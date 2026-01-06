@@ -1,0 +1,15 @@
+# AGENTS.md — {{ repo_slug }}
+
+## Intent
+Template for an **agent repo**: one repo per agent, no hierarchy, work via proposals + merge requests.
+
+## Guardrails
+- No secrets in git (use GitLab CI variables + 1Password references).
+- Never push to `main`; open branches + MRs.
+- Treat `docs/_core/**` as immutable (vendored snapshot or submodule from `holdingco-os`).
+
+## Read order
+1) `docs/_core/README.md`
+2) `docs/person/`
+3) `docs/system4d/`
+

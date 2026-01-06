@@ -1,0 +1,17 @@
+_subdirectory: ""
+answers_file: .copier-answers.yml
+
+repo_slug:
+  type: str
+  help: "Repo slug (e.g. softwareco-handbook)"
+
+core_owner_handle:
+  type: str
+  default: "@holding-owner"
+  help: "CODEOWNERS entry for core docs paths"
+
+org_owner_handle:
+  type: str
+  default: "@software-owner"
+  help: "CODEOWNERS entry for org-owned paths"
+
