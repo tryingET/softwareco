@@ -40,4 +40,15 @@ if [[ ! -d "$template_dir" ]]; then
   exit 2
 fi
 
-"${copier_cmd[@]}" copy "$template_dir" "$dest_dir" "$@"
+have_answers=0
+for arg in "$@"; do
+  case "$arg" in
+    -a|--answers-file|--answers-file=*) have_answers=1; break ;;
+  esac
+done
+answers_args=()
+if [[ "$have_answers" == "0" ]]; then
+  answers_args=(-a .copier-answers.yml)
+fi
+
+"${copier_cmd[@]}" copy "${answers_args[@]}" "$template_dir" "$dest_dir" "$@"

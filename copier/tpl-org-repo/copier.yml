@@ -1,5 +1,5 @@
 _subdirectory: ""
-answers_file: .copier-answers.yml
+_answers_file: .copier-answers.yml
 
 repo_slug:
   type: str
@@ -14,4 +14,3 @@ org_owner_handle:
   type: str
   default: "@software-owner"
   help: "CODEOWNERS entry for org-owned paths"
-
