@@ -1,7 +1,6 @@
 _subdirectory: ""
-answers_file: .copier-answers.yml
+_answers_file: .copier-answers.yml
 
 repo_slug:
   type: str
   help: "Repo slug (e.g. agent-triage)"
-
