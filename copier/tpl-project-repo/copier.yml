@@ -4,3 +4,18 @@ _answers_file: .copier-answers.yml
 repo_slug:
   type: str
   help: "Repo slug (e.g. proj-foo)"
+
+core_owner_handle:
+  type: str
+  default: "@holding-owner"
+  help: "CODEOWNERS entry for core docs paths"
+
+org_owner_handle:
+  type: str
+  default: "@org-owners"
+  help: "CODEOWNERS entry for org-owned paths"
+
+project_owner_handle:
+  type: str
+  default: "@project-owners"
+  help: "CODEOWNERS entry for project-owned paths"
