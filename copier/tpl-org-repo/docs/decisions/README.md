@@ -6,5 +6,4 @@ read_when:
 
 # Decisions (ADRs)
 
-Prefer the core ADR template from `holdingco-os` (`docs/core/system4d/TEMPLATE-ADR.md`).
-
+Prefer the core ADR template from `governance-kernel` (`docs/core/system4d/TEMPLATE-ADR.md`).
