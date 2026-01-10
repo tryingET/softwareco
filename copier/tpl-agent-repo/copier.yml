@@ -4,3 +4,13 @@ _answers_file: .copier-answers.yml
 repo_slug:
   type: str
   help: "Repo slug (e.g. agent-triage)"
+
+core_owner_handle:
+  type: str
+  default: "@holding-owner"
+  help: "CODEOWNERS entry for core docs paths"
+
+agent_owner_handle:
+  type: str
+  default: "@agent-owner"
+  help: "CODEOWNERS entry for agent-owned paths"

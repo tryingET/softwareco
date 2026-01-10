@@ -1,6 +1,13 @@
-# Core Docs (vendored)
+---
+summary: "Placeholder for core docs snapshot (vendored)."
+read_when:
+  - "When creating/updating docs under docs/_core"
+---
 
-This folder is a placeholder for the Holding core snapshot (or submodule) used by this repo.
+# Core Docs (`docs/_core/`)
 
-Expected source: `ai-society/holdingco/holdingco-os`.
+This folder is the **Holding core snapshot** for this repo.
 
+Preferred source: `ai-society/holdingco/governance-kernel` (`docs/core/**`, `governance/**`).
+
+Recommended: vendor a snapshot and treat it as immutable via CODEOWNERS + CI.
