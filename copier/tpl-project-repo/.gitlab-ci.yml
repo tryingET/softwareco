@@ -4,6 +4,8 @@ stages:
 core_integrity_check:
   stage: test
   image: alpine:3.19
+  tags:
+    - runner::mr
   script:
     - apk add --no-cache git ripgrep
     - git fetch origin "$CI_DEFAULT_BRANCH"
@@ -14,4 +16,3 @@ core_integrity_check:
         || echo "ok: no protected core changes"
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-
