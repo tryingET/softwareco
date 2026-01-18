@@ -1,7 +1,7 @@
 ---
 summary: "Placeholder for core docs snapshot (vendored)."
 read_when:
-  - "When setting up docs/_core for a project repo"
+  - "When setting up docs/_core for an owned repo"
 ---
 
 # Core Docs (`docs/_core/`)

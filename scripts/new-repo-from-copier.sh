@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF' >&2
-usage: new-repo-from-copier.sh <tpl-agent-repo|tpl-org-repo|tpl-project-repo> <dest-dir> [copier args...]
+usage: new-repo-from-copier.sh <tpl-agent-repo|tpl-org-repo|tpl-owned-repo> <dest-dir> [copier args...]
 
 Notes:
   - Requires `uv` (uses `uvx copier`).
