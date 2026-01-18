@@ -1,5 +1,5 @@
 ---
-summary: "Project purpose."
+summary: "Repo purpose."
 read_when:
   - "When deciding if work is in-scope"
 ---
@@ -7,4 +7,3 @@ read_when:
 # Purpose
 
 TBD.
-

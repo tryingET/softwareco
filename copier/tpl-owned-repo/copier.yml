@@ -3,7 +3,7 @@ _answers_file: .copier-answers.yml
 
 repo_slug:
   type: str
-  help: "Repo slug (e.g. proj-foo)"
+  help: "Repo slug (e.g. dotfiles-managed)"
 
 core_owner_handle:
   type: str
@@ -12,10 +12,10 @@ core_owner_handle:
 
 org_owner_handle:
   type: str
-  default: "@org-owners"
+  default: "@software-owner"
   help: "CODEOWNERS entry for org-owned paths"
 
-project_owner_handle:
+owned_owner_handle:
   type: str
-  default: "@project-owners"
-  help: "CODEOWNERS entry for project-owned paths"
+  default: "@software-owner"
+  help: "CODEOWNERS entry for owned-repo paths"

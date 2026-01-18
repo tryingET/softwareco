@@ -1,5 +1,5 @@
 ---
-summary: "System4D: Engine (states/invariants/lifecycle) for this project."
+summary: "System4D: Engine (states/invariants/lifecycle) for this repo."
 read_when:
   - "When defining invariants and lifecycle"
 ---
@@ -7,4 +7,3 @@ read_when:
 # System4D — Engine
 
 TBD.
-

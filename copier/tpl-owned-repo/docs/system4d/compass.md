@@ -1,5 +1,5 @@
 ---
-summary: "System4D: Compass (driver/outcome) for this project."
+summary: "System4D: Compass (driver/outcome) for this repo."
 read_when:
   - "When choosing priorities"
 ---
@@ -7,4 +7,3 @@ read_when:
 # System4D — Compass
 
 TBD.
-

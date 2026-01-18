@@ -26,6 +26,6 @@ check_copier() {
 echo "checking copier templates..."
 check_copier tpl-agent-repo
 check_copier tpl-org-repo
-check_copier tpl-project-repo
+check_copier tpl-owned-repo
 
 echo "ok: templates ci"
