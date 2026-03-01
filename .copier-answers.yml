@@ -2,11 +2,11 @@
 l1_profile: ''
 company_slug: 'softwareco'
 company_name: 'Software Company'
-repo_slug: 'softwareco-templates'
+repo_slug: 'softwareco'
 maintainer_handle: '@template-owner'
-l0_source_sha: '8330be0ab2a01bafeb7fa236306f8191f6ee242e'
+l0_source_sha: 'e48b6191be68b37851a682c5c38c40cea0f70e60'
 l1_org_docs_profile: 'rich'
-l2_org_docs_default: 'compact'
+l2_org_docs_default: ''
 enable_vouch_gate: false
 enable_community_pack: false
 enable_release_pack: false

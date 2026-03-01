@@ -1,0 +1,16 @@
+# Location: contrib
+# Language: python# Core + org context snapshots
+docs/_core/** @core-owner
+docs/org_context/** @org-owners
+
+# Project delivery + governance
+docs/project/** @softwareco-contrib
+docs/system4d/** @softwareco-contrib
+docs/decisions/** @softwareco-contrib
+docs/dev/** @softwareco-contrib
+policy/** @softwareco-contrib
+
+# Code
+scripts/** @softwareco-contrib
+src/** @softwareco-contrib
+tests/** @softwareco-contrib

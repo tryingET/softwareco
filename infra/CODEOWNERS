@@ -1,0 +1,16 @@
+# Location: infra
+# Language: python# Core + org context snapshots
+docs/_core/** @core-owner
+docs/org_context/** @org-owners
+
+# Project delivery + governance
+docs/project/** @softwareco-infra
+docs/system4d/** @softwareco-infra
+docs/decisions/** @softwareco-infra
+docs/dev/** @softwareco-infra
+policy/** @softwareco-infra
+
+# Code
+scripts/** @softwareco-infra
+src/** @softwareco-infra
+tests/** @softwareco-infra

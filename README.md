@@ -1,11 +1,11 @@
-# softwareco-templates
+# softwareco
 
 This is an **L1 template repository** generated from `core/tpl-template-repo` (L0).
 
 - Profile: ``
 - Maintainer: `@template-owner`
 - L1 organization docs profile: `rich`
-- Default L2 organization docs profile: `compact`
+- Default L2 organization docs profile: ``
 - Baseline L2 template family: `agent`, `project`, `org`, `monorepo`, `package`
 
 ## What this repo provides
@@ -171,7 +171,7 @@ See `tips/README.md` for TIP process.
 ## Organization docs profile
 
 - This L1 repository currently ships **rich** organization docs in `docs/org/`.
-- Generated L2 repositories default to **compact** via `scripts/new-repo-from-copier.sh` inheritance from `.copier-answers.yml` (`l2_org_docs_default`).
+- Generated L2 repositories default to **** via `scripts/new-repo-from-copier.sh` inheritance from `.copier-answers.yml` (`l2_org_docs_default`).
 - Override at L2 generation time with:
   - `-d org_docs_profile=compact`
   - `-d org_docs_profile=rich`
