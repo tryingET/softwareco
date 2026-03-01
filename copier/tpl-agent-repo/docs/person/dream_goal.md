@@ -6,5 +6,6 @@ read_when:
 
 # Dream Goal
 
-TBD.
+- Dream goal:
+- Why it matters:
 

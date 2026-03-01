@@ -6,6 +6,8 @@ read_when:
 
 # Agent Persona (`docs/person/`)
 
+This folder is **owned by the agent** and defines its persona and preferences.
+
 Start here:
 - `identity.md`
 - `reason.md`

@@ -6,5 +6,8 @@ read_when:
 
 # Consent
 
-TBD.
+## Change workflow
+1) Proposal issue
+2) MR with consent template
+3) Explicit consent recorded in MR
 

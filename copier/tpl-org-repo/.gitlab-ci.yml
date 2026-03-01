@@ -15,7 +15,7 @@ ci:smoke:
   variables:
     GIT_DEPTH: "0"
   script:
-    - apk add --no-cache git ripgrep
+    - apk add --no-cache git
     - ./scripts/ci/smoke.sh
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
@@ -28,7 +28,7 @@ ci:full:
   variables:
     GIT_DEPTH: "0"
   script:
-    - apk add --no-cache git ripgrep
+    - apk add --no-cache git
     - ./scripts/ci/full.sh
   rules:
     - if: '$CI_COMMIT_REF_PROTECTED == "true"'

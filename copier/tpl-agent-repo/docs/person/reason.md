@@ -6,5 +6,6 @@ read_when:
 
 # Reason
 
-TBD.
+- Why do we have this agent?
+- What recurring pain does it remove?
 

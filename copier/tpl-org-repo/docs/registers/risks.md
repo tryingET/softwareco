@@ -6,5 +6,7 @@ read_when:
 
 # Risks
 
-TBD.
+- Risk:
+- Impact:
+- Mitigation:
 

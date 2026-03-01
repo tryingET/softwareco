@@ -6,5 +6,13 @@ read_when:
 
 # System4D — Engine
 
-TBD.
+## Triggers
+- Trigger(s):
+
+## State / Lifecycle
+- States:
+- Transitions:
+
+## Invariants
+- Invariant(s):
 

@@ -6,5 +6,10 @@ read_when:
 
 # System4D — Container
 
-TBD.
+## Boundary
+- In scope:
+- Out of scope:
+
+## Constraints
+- Constraints:
 

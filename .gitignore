@@ -1,2 +1,9 @@
-NUL
+# Local artifacts
+.tmp/
+tmp/
+*.tmp
+*.log
+
+# Python generated artifacts
 __pycache__/
+*.pyc

@@ -6,5 +6,15 @@ read_when:
 
 # System4D — Fog
 
-TBD.
+## Assumptions
+- Assumption(s):
+
+## Risks
+- Risk(s):
+
+## Exceptions
+- Exception(s):
+
+## Debt
+- Debt:
 

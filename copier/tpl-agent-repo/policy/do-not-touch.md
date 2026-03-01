@@ -6,6 +6,9 @@ read_when:
 
 # Do Not Touch
 
+## Secrets
 - Never commit secrets or tokens.
+
+## Immutable core paths
 - `docs/_core/**` is immutable (core snapshot/submodule).
 

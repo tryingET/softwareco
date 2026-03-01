@@ -6,4 +6,5 @@ read_when:
 
 # Decisions (ADRs)
 
-Prefer the core ADR template from `governance-kernel` (`docs/core/system4d/TEMPLATE-ADR.md`).
+- Use ADRs for durable decisions and trade-offs.
+- Prefer the core ADR template from `governance-kernel` (`docs/core/system4d/TEMPLATE-ADR.md`).

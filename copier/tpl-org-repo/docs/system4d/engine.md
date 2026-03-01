@@ -6,5 +6,6 @@ read_when:
 
 # System4D — Engine
 
-TBD.
+## Invariants
+- Invariant(s):
 

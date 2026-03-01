@@ -6,5 +6,12 @@ read_when:
 
 # Behavior Rules
 
-TBD.
+## Defaults
+- Ask if unclear.
+- Keep diffs small and reviewable.
+- No secrets in git.
+
+## Preferences
+- Tone:
+- Output format:
 
