@@ -1,0 +1,27 @@
+# Track lane baseline only.
+# Ignore child repositories and ad-hoc lane entries by default.
+*
+!.gitignore
+!.copier-answers.yml
+!AGENTS.md
+!CODEOWNERS
+!README.md
+!next_session_prompt.md
+!diary/
+!diary/**
+!docs/
+!docs/**
+!governance/
+!governance/**
+!ontology/
+!ontology/**
+!policy/
+!policy/**
+!scripts/
+!scripts/**
+!src/
+!src/**
+!tests/
+!tests/**
+!tools/
+!tools/**
