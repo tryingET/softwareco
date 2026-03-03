@@ -1,46 +1,40 @@
-# AGENTS.md — infra
+---
+summary: "Group-level defaults for infrastructure repos under softwareco/infra."
+read_when:
+  - "You work in softwareco infra repos and need lane-level guardrails."
+  - "You are separating infrastructure-archetype policy from repo-specific operations."
+type: "reference"
+---
 
-## Intent
-Template for a delivery project repo (project context + code + tests).
+# AGENTS.md — softwareco/infra
+
+## Scope
+Group-level defaults for infrastructure/platform repos under `softwareco/infra/`.
+This file is parent context for infra repos.
+
+## First-principles boundary
+Parent AGENTS files are injected into every descendant repo prompt.
+Therefore this file stays:
+- concise
+- meta-level
+- infrastructure-archetype focused
+
+Repo-specific operational details belong in each infra repo's local `AGENTS.md`.
 
 ## Guardrails
 - No secrets in git.
-- Never push to `main`; MRs only.
-- Treat `docs/_core/**` as immutable.
-- Track deferred work in `governance/work-items.json` (avoid ad-hoc TODO comments).
+- Branch + MR workflow.
+- Track deferred work in `governance/work-items.json` where available.
 
-## Deterministic tooling policy (ROCS-first)
-- Prefer `./scripts/rocs.sh <args...>` before ad-hoc inline scripting.
-- For ontology/policy checks, use ROCS commands as the default execution path.
-- Use inline Python only as an explicit escape hatch when no deterministic command exists.
+## Deterministic tooling
+- Prefer deterministic wrappers (`./scripts/rocs.sh`, repo scripts) over ad-hoc shell/Python.
+- Use inline Python only when no deterministic command exists.
 
-## Knowledge Crystallization Flow
-
-```
-Session → diary/ (raw) → docs/learnings/ (crystallized) → TIPs (propagated)
-```
-
-**Knowledge that isn't crystallized is knowledge that will be re-learned the hard way.**
-
-1. During work: Capture in `diary/YYYY-MM-DD--type-scope-summary.md`
-2. End of session: Extract patterns, decisions, learnings
-3. Weekly: Promote to `docs/learnings/` and `docs/decisions/`
-4. When pattern generalizes: Propose TIP
-
-## Recursion policy (explicit)
-Allowed:
-- L1 -> L2
-
-Forbidden:
-- L1 -> L0
-- L2 -> L1
-- any cycle
-
-## Read order
-1) `docs/_core/`
-2) `docs/org_context/`
-3) `docs/project/`
-4) `docs/decisions/`
-5) `docs/learnings/`
-6) `diary/`               ← recent work sessions
-7) `docs/system4d/`
+## Default read order inside infra repos
+1. `docs/_core/` (if present)
+2. `docs/org_context/` (if present)
+3. `docs/project/`
+4. `docs/decisions/`
+5. `docs/learnings/`
+6. `diary/`
+7. repo `AGENTS.md`
