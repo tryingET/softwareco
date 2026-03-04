@@ -32,5 +32,6 @@ Therefore:
 
 ## Shared tooling
 - Docs discovery: `./scripts/docs-list.sh --task "<task>" --top 8`
+- Repo census preflight: `./scripts/preflight-repo-census.sh [scope]`
 - Deterministic ROCS launcher: `./scripts/rocs.sh <rocs args...>`
 - New L2 repo from template: `./scripts/new-repo-from-copier.sh <template> <dest> -d repo_slug=<slug> --defaults`
