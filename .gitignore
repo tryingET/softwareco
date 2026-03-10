@@ -13,6 +13,7 @@ __pycache__/
 # while ignoring future lane child repos by default.
 
 owned/*
+!owned/.gitignore
 !owned/.copier-answers.yml
 !owned/.gitlab-ci.yml
 !owned/.gitlab/
@@ -43,6 +44,7 @@ owned/*
 !owned/tools/**
 
 contrib/*
+!contrib/.gitignore
 !contrib/.copier-answers.yml
 !contrib/.gitlab-ci.yml
 !contrib/.gitlab/
@@ -73,6 +75,7 @@ contrib/*
 !contrib/tools/**
 
 infra/*
+!infra/.gitignore
 !infra/.copier-answers.yml
 !infra/.gitlab-ci.yml
 !infra/.gitlab/
@@ -106,6 +109,7 @@ infra/*
 # Keep current agents baseline tracked, ignore future child repos by default.
 
 agents/*
+!agents/.gitignore
 !agents/.copier-answers.yml
 !agents/.gitlab-ci.yml
 !agents/.gitlab/
@@ -136,3 +140,32 @@ agents/*
 !agents/tests/**
 !agents/tools/
 !agents/tools/**
+
+# Lane root: fork
+# Track lane baseline only; ignore nested child repositories by default.
+fork/*
+!fork/.gitignore
+!fork/.copier-answers.yml
+!fork/AGENTS.md
+!fork/CODEOWNERS
+!fork/README.md
+!fork/next_session_prompt.md
+!fork/diary/
+!fork/diary/**
+!fork/docs/
+!fork/docs/**
+!fork/governance/
+!fork/governance/**
+!fork/ontology/
+!fork/ontology/**
+!fork/policy/
+!fork/policy/**
+!fork/scripts/
+!fork/scripts/**
+!fork/src/
+!fork/src/**
+!fork/tests/
+!fork/tests/**
+!fork/tools/
+!fork/tools/**
+# End lane root: fork

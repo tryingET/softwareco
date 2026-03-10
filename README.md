@@ -32,6 +32,15 @@ Validate this L1 template repo:
 bash ./scripts/check-template-ci.sh
 ```
 
+Bootstrap a lane root before nesting child repos:
+
+```bash
+./scripts/bootstrap-lane-root.sh fork
+git add .gitignore fork
+git commit -m "chore: bootstrap fork lane baseline"
+./scripts/bootstrap-lane-root.sh fork --init-lane-git
+```
+
 Generate an L2 **agent** repository:
 
 ```bash
