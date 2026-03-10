@@ -33,11 +33,8 @@ That upstream line is now considered closed locally; future work should move int
 ## Bootstrap status
 
 - lane baseline materialized from `tpl-project-repo`
-- parent repo still needs a commit before `fork/` can be initialized as its own git root via:
-
-```bash
-./scripts/bootstrap-lane-root.sh fork --init-lane-git
-```
+- lane-root git initialized on 2026-03-10
+- next likely step: create the first actual fork repo under `fork/`
 
 ## Structure
 

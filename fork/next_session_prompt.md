@@ -27,16 +27,15 @@ Do not ask for permission to start.
 - Raw session capture: `diary/`
 
 ## ACTIVE HANDOFF
-- `fork/` lane baseline was materialized on 2026-03-10 from `tpl-project-repo`.
-- Parent repo still needs to commit `.gitignore`, `scripts/bootstrap-lane-root.sh`, and `fork/` before lane-root git can be initialized with:
-  - `./scripts/bootstrap-lane-root.sh fork --init-lane-git`
+- `fork/` lane baseline was materialized from `tpl-project-repo` and lane-root git is now initialized.
 - Immediate intended use: host local forks for DSPY-related work that will no longer be pursued through `badlogic/pi-mono` upstream requests.
+- Next bounded slice: create the first actual repo under `softwareco/fork/` and document why the fork exists.
 
 ## SESSION PREFLIGHT (FILL BEFORE EXECUTION)
 - Objective (one sentence): initialize first actual fork repo under this lane
-- Constraints (hard limits): do not init lane git before parent repo commit; keep fork rationale explicit in docs/decisions
-- Assumptions (max 3): fork lane remains for long-lived divergence, not casual mirrors; parent `softwareco/` repo owns lane policy; first fork likely comes from DSPY/pi-mono needs
-- Blockers (none or list): parent repo commit still pending before `--init-lane-git`
+- Constraints (hard limits): keep fork rationale explicit in docs/decisions; do not route normal first-party work into this lane by default
+- Assumptions (max 3): fork lane remains for long-lived divergence, not casual mirrors; parent `softwareco/` repo owns company-wide lane policy; first fork likely comes from DSPY/pi-mono needs
+- Blockers (none or list): first actual fork repo not created yet
 
 ## READ-FIRST ALLOWLIST (STARTUP BUDGET)
 1. `AGENTS.md`
