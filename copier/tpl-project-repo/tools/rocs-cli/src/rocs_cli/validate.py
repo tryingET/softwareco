@@ -11,7 +11,7 @@ import re
 
 
 PLACEHOLDER_RE = re.compile(r"<[^>]+>")
-GITLAB_REF_RE = re.compile(r"^<gitlab:([^@>]+)@([^>]+)>$")
+REF_LOCATOR_RE = re.compile(r"^<(repo|gitlab):([^@>]+)@([^>]+)>$")
 
 _ALLOWED_CONCEPT_KEYS = {
     "id",
@@ -39,6 +39,13 @@ _ALLOWED_RELATION_KEYS = {
     "inverse",
     "lint_ignore",
 }
+
+
+def _ignored(ont: dict) -> set[str]:
+    ig = ont.get("lint_ignore") or []
+    if isinstance(ig, list):
+        return {str(x) for x in ig}
+    return set()
 
 
 def _id_ok(ont_id: str) -> bool:
@@ -89,7 +96,7 @@ def validate_manifest_placeholders(repo_root: Path, strict_placeholders: bool) -
     findings: list[Finding] = []
     for m in PLACEHOLDER_RE.finditer(text):
         token = m.group(0)
-        if GITLAB_REF_RE.match(token):
+        if REF_LOCATOR_RE.match(token):
             continue
         findings.append(
             Finding(
@@ -107,9 +114,17 @@ def validate_reference_schema(
     *,
     strict_placeholders: bool,
     validate_deps: bool,
+    concepts: dict | None = None,
+    relations: dict | None = None,
 ) -> tuple[list[Finding], dict]:
     findings: list[Finding] = []
-    concepts, relations = collect_docs(layers)
+    if concepts is None or relations is None:
+        concepts, relations = collect_docs(layers)
+
+    def add_doc_finding(ignore: set[str], finding: Finding) -> None:
+        if finding.rule_id in ignore:
+            return
+        findings.append(finding)
 
     rel_label_to_ids = relation_label_index(relations)
     for lbl, ids in rel_label_to_ids.items():
@@ -141,8 +156,10 @@ def validate_reference_schema(
                     )
 
     for cid, cdoc in concepts.items():
+        ignore = _ignored(cdoc.ont)
         if not _id_ok(cid):
-            findings.append(
+            add_doc_finding(
+                ignore,
                 Finding(
                     rule_id="ONT001",
                     severity="error",
@@ -155,7 +172,8 @@ def validate_reference_schema(
         if validate_deps or cdoc.layer_kind == "path":
             extra = set(ont.keys()) - _ALLOWED_CONCEPT_KEYS
             if extra:
-                findings.append(
+                add_doc_finding(
+                    ignore,
                     Finding(
                         rule_id="ONT002",
                         severity="error",
@@ -166,7 +184,8 @@ def validate_reference_schema(
                 )
             labels = ont.get("labels")
             if not isinstance(labels, list) or not labels or not all(str(x).strip() for x in labels):
-                findings.append(
+                add_doc_finding(
+                    ignore,
                     Finding(
                         rule_id="ONT003",
                         severity="error",
@@ -177,7 +196,8 @@ def validate_reference_schema(
                 )
             desc = str(ont.get("description") or "").strip()
             if not desc:
-                findings.append(
+                add_doc_finding(
+                    ignore,
                     Finding(
                         rule_id="ONT004",
                         severity="error",
@@ -190,7 +210,8 @@ def validate_reference_schema(
         if rels is None and cdoc.layer_kind != "path" and not validate_deps:
             rels = []
         if not isinstance(rels, list):
-            findings.append(
+            add_doc_finding(
+                ignore,
                 Finding(
                     rule_id="ONT005",
                     severity="error",
@@ -203,7 +224,8 @@ def validate_reference_schema(
 
         for edge in rels:
             if not isinstance(edge, dict):
-                findings.append(
+                add_doc_finding(
+                    ignore,
                     Finding(
                         rule_id="ONT006",
                         severity="error",
@@ -216,7 +238,8 @@ def validate_reference_schema(
             rtype = str(edge.get("type") or "")
             target = str(edge.get("target") or "")
             if rtype and rtype not in rel_label_to_ids:
-                findings.append(
+                add_doc_finding(
+                    ignore,
                     Finding(
                         rule_id="ONT007",
                         severity="error",
@@ -226,7 +249,8 @@ def validate_reference_schema(
                     )
                 )
             if target and target not in concepts:
-                findings.append(
+                add_doc_finding(
+                    ignore,
                     Finding(
                         rule_id="ONT008",
                         severity="error",
@@ -238,7 +262,8 @@ def validate_reference_schema(
 
         status = str(ont.get("status") or "active")
         if status not in ("active", "deprecated"):
-            findings.append(
+            add_doc_finding(
+                ignore,
                 Finding(
                     rule_id="ONT009",
                     severity="error",
@@ -250,7 +275,8 @@ def validate_reference_schema(
         if status == "deprecated":
             dep = ont.get("deprecated") or {}
             if not isinstance(dep, dict):
-                findings.append(
+                add_doc_finding(
+                    ignore,
                     Finding(
                         rule_id="ONT010",
                         severity="error",
@@ -262,7 +288,8 @@ def validate_reference_schema(
             else:
                 for k in ("since", "replaced_by", "decision"):
                     if not dep.get(k):
-                        findings.append(
+                        add_doc_finding(
+                            ignore,
                             Finding(
                                 rule_id="ONT011",
                                 severity="error",
@@ -273,7 +300,8 @@ def validate_reference_schema(
                         )
                 rb = str(dep.get("replaced_by") or "")
                 if rb and rb not in concepts:
-                    findings.append(
+                    add_doc_finding(
+                        ignore,
                         Finding(
                             rule_id="ONT012",
                             severity="error",
@@ -284,8 +312,10 @@ def validate_reference_schema(
                     )
 
     for rid, rdoc in relations.items():
+        ignore = _ignored(rdoc.ont)
         if not _id_ok(rid):
-            findings.append(
+            add_doc_finding(
+                ignore,
                 Finding(
                     rule_id="REL010",
                     severity="error",
@@ -298,7 +328,8 @@ def validate_reference_schema(
         if validate_deps or rdoc.layer_kind == "path":
             extra = set(ont.keys()) - _ALLOWED_RELATION_KEYS
             if extra:
-                findings.append(
+                add_doc_finding(
+                    ignore,
                     Finding(
                         rule_id="REL011",
                         severity="error",
@@ -309,7 +340,8 @@ def validate_reference_schema(
                 )
             labels = ont.get("labels")
             if not isinstance(labels, list) or not labels or not all(str(x).strip() for x in labels):
-                findings.append(
+                add_doc_finding(
+                    ignore,
                     Finding(
                         rule_id="REL012",
                         severity="error",
@@ -320,7 +352,8 @@ def validate_reference_schema(
                 )
             desc = str(ont.get("description") or "").strip()
             if not desc:
-                findings.append(
+                add_doc_finding(
+                    ignore,
                     Finding(
                         rule_id="REL013",
                         severity="error",
@@ -337,7 +370,8 @@ def validate_reference_schema(
             if inv in labels:
                 continue
             if inv not in rel_label_to_ids:
-                findings.append(
+                add_doc_finding(
+                    ignore,
                     Finding(
                         rule_id="REL020",
                         severity="error",
@@ -349,7 +383,8 @@ def validate_reference_schema(
             else:
                 inv_ids = sorted(rel_label_to_ids.get(inv) or [])
                 if len(inv_ids) != 1:
-                    findings.append(
+                    add_doc_finding(
+                        ignore,
                         Finding(
                             rule_id="REL021",
                             severity="error",
@@ -363,7 +398,8 @@ def validate_reference_schema(
                     if inv_doc:
                         back = inv_doc.ont.get("inverse")
                         if back is None or str(back) not in labels:
-                            findings.append(
+                            add_doc_finding(
+                                ignore,
                                 Finding(
                                     rule_id="REL022",
                                     severity="error",
