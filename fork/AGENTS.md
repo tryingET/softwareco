@@ -20,10 +20,14 @@ Because parent AGENTS files are injected into all descendants:
 
 ## Guardrails
 - No secrets in git.
-- Branch + MR workflow.
+- Main-first workflow: commit directly to `main` for normal repo work.
+- Use GitHub PRs for releases or when the operator explicitly asks for review.
 - Treat `docs/_core/**` as immutable.
 - Track deferred work in `governance/work-items.json` where available.
 - Record why the fork exists and what upstream boundary failed in repo-local docs/decisions.
+- If a fork repo uses repo-local direction docs (`strategic_goals.md`, `tactical_goals.md`, `operating_plan.md`), update them in the same pass when a direction slice task lands, or bind the doc-sync follow-up into AK with an explicit deferral.
+- In fork repos that import runtime links from direction docs, use typed refs such as `task:` / `decision:` instead of raw `#123` shorthand.
+- Treat `ak direction check` as an authority-reconciliation gate when that substrate exists, not just a markdown parser smoke test.
 
 ## Deterministic tooling
 - Prefer deterministic wrappers (`./scripts/rocs.sh`, repo scripts) over ad-hoc shell/Python.
