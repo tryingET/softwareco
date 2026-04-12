@@ -33,6 +33,7 @@ from rocs_cli.pack import build_pack, pack_config_from_profile
 from rocs_cli.repo_view import RepoView, load_repo_view
 from rocs_cli.rules import Finding, RULES
 from rocs_cli.errors import RocsCliError
+from rocs_cli.managed_surface import ensure_managed_output_dir, ensure_managed_output_file
 from rocs_cli.rulesets import behavior_for_ruleset, effective_ruleset
 from rocs_cli.validate import (
     enforce_budget,
@@ -72,7 +73,7 @@ def _maybe_load_env_file(env_file: str | None, *, repo_root: Path | None) -> Non
     p = Path(env_file).expanduser() if env_file else _discover_default_env_file(repo_root=repo_root)
     if not p:
         return
-    from rocs_cli.gitlab import load_env_file
+    from rocs_cli.env import load_env_file
 
     load_env_file(p)
 
@@ -159,15 +160,14 @@ def _print_findings(findings: list[Finding]) -> None:
             console.print(f"- {f.rule_id} {f.severity}: {f.message}")
 
 
+def _ensure_dist_dir(repo: Path, *, label: str) -> Path:
+    return ensure_managed_output_dir(repo, dist_dir(repo), label=label)
+
+
 def _write_resolve_artifact(repo: Path, *, layers, profile: str | None) -> Path:
-    dist = dist_dir(repo)
-    dist.mkdir(parents=True, exist_ok=True)
+    dist = _ensure_dist_dir(repo, label="resolve artifact dir")
     entries = []
     for layer_spec in layers:
-        cache_repo_root = None
-        if layer_spec.kind == "ref":
-            # <cache>/gitlab/<proj>/<ref>/ontology/src
-            cache_repo_root = str(layer_spec.src_root.parent.parent)
         entries.append(
             {
                 "name": layer_spec.name,
@@ -175,20 +175,25 @@ def _write_resolve_artifact(repo: Path, *, layers, profile: str | None) -> Path:
                 "origin": layer_spec.origin,
                 "source": layer_spec.source,
                 "src_root": str(layer_spec.src_root),
-                "cache_repo_root": cache_repo_root,
             }
         )
     entries.sort(key=lambda e: str(e.get("name") or ""))
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "version": __version__,
         "repo": str(repo),
         "profile": profile,
         "layers": entries,
     }
-    out = dist / "resolve.json"
+    out = ensure_managed_output_file(repo, dist / "resolve.json", label="resolve artifact")
     out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", "utf-8")
     return out
+
+
+def _clear_build_artifacts(repo: Path) -> None:
+    dist = dist_dir(repo)
+    for name in ("resolve.json", "summary.json", "id_index.json"):
+        (dist / name).unlink(missing_ok=True)
 
 
 def _write_authority_receipt_if_possible(
@@ -457,9 +462,11 @@ def cmd_build(args: argparse.Namespace) -> int:
     repo = _repo_root(args.repo)
     ws_mode = effective_workspace_ref_mode(getattr(args, "workspace_ref_mode", None))
     dist = dist_dir(repo)
+    _ensure_dist_dir(repo, label="build output dir")
     if args.clean and dist.exists():
         shutil.rmtree(dist)
-    dist.mkdir(parents=True, exist_ok=True)
+    _ensure_dist_dir(repo, label="build output dir")
+    _clear_build_artifacts(repo)
     try:
         view = _load_view(args)
     except RocsCliError as e:
@@ -481,7 +488,7 @@ def cmd_build(args: argparse.Namespace) -> int:
     findings, _budget_payload = _schema_validation_result(
         view,
         strict_placeholders=strict_placeholders,
-        validate_deps=False,
+        validate_deps=True,
     )
     if findings:
         _write_authority_receipt_if_possible(
@@ -512,9 +519,9 @@ def cmd_build(args: argparse.Namespace) -> int:
         "concept_ids": sorted(view.concepts.keys()),
         "relation_ids": sorted(view.relations.keys()),
     }
-    summary_out = dist / "summary.json"
+    summary_out = ensure_managed_output_file(repo, dist / "summary.json", label="build summary artifact")
     summary_out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", "utf-8")
-    id_index_out = dist / "id_index.json"
+    id_index_out = ensure_managed_output_file(repo, dist / "id_index.json", label="build id-index artifact")
     id_index_out.write_text(
         json.dumps(build_id_index(concepts=view.concepts, relations=view.relations), indent=2, sort_keys=True) + "\n", "utf-8"
     )
@@ -658,21 +665,22 @@ def cmd_graph(args: argparse.Namespace) -> int:
     if args.relation:
         rel_filter = {args.relation}
     edges = build_edges(view.concepts, rel_filter=rel_filter)
-    nodes = sorted(view.concepts.keys())
+    nodes = sorted(set(view.concepts.keys()) | {edge.src for edge in edges} | {edge.dst for edge in edges})
     if args.collapse_prefix:
         nodes, edges = collapse_nodes(nodes, edges, prefixes=args.collapse_prefix.split(","))
     layout = compute_layout(nodes, edges, layout=args.layout)
     if args.out:
         out = Path(args.out)
     else:
+        dist = _ensure_dist_dir(view.repo, label="graph output dir")
         if args.json:
-            out = dist_dir(view.repo) / "graph.json"
+            out = ensure_managed_output_file(view.repo, dist / "graph.json", label="graph artifact")
         elif args.format == "dot":
-            out = dist_dir(view.repo) / "graph.dot"
+            out = ensure_managed_output_file(view.repo, dist / "graph.dot", label="graph artifact")
         elif args.format == "excalidraw-cli-json":
-            out = dist_dir(view.repo) / "graph.excalidraw-cli.json"
+            out = ensure_managed_output_file(view.repo, dist / "graph.excalidraw-cli.json", label="graph artifact")
         else:
-            out = dist_dir(view.repo) / "graph.excalidraw.json"
+            out = ensure_managed_output_file(view.repo, dist / "graph.excalidraw.json", label="graph artifact")
     direction = "LR" if args.layout == "dag" else "TB"
     fmt = "json" if args.json else args.format
     write_graph(out, fmt=fmt, nodes=nodes, edges=edges, layout=layout, direction=direction)
@@ -762,11 +770,11 @@ def cmd_diff(args: argparse.Namespace) -> int:
     baseline = args.baseline.strip()
     if not args.resolve_refs:
         raise SystemExit(
-            "rocs diff requires --resolve-refs to resolve a <repo:...@...> or legacy <gitlab:...@...> baseline"
+            "rocs diff requires --resolve-refs to resolve a <repo:...@...> baseline"
         )
     parsed = parse_ref_locator(baseline)
     if parsed is None:
-        raise SystemExit("--baseline must be a <repo:...@...> or legacy <gitlab:...@...> locator for now")
+        raise SystemExit("--baseline must be a <repo:...@...> locator")
 
     base_repo, _base_source, _base_notes = resolve_ref_repo_root(
         baseline,
@@ -806,9 +814,8 @@ def cmd_diff(args: argparse.Namespace) -> int:
         "breaking": breaking,
     }
 
-    dist = dist_dir(repo)
-    dist.mkdir(parents=True, exist_ok=True)
-    out = dist / "diff.json"
+    dist = _ensure_dist_dir(repo, label="diff output dir")
+    out = ensure_managed_output_file(repo, dist / "diff.json", label="diff artifact")
     out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", "utf-8")
 
     if args.json:
@@ -837,7 +844,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_resolve_common = argparse.ArgumentParser(add_help=False)
     p_resolve_common.add_argument(
         "--workspace-root",
-        help="workspace root used to satisfy <repo:...@ref> refs locally (and legacy <gitlab:...@ref> locators) (or ROCS_WORKSPACE_ROOT)",
+        help="workspace root used to satisfy <repo:...@ref> refs locally (or ROCS_WORKSPACE_ROOT)",
     )
     p_resolve_common.add_argument(
         "--workspace-ref-mode",
@@ -847,7 +854,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_resolve_common.add_argument(
         "--show-resolve-sources",
         action="store_true",
-        help="show workspace/cache/gitlab source per layer in text output",
+        help="show path/workspace source per layer in text output",
     )
     p_resolve_common.add_argument(
         "--show-resolve-details",
@@ -875,13 +882,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--resolve-refs",
         action="store_true",
-        help="resolve <repo:...@...> refs locally and allow legacy <gitlab:...> fetches when needed",
+        help="resolve <repo:...@...> refs from the local workspace",
     )
-    p.add_argument("--env-file", help="dotenv file to load into environment (for local config and legacy GitLab auth)")
+    p.add_argument("--env-file", help="dotenv file to load into environment (for local config)")
     p.add_argument("--only", help="filter layers: path|ref")
     p.add_argument("--layer", help="filter a specific layer name")
     p.add_argument("--json", action="store_true", help="emit JSON output")
-    p.add_argument("--write-dist", action="store_true", help="write ontology/dist/resolve.json")
+    p.add_argument("--write-dist", action="store_true", help="write managed dist/resolve.json artifact")
     p.set_defaults(fn=cmd_resolve)
 
     p = sub.add_parser("summary", parents=[p_resolve_common])
@@ -890,9 +897,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--resolve-refs",
         action="store_true",
-        help="resolve <repo:...@...> refs locally and allow legacy <gitlab:...> fetches when needed",
+        help="resolve <repo:...@...> refs from the local workspace",
     )
-    p.add_argument("--env-file", help="dotenv file to load into environment (for local config and legacy GitLab auth)")
+    p.add_argument("--env-file", help="dotenv file to load into environment (for local config)")
     p.add_argument("--only", help="filter layers: path|ref")
     p.add_argument("--layer", help="filter a specific layer name")
     p.add_argument("--json", action="store_true", help="emit JSON output")
@@ -906,9 +913,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--resolve-refs",
         action="store_true",
-        help="resolve <repo:...@...> refs locally and allow legacy <gitlab:...> fetches when needed",
+        help="resolve <repo:...@...> refs from the local workspace",
     )
-    p.add_argument("--env-file", help="dotenv file to load into environment (for local config and legacy GitLab auth)")
+    p.add_argument("--env-file", help="dotenv file to load into environment (for local config)")
     p.add_argument("--only", help="filter layers: path|ref")
     p.add_argument("--layer", help="filter a specific layer name")
     p.add_argument(
@@ -921,14 +928,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("diff", parents=[p_resolve_common])
     p.add_argument("--repo", default=".", help="repo root path")
-    p.add_argument("--baseline", required=True, help="baseline <repo:...@ref> (or legacy <gitlab:...@ref>) to diff against")
+    p.add_argument("--baseline", required=True, help="baseline <repo:...@ref> to diff against")
     p.add_argument("--profile", help="manifest profile name (defaults to rocs.profiles.default)")
     p.add_argument(
         "--resolve-refs",
         action="store_true",
-        help="resolve <repo:...@...> refs locally and allow legacy <gitlab:...> fetches when needed",
+        help="resolve <repo:...@...> refs from the local workspace",
     )
-    p.add_argument("--env-file", help="dotenv file to load into environment (for local config and legacy GitLab auth)")
+    p.add_argument("--env-file", help="dotenv file to load into environment (for local config)")
     p.add_argument("--only", help="filter layers: path|ref")
     p.add_argument("--layer", help="filter a specific layer name")
     p.add_argument("--json", action="store_true", help="emit JSON diff")
@@ -940,9 +947,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--resolve-refs",
         action="store_true",
-        help="resolve <repo:...@...> refs locally and allow legacy <gitlab:...> fetches when needed",
+        help="resolve <repo:...@...> refs from the local workspace",
     )
-    p.add_argument("--env-file", help="dotenv file to load into environment (for local config and legacy GitLab auth)")
+    p.add_argument("--env-file", help="dotenv file to load into environment (for local config)")
     p.add_argument("--only", help="filter layers: path|ref")
     p.add_argument("--layer", help="filter a specific layer name")
     p.add_argument("--strict-placeholders", action="store_true", help="treat placeholders in bodies as lint warnings")
@@ -958,9 +965,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--resolve-refs",
         action="store_true",
-        help="resolve <repo:...@...> refs locally and allow legacy <gitlab:...> fetches when needed",
+        help="resolve <repo:...@...> refs from the local workspace",
     )
-    p.add_argument("--env-file", help="dotenv file to load into environment (for local config and legacy GitLab auth)")
+    p.add_argument("--env-file", help="dotenv file to load into environment (for local config)")
     p.add_argument("--only", help="filter layers: path|ref")
     p.add_argument("--layer", help="filter a specific layer name")
     p.add_argument("--fix", action="store_true", help="apply safe fixes to local/path layer relation docs")
@@ -973,9 +980,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--resolve-refs",
         action="store_true",
-        help="resolve <repo:...@...> refs locally and allow legacy <gitlab:...> fetches when needed",
+        help="resolve <repo:...@...> refs from the local workspace",
     )
-    p.add_argument("--env-file", help="dotenv file to load into environment (for local config and legacy GitLab auth)")
+    p.add_argument("--env-file", help="dotenv file to load into environment (for local config)")
     p.add_argument("--only", help="filter layers: path|ref")
     p.add_argument("--layer", help="filter a specific layer name")
     p.add_argument("--scope", choices=["all", "taxonomy"], default="all")
@@ -984,7 +991,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--layout", choices=["grid", "dag"], default="grid")
     p.add_argument("--format", choices=["excalidraw", "excalidraw-cli-json", "dot"], default="excalidraw")
     p.add_argument("--json", action="store_true", help="emit JSON output (writes graph.json by default)")
-    p.add_argument("--out", help="output path (default: ontology/dist/graph.<fmt>.*)")
+    p.add_argument("--out", help="output path (default: managed dist/graph.<fmt>.*)")
     p.set_defaults(fn=cmd_graph)
 
     p = sub.add_parser("build", parents=[p_resolve_common])
@@ -993,12 +1000,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--resolve-refs",
         action="store_true",
-        help="resolve <repo:...@...> refs locally and allow legacy <gitlab:...> fetches when needed",
+        help="resolve <repo:...@...> refs from the local workspace",
     )
-    p.add_argument("--env-file", help="dotenv file to load into environment (for local config and legacy GitLab auth)")
+    p.add_argument("--env-file", help="dotenv file to load into environment (for local config)")
     p.add_argument("--only", help="filter layers: path|ref")
     p.add_argument("--layer", help="filter a specific layer name")
-    p.add_argument("--clean", action="store_true", help="remove ontology/dist before building")
+    p.add_argument("--clean", action="store_true", help="remove the managed dist directory before building")
     p.add_argument("--json", action="store_true", help="emit JSON output")
     p.set_defaults(fn=cmd_build)
 
@@ -1009,9 +1016,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--resolve-refs",
         action="store_true",
-        help="resolve <repo:...@...> refs locally and allow legacy <gitlab:...> fetches when needed",
+        help="resolve <repo:...@...> refs from the local workspace",
     )
-    p.add_argument("--env-file", help="dotenv file to load into environment (for local config and legacy GitLab auth)")
+    p.add_argument("--env-file", help="dotenv file to load into environment (for local config)")
     p.add_argument("--only", help="filter layers: path|ref")
     p.add_argument("--layer", help="filter a specific layer name")
     p.add_argument("--depth", type=int, help="relation expansion depth (default: profile pack.max_depth or 0)")
@@ -1044,9 +1051,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--resolve-refs",
         action="store_true",
-        help="resolve <repo:...@...> refs locally and allow legacy <gitlab:...> fetches when needed",
+        help="resolve <repo:...@...> refs from the local workspace",
     )
-    p.add_argument("--env-file", help="dotenv file to load into environment (for local config and legacy GitLab auth)")
+    p.add_argument("--env-file", help="dotenv file to load into environment (for local config)")
     p.add_argument("--layer", help="only normalize a specific layer name (path layers only)")
     p.add_argument("--apply", action="store_true", help="apply changes (default: check only)")
     p.set_defaults(fn=cmd_normalize)

@@ -4,11 +4,12 @@ import contextlib
 import json
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from rocs_cli import __version__
 from rocs_cli.errors import RocsCliError
-from rocs_cli.layers import dist_dir, parse_ref_locator
+from rocs_cli.layers import dist_dir, manifest_path, parse_ref_locator
+from rocs_cli.managed_surface import ensure_managed_output_dir, ensure_managed_output_file
 from rocs_cli.workspace import workspace_ref_mode_from_env
 
 if TYPE_CHECKING:
@@ -34,8 +35,11 @@ def _receipt_lock(lock_path: Path):
             if os.name == "nt":
                 import msvcrt  # noqa: PLC0415
 
-                msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
-                locked = True
+                win_lock = getattr(cast(Any, msvcrt), "locking", None)
+                lock_flag = getattr(cast(Any, msvcrt), "LK_LOCK", None)
+                if callable(win_lock) and lock_flag is not None:
+                    win_lock(f.fileno(), lock_flag, 1)
+                    locked = True
             else:
                 import fcntl  # noqa: PLC0415
 
@@ -52,7 +56,10 @@ def _receipt_lock(lock_path: Path):
                     if os.name == "nt":
                         import msvcrt  # noqa: PLC0415
 
-                        msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+                        win_lock = getattr(cast(Any, msvcrt), "locking", None)
+                        unlock_flag = getattr(cast(Any, msvcrt), "LK_UNLCK", None)
+                        if callable(win_lock) and unlock_flag is not None:
+                            win_lock(f.fileno(), unlock_flag, 1)
                     else:
                         import fcntl  # noqa: PLC0415
 
@@ -69,7 +76,12 @@ def effective_workspace_ref_mode(explicit_mode: str | None) -> str:
 
 
 def can_write_authority_receipt(repo_root: Path) -> bool:
-    return repo_root.exists() and (repo_root / "ontology").exists()
+    if not repo_root.exists():
+        return False
+    try:
+        return manifest_path(repo_root).exists()
+    except RocsCliError:
+        return False
 
 
 def authority_receipt_path(repo_root: Path) -> Path:
@@ -143,7 +155,6 @@ def authority_receipt_payload(
     locator_kinds: set[str] = set()
     ref_layers_present = False
     ref_layer_count = 0
-    legacy_gitlab_fallback_used = False
     loose_workspace_ref_layers_used = 0
 
     for layer_spec in sorted(layers, key=lambda x: x.name):
@@ -153,8 +164,6 @@ def authority_receipt_payload(
             ref_layer_count += 1
             if layer_spec.source == "workspace" and workspace_ref_mode == "loose":
                 loose_workspace_ref_layers_used += 1
-        if layer_spec.source == "gitlab":
-            legacy_gitlab_fallback_used = True
         locator_kinds.add(locator_kind)
         layer_sources.append(
             {
@@ -175,7 +184,7 @@ def authority_receipt_payload(
     )
 
     payload: dict[str, object] = {
-        "schema_version": 2,
+        "schema_version": 3,
         "version": __version__,
         "command": command,
         "ok": ok,
@@ -191,7 +200,6 @@ def authority_receipt_payload(
         "loose_workspace_ref_layers_used": loose_workspace_ref_layers_used,
         "layer_sources": layer_sources,
         "locator_kinds_present": sorted(locator_kinds),
-        "legacy_gitlab_fallback_used": legacy_gitlab_fallback_used,
     }
     if result:
         payload["result"] = result
@@ -206,12 +214,19 @@ def write_authority_receipt(repo_root: Path, payload: dict) -> dict[str, Path]:
     if not command:
         raise RocsCliError(kind="usage", message="authority receipt payload missing command")
 
-    dist = dist_dir(repo_root)
-    dist.mkdir(parents=True, exist_ok=True)
+    dist = ensure_managed_output_dir(repo_root, dist_dir(repo_root), label="authority receipt dir")
 
-    command_out = command_authority_receipt_path(repo_root, command)
-    aggregate_out = authority_receipt_path(repo_root)
-    lock_path = dist / ".authority-receipt.lock"
+    command_out = ensure_managed_output_file(
+        repo_root,
+        command_authority_receipt_path(repo_root, command),
+        label="authority receipt command artifact",
+    )
+    aggregate_out = ensure_managed_output_file(
+        repo_root,
+        authority_receipt_path(repo_root),
+        label="authority receipt aggregate artifact",
+    )
+    lock_path = ensure_managed_output_file(repo_root, dist / ".authority-receipt.lock", label="authority receipt lock")
 
     with _receipt_lock(lock_path):
         command_out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", "utf-8")
@@ -224,7 +239,7 @@ def write_authority_receipt(repo_root: Path, payload: dict) -> dict[str, Path]:
                 existing = json.loads(aggregate_out.read_text("utf-8"))
             except Exception:
                 existing = None
-            if isinstance(existing, dict) and existing.get("schema_version") == 2:
+            if isinstance(existing, dict) and existing.get("schema_version") == 3:
                 cmds = existing.get("commands")
                 if isinstance(cmds, dict):
                     existing_commands = {str(k): v for k, v in cmds.items()}
@@ -241,7 +256,7 @@ def write_authority_receipt(repo_root: Path, payload: dict) -> dict[str, Path]:
         existing_files[command] = command_out.name
 
         aggregate_payload = {
-            "schema_version": 2,
+            "schema_version": 3,
             "version": __version__,
             "repo": str(repo_root),
             "last_command": command,

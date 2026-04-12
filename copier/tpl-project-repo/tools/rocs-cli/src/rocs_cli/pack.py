@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any, cast
 
 from rocs_cli.errors import RocsCliError
 from rocs_cli.model import OntDoc, relation_label_index
@@ -28,14 +29,23 @@ def _int_or_error(v: object, *, field: str, minimum: int | None = None, allow_no
         if allow_none:
             return None
         raise RocsCliError(kind="config", message=f"pack.{field} must be set")
+    value = cast(Any, v)
     try:
-        out = int(v)
+        out = int(value)
     except Exception as e:
         raise RocsCliError(kind="config", message=f"pack.{field} must be an integer") from e
     if minimum is not None and out < minimum:
         comparator = ">=" if minimum == 0 else f">= {minimum}"
         raise RocsCliError(kind="config", message=f"pack.{field} must be {comparator}")
     return out
+
+
+def _bool_or_error(v: object, *, field: str) -> bool:
+    if v is None:
+        return False
+    if isinstance(v, bool):
+        return v
+    raise RocsCliError(kind="config", message=f"pack.{field} must be a boolean")
 
 
 def _parse_profile_pack_cfg(profile_def: dict | None) -> PackConfig:
@@ -56,7 +66,7 @@ def _parse_profile_pack_cfg(profile_def: dict | None) -> PackConfig:
             raise RocsCliError(kind="config", message="pack.rel_types must be a list")
         rel_types = {str(x) for x in raw_rel_types if str(x).strip()}
 
-    include_relation_defs = bool(pack.get("include_relation_defs") or False)
+    include_relation_defs = _bool_or_error(pack.get("include_relation_defs"), field="include_relation_defs")
     max_docs = _int_or_error(pack.get("max_docs"), field="max_docs", minimum=1, allow_none=True)
     max_bytes = _int_or_error(pack.get("max_bytes"), field="max_bytes", minimum=1, allow_none=True)
 
@@ -82,13 +92,23 @@ def build_pack(
     packed: list[PackedDoc] = []
     bytes_used = 0
 
-    def add_doc(ont_id: str, kind: str, doc: OntDoc) -> bool:
+    def add_doc(ont_id: str, kind: str, doc: OntDoc, *, required: bool = False) -> bool:
         nonlocal bytes_used
         if config.max_docs is not None and len(packed) >= config.max_docs:
+            if required:
+                raise RocsCliError(
+                    kind="usage",
+                    message=f"pack limits exclude requested root doc: {ont_id} (max_docs={config.max_docs})",
+                )
             return False
         text = doc.path.read_text("utf-8")
         b = len(text.encode("utf-8"))
         if config.max_bytes is not None and bytes_used + b > config.max_bytes:
+            if required:
+                raise RocsCliError(
+                    kind="usage",
+                    message=f"pack limits exclude requested root doc: {ont_id} (max_bytes={config.max_bytes})",
+                )
             return False
         bytes_used += b
         packed.append(PackedDoc(ont_id=ont_id, kind=kind, path=str(doc.path), text=text))
@@ -136,7 +156,7 @@ def build_pack(
         cdoc = concepts.get(cid)
         if not cdoc:
             continue
-        add_doc(cid, "concept", cdoc)
+        add_doc(cid, "concept", cdoc, required=(cid == root_id))
 
     included_relation_labels: set[str] = set()
     if config.include_relation_defs:
@@ -157,7 +177,7 @@ def build_pack(
     if relation_root_id is not None:
         rdoc = relations.get(relation_root_id)
         if rdoc is not None:
-            add_doc(relation_root_id, "relation", rdoc)
+            add_doc(relation_root_id, "relation", rdoc, required=True)
 
     rel_label_to_ids = relation_label_index(relations)
     included_relation_ids: set[str] = set()

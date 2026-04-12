@@ -32,7 +32,11 @@ def workspace_repo_candidates(workspace_root: Path, project_path: str) -> list[P
     candidates: list[Path] = []
 
     candidates.append((workspace_root / Path(*parts)).resolve())
-    if len(parts) >= 2:
+
+    # Support the explicit workspace namespace prefix when a locator uses
+    # `<repo:ai-society/...>` or `<repo:<workspace-root-name>/...>` while the
+    # local checkout root already points at that namespace directory.
+    if len(parts) >= 2 and parts[0] in {"ai-society", workspace_root.name}:
         candidates.append((workspace_root / Path(*parts[1:])).resolve())
 
     out: list[Path] = []
@@ -50,7 +54,7 @@ _SCP_LIKE_RE = re.compile(r"^(?P<user>[^@]+)@(?P<host>[^:]+):(?P<path>.+)$")
 
 def _project_path_from_remote_url(remote_url: str) -> str | None:
     """
-    Extract a GitLab-style `<group>/<subgroup>/<repo>` from common Git remote URL forms:
+    Extract a workspace-style `<group>/<subgroup>/<repo>` path from common Git remote URL forms:
     - https://host/group/subgroup/repo(.git)
     - http://host/group/subgroup/repo(.git)
     - ssh://git@host/group/subgroup/repo(.git)
