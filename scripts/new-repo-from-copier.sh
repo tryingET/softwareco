@@ -28,6 +28,8 @@ Notes:
   - Wrapper runs Copier in quiet mode by default; set `COPIER_QUIET=0` to show Copier progress logs.
   - `enable_vouch_gate`, `enable_community_pack`, and `enable_release_pack`
     are inherited from this L1 repo `.copier-answers.yml` unless overridden.
+  - `org_docs_profile` is inherited for `tpl-project-repo` / `tpl-monorepo`
+    from `l2_org_docs_default` unless overridden.
   - `template_source_sha` is auto-injected from this L1 git HEAD unless
     overridden with `-d template_source_sha=<git-sha>`.
 EOF
@@ -141,6 +143,11 @@ is_enabled() {
   esac
 }
 
+fail() {
+  echo "error: $*" >&2
+  exit 2
+}
+
 has_data_override() {
   key="$1"
   shift
@@ -168,52 +175,58 @@ has_data_override() {
   return 1
 }
 
+yaml_scalar_from_answers() {
+  answers_file="$1"
+  key="$2"
+  value=""
+  status=0
+
+  value="$(copier_answers_try_scalar "$answers_file" "$key" 2>/dev/null)" || status=$?
+
+  if [ "$status" -eq 0 ]; then
+    printf '%s\n' "$value"
+    return 0
+  fi
+
+  echo "error: unable to parse '$key' from $answers_file; install python3/python with PyYAML for multiline or escaped Copier answers" >&2
+  return "$status"
+}
+
 read_inherited_value() {
   answers_file="$1"
   key="$2"
 
-  [ -f "$answers_file" ] || return 1
+  value="$(yaml_scalar_from_answers "$answers_file" "$key")"
+  [ -n "$value" ] || return 0
 
-  awk -v key="$key" '
-    $0 ~ "^[[:space:]]*" key "[[:space:]]*:" {
-      v = $0
-      sub("^[[:space:]]*" key "[[:space:]]*:[[:space:]]*", "", v)
-      gsub(/^[ \t]+|[ \t]+$/, "", v)
-      gsub(/"/, "", v)
-      gsub(/\047/, "", v)
-      print tolower(v)
-      exit
-    }
-  ' "$answers_file"
+  printf '%s\n' "$value" | tr '[:upper:]' '[:lower:]'
 }
 
 read_inherited_string() {
   answers_file="$1"
   key="$2"
 
-  [ -f "$answers_file" ] || return 1
-
-  awk -v key="$key" '
-    $0 ~ "^[[:space:]]*" key "[[:space:]]*:" {
-      v = $0
-      sub("^[[:space:]]*" key "[[:space:]]*:[[:space:]]*", "", v)
-      gsub(/^[ \t]+|[ \t]+$/, "", v)
-      gsub(/"/, "", v)
-      gsub(/\047/, "", v)
-      print v
-      exit
-    }
-  ' "$answers_file"
+  yaml_scalar_from_answers "$answers_file" "$key"
 }
 
-infer_project_owner_handle() {
-  root="$1"
+structured_project_owner_handle() {
+  raw="$1"
+  raw="${raw#@}"
 
-  raw="$(git -C "$root" config --get user.username 2>/dev/null || true)"
-  if [ -z "$raw" ]; then
-    raw="$(git -C "$root" config --get user.name 2>/dev/null || true)"
-  fi
   [ -n "$raw" ] || return 1
+
+  case "$raw" in
+    *[!A-Za-z0-9._/-]*)
+      return 1
+      ;;
+  esac
+
+  printf '@%s\n' "$raw"
+}
+
+normalized_project_owner_handle() {
+  raw="$1"
+  raw="${raw#@}"
 
   handle="$(
     printf '%s' "$raw" \
@@ -225,15 +238,117 @@ infer_project_owner_handle() {
   printf '@%s\n' "$handle"
 }
 
-repo_root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+project_owner_handle_from_override() {
+  raw="$1"
+
+  structured_project_owner_handle "$raw" && return 0
+  normalized_project_owner_handle "$raw"
+}
+
+infer_project_owner_handle() {
+  root="$1"
+  raw=""
+  owner_handle=""
+
+  if is_enabled "${DISABLE_PROJECT_OWNER_HANDLE_INFERENCE:-}"; then
+    return 1
+  fi
+
+  raw="${PROJECT_OWNER_HANDLE:-}"
+  if [ -n "$raw" ]; then
+    owner_handle="$(project_owner_handle_from_override "$raw" || true)"
+    [ -n "$owner_handle" ] || return 1
+    printf '%s\n' "$owner_handle"
+    return 0
+  fi
+
+  raw="${PI_PROJECT_OWNER_HANDLE:-}"
+  if [ -n "$raw" ]; then
+    owner_handle="$(project_owner_handle_from_override "$raw" || true)"
+    [ -n "$owner_handle" ] || return 1
+    printf '%s\n' "$owner_handle"
+    return 0
+  fi
+
+  raw="${GITHUB_ACTOR:-}"
+  if [ -z "$raw" ]; then
+    raw="$(git -C "$root" config --get user.username 2>/dev/null || true)"
+  fi
+  if [ -z "$raw" ]; then
+    raw="$(git -C "$root" config --get user.name 2>/dev/null || true)"
+  fi
+  [ -n "$raw" ] || return 1
+
+  normalized_project_owner_handle "$raw"
+}
+
+repo_root="$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)"
 answers_file="$repo_root/.copier-answers.yml"
+answers_lib="$repo_root/scripts/lib/copier-answers.sh"
+[ -f "$answers_lib" ] || {
+  echo "error: missing dependency: $answers_lib" >&2
+  exit 2
+}
+# shellcheck source=/dev/null
+. "$answers_lib"
+
+layer_contract_path() {
+  printf '%s/contracts/layer-contract.yml\n' "$1"
+}
+
+layer_contract_read_layer() {
+  contract_path="$(layer_contract_path "$1")"
+  [ -f "$contract_path" ] || return 1
+
+  layer="$(copier_answers_try_scalar "$contract_path" layer)" || return $?
+  [ -n "$layer" ] || return 2
+  printf '%s\n' "$layer"
+}
+
+assert_repo_layer() {
+  root="$1"
+  expected_layer="$2"
+  label="$3"
+  contract_path="$(layer_contract_path "$root")"
+  layer="$(layer_contract_read_layer "$root")" || fail "$label must declare layer $expected_layer via $contract_path"
+  [ "$layer" = "$expected_layer" ] || fail "$label must declare layer $expected_layer (found $layer in $contract_path)"
+}
+
+guard_destination_layer() {
+  dest_root="$1"
+  expected_layer="$2"
+  transition_label="$3"
+  [ -e "$dest_root" ] || return 0
+
+  dest_layer=""
+  dest_status=0
+  dest_layer="$(layer_contract_read_layer "$dest_root")" || dest_status=$?
+  case "$dest_status" in
+    0)
+      if [ "$dest_layer" != "$expected_layer" ]; then
+        fail "refusing $transition_label render into $dest_root: destination already declares layer $dest_layer"
+      fi
+      ;;
+    1)
+      ;;
+    *)
+      fail "unable to parse layer contract at $(layer_contract_path "$dest_root")"
+      ;;
+  esac
+}
+
+assert_repo_layer "$repo_root" "L1" "L1 render wrapper"
+guard_destination_layer "$dest_dir" "L2" "L1 -> L2"
 
 for key in enable_vouch_gate enable_community_pack enable_release_pack; do
   if has_data_override "$key" "$@"; then
     continue
   fi
 
-  inherited_value="$(read_inherited_value "$answers_file" "$key" || true)"
+  inherited_value=""
+  inherited_value_status=0
+  inherited_value="$(read_inherited_value "$answers_file" "$key")" || inherited_value_status=$?
+  [ "$inherited_value_status" -eq 0 ] || exit "$inherited_value_status"
   case "$inherited_value" in
     true|false)
       set -- -d "$key=$inherited_value" "$@"
@@ -243,20 +358,27 @@ done
 
 # Inherit company_slug and company_name from L1 answers
 if ! has_data_override company_slug "$@"; then
-  inherited_slug="$(read_inherited_string "$answers_file" company_slug || true)"
+  inherited_slug=""
+  inherited_slug_status=0
+  inherited_slug="$(read_inherited_string "$answers_file" company_slug)" || inherited_slug_status=$?
+  [ "$inherited_slug_status" -eq 0 ] || exit "$inherited_slug_status"
   if [ -n "$inherited_slug" ]; then
     set -- -d "company_slug=$inherited_slug" "$@"
   fi
 fi
 
 if ! has_data_override company_name "$@"; then
-  inherited_name="$(read_inherited_string "$answers_file" company_name || true)"
+  inherited_name=""
+  inherited_name_status=0
+  inherited_name="$(read_inherited_string "$answers_file" company_name)" || inherited_name_status=$?
+  [ "$inherited_name_status" -eq 0 ] || exit "$inherited_name_status"
   if [ -n "$inherited_name" ]; then
     set -- -d "company_name=$inherited_name" "$@"
   fi
 fi
 
-# Default project owner handle from local git config unless explicitly provided.
+# Default project owner handle from local git config unless explicitly provided
+# and inference is not explicitly disabled.
 if ! has_data_override project_owner_handle "$@"; then
   inferred_owner="$(infer_project_owner_handle "$repo_root" || true)"
   if [ -n "$inferred_owner" ]; then
@@ -264,13 +386,29 @@ if ! has_data_override project_owner_handle "$@"; then
   fi
 fi
 
-if ! has_data_override org_docs_profile "$@"; then
-  inherited_org_profile="$(read_inherited_value "$answers_file" l2_org_docs_default || true)"
-  case "$inherited_org_profile" in
-    compact|rich)
-      set -- -d "org_docs_profile=$inherited_org_profile" "$@"
-      ;;
-  esac
+if [ "$template_name" = "tpl-project-repo" ] || [ "$template_name" = "tpl-monorepo" ]; then
+  if ! has_data_override org_docs_profile "$@"; then
+    inherited_org_profile=""
+    inherited_org_profile_status=0
+    inherited_org_profile="$(read_inherited_value "$answers_file" l2_org_docs_default)" || inherited_org_profile_status=$?
+    [ "$inherited_org_profile_status" -eq 0 ] || exit "$inherited_org_profile_status"
+    case "$inherited_org_profile" in
+      compact|rich)
+        set -- -d "org_docs_profile=$inherited_org_profile" "$@"
+        ;;
+    esac
+  fi
+fi
+
+if [ "$template_name" = "tpl-package" ]; then
+  if ! has_data_override package_owner_handle "$@"; then
+    inherited_owner=""
+    inherited_owner_status=0
+    inherited_owner="$(read_inherited_value "$answers_file" project_owner_handle)" || inherited_owner_status=$?
+    if [ "$inherited_owner_status" -eq 0 ] && [ -n "$inherited_owner" ]; then
+      set -- -d "package_owner_handle=$inherited_owner" "$@"
+    fi
+  fi
 fi
 
 if ! has_data_override template_source_sha "$@"; then

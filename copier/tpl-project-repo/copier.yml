@@ -30,11 +30,7 @@ repo_slug:
 location:
   type: str
   default: owned
-  choices:
-    - owned
-    - contrib
-    - infra
-  help: "Location archetype: owned (company projects), contrib (upstream contributions), infra (infrastructure)"
+  help: "Location/lane label: owned, contrib, infra, or a custom lane name (for example data-lane)."
 
 language:
   type: str
@@ -45,6 +41,7 @@ language:
     - typescript
     - rust
     - go
+    - elixir
     - bash
   help: "Primary language for the project"
 
@@ -53,30 +50,38 @@ enable_software_pack:
   default: false
   help: "Enable software development scaffolding (pyproject.toml, package.json, etc.)"
 
+org_docs_profile:
+  type: str
+  default: compact
+  choices:
+    - compact
+    - rich
+  help: "Depth of org-context docs under docs/org_context/."
+
 enable_community_pack:
   type: bool
   default: false
-  help: "Inherited compatibility flag from L1 profile; currently metadata-only in tpl-project-repo."
+  help: "Inherited compatibility flag from L1 profile; currently metadata-only in tpl-project-repo (no extra file overlays)."
 
 enable_release_pack:
   type: bool
   default: false
-  help: "Inherited compatibility flag from L1 profile; currently metadata-only in tpl-project-repo."
+  help: "Inherited compatibility flag from L1 profile; currently metadata-only in tpl-project-repo (no extra file overlays)."
 
 enable_vouch_gate:
   type: bool
   default: false
-  help: "Inherited compatibility flag from L1 profile; currently metadata-only in tpl-project-repo."
+  help: "Inherited compatibility flag from L1 profile; currently metadata-only in tpl-project-repo (no extra file overlays)."
 
 kernel_ontology_ref:
   type: str
-  default: "<gitlab:org/ontology-kernel@v0.1.0>"
-  help: "ROCS core/kernel ontology ref (GitLab locator)"
+  default: "<repo:core/ontology-kernel@main>"
+  help: "ROCS core/kernel ontology ref (workspace repo locator)"
 
 company_ontology_ref:
   type: str
-  default: "<gitlab:org/ontology@v0.1.0>"
-  help: "ROCS company overlay ref (GitLab locator)"
+  default: "<repo:{{ company_slug }}/ontology@main>"
+  help: "ROCS company overlay ref (workspace repo locator)"
 
 core_owner_handle:
   type: str
@@ -99,10 +104,14 @@ project_owner_handle:
 # infra -> typically @infra-team, release_pack=false
 
 _tasks:
-  - "chmod +x scripts/ci/smoke.sh scripts/ci/full.sh scripts/rocs.sh 2>/dev/null || true"
+  - "chmod +x scripts/ci/smoke.sh scripts/ci/fast.sh scripts/ci/full.sh scripts/rocs.sh 2>/dev/null || true"
   # Clean up empty/unused software pack files
   - "if [ '{{ enable_software_pack }}' != 'True' ] || [ '{{ language }}' != 'python' ]; then rm -f pyproject.toml uv.lock 2>/dev/null; fi"
-  - "if [ '{{ enable_software_pack }}' != 'True' ] || [ '{{ language }}' != 'node' ]; then rm -f package.json package-lock.json 2>/dev/null; fi"
-  - "if [ '{{ enable_software_pack }}' != 'True' ] || [ '{{ language }}' != 'typescript' ]; then rm -f package.json tsconfig.json 2>/dev/null; fi"
+  - "if [ '{{ enable_software_pack }}' != 'True' ] || ! printf '%s\n' '{{ language }}' | grep -Eq '^(node|typescript)$'; then rm -f package.json 2>/dev/null; fi"
+  - "if [ '{{ enable_software_pack }}' != 'True' ] || [ '{{ language }}' != 'node' ]; then rm -f package-lock.json 2>/dev/null; fi"
+  - "if [ '{{ enable_software_pack }}' != 'True' ] || [ '{{ language }}' != 'typescript' ]; then rm -f tsconfig.json 2>/dev/null; fi"
   - "if [ '{{ enable_software_pack }}' != 'True' ] || [ '{{ language }}' != 'rust' ]; then rm -f Cargo.toml Cargo.lock 2>/dev/null; fi"
   - "if [ '{{ enable_software_pack }}' != 'True' ] || [ '{{ language }}' != 'go' ]; then rm -f go.mod go.sum 2>/dev/null; fi"
+  - "if [ '{{ enable_software_pack }}' != 'True' ] || [ '{{ language }}' != 'elixir' ]; then rm -f mix.exs 2>/dev/null; fi"
+  - "if [ '{{ enable_software_pack }}' != 'True' ] || ! printf '%s\n' '{{ language }}' | grep -Eq '^(python|node|typescript|rust|go|elixir)$'; then rm -f policy/stack-lane.json docs/tech-stack.local.md 2>/dev/null; fi"
+  - "if [ '{{ org_docs_profile }}' != 'rich' ]; then rm -f docs/org_context/mission.md docs/org_context/purpose.md docs/org_context/vision.md docs/org_context/strategic_objectives.md docs/org_context/governance.md 2>/dev/null; fi"

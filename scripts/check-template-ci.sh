@@ -78,6 +78,15 @@ assert_line_precedes() {
   [ "$first_line" -lt "$second_line" ] || fail "$label (expected '$first' before '$second' in $path)"
 }
 
+assert_command_succeeds() {
+  label="$1"
+  shift
+  if "$@" >/dev/null 2>&1; then
+    return 0
+  fi
+  fail "$label"
+}
+
 suffix_policy_lib="$repo_root/scripts/lib/suffix-policy.sh"
 [ -f "$suffix_policy_lib" ] || fail "missing file: $suffix_policy_lib"
 # shellcheck source=/dev/null
@@ -145,6 +154,8 @@ CONTRIBUTING.md
 contracts/layer-contract.yml
 contracts/provenance-seal.yml
 scripts/new-repo-from-copier.sh
+scripts/bootstrap-lane-root.sh
+scripts/docs-list.sh
 scripts/rocs.sh
 scripts/check-template-ci.sh
 scripts/install-hooks.sh
@@ -183,6 +194,18 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package
   assert_file "copier/$tpl/scripts/rocs.sh.j2"
   assert_exec "copier/$tpl/scripts/rocs.sh.j2"
   assert_file "copier/$tpl/scripts/ci/smoke.sh"
+  if [ "$tpl" = "tpl-project-repo" ]; then
+    assert_file "copier/$tpl/{{ _copier_conf.answers_file }}.j2"
+    assert_not_file "copier/$tpl/.copier-answers.yml.j2"
+    assert_not_file "copier/$tpl/ontology/manifest.yaml"
+    assert_not_dir "copier/$tpl/ontology/dist"
+    assert_file "copier/$tpl/scripts/check-task-scope-snapshots.sh"
+    assert_file "copier/$tpl/scripts/preflight-repo-census.sh.j2"
+    assert_file "copier/$tpl/scripts/lib/check-task-scope-snapshots.py"
+    assert_file "copier/$tpl/scripts/lib/copier-answers.sh"
+    assert_file "copier/$tpl/scripts/lib/repo-surface.sh.j2"
+    assert_file "copier/$tpl/scripts/ci/fast.sh"
+  fi
   assert_file "copier/$tpl/scripts/ci/full.sh"
   assert_file "copier/$tpl/diary/README.md"
   assert_contains "copier/$tpl/diary/README.md" "YYYY-MM-DD--type-scope-summary.md" "L2 template $tpl diary README should enforce descriptive filename convention"
@@ -192,13 +215,24 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package
   assert_contains "copier/$tpl/AGENTS.md.j2" "diary/" "L2 template $tpl AGENTS should reference repo-local diary"
   assert_contains "copier/$tpl/README.md.j2" "ROCS command flow" "L2 template $tpl README should include ROCS command flow section"
   assert_contains "copier/$tpl/scripts/ci/full.sh" "scripts/rocs.sh" "L2 template $tpl full CI should use scripts/rocs.sh when ontology is present"
+  if [ "$tpl" = "tpl-project-repo" ]; then
+    assert_not_file "copier/$tpl/.gitlab-ci.yml"
+    assert_not_dir "copier/$tpl/gitlab"
+  fi
 done
+if [ -f "next_session_prompt.md" ]; then
+  assert_command_succeeds "softwareco docs-list wrapper should parse repo next-session prompt" ./scripts/docs-list.sh --from-prompt next_session_prompt.md --paths-only --wikilink
+fi
+assert_command_succeeds "softwareco docs-list wrapper should parse tpl-project-repo next-session prompt" ./scripts/docs-list.sh --from-prompt copier/tpl-project-repo/next_session_prompt.md --paths-only --wikilink
+assert_not_contains "copier/tpl-project-repo/scripts/ci/full.sh" "./scripts/ak.sh" "tpl-project-repo CI should use plain installed ak via AK_CMD"
 assert_not_contains "copier/tpl-project-repo/scripts/ci/full.sh" "uvx -n --from ./tools/rocs-cli rocs" "tpl-project-repo CI should not hardcode uvx vendored invocation"
 
 check_multi_pass_suffix_policy
 
 required_exec="
 scripts/new-repo-from-copier.sh
+scripts/bootstrap-lane-root.sh
+scripts/docs-list.sh
 scripts/rocs.sh
 scripts/check-template-ci.sh
 scripts/install-hooks.sh
@@ -221,9 +255,11 @@ done
 assert_contains "CONTRIBUTING.md" "check-template-ci.sh" "L1 contributing guide should reference template checks"
 assert_contains "CONTRIBUTING.md" "scripts/rocs.sh --doctor" "L1 contributing guide should include deterministic ROCS wrapper usage"
 assert_contains "AGENTS.md" "Deterministic tooling policy" "L1 AGENTS should document deterministic tooling policy"
+assert_contains "AGENTS.md" "scripts/docs-list.sh" "L1 AGENTS should reference scripts/docs-list.sh"
 assert_contains "AGENTS.md" "scripts/rocs.sh" "L1 AGENTS should reference scripts/rocs.sh"
 assert_contains "AGENTS.md" "diary/" "L1 AGENTS should require repo-local diary"
 assert_contains "AGENTS.md" "L2 Templates" "L1 AGENTS should document L2 templates"
+assert_contains "AGENTS.md" "bootstrap-lane-root.sh" "L1 AGENTS should document lane bootstrap helper"
 assert_contains "README.md" "Organization docs profile" "L1 README should describe organization docs profile"
 assert_contains "README.md" "Governance layering" "L1 README should describe governance layering"
 assert_contains "README.md" "Community profile" "L1 README should describe community profile toggle"
@@ -235,6 +271,11 @@ assert_contains "README.md" "repo-local diary" "L1 README should document repo-l
 assert_contains "README.md" "no automatic in-place migrator" "L1 README should describe deterministic migration limitation"
 assert_contains "README.md" ".gitattributes" "L1 README should mention git baseline files"
 assert_contains "README.md" "tpl-project-repo-file-contract.md" "L1 README should link canonical tpl-project-repo file contract"
+assert_contains "README.md" "bootstrap-lane-root.sh" "L1 README should document lane bootstrap workflow"
+assert_contains ".gitignore" "!owned/.gitignore" "L1 parent .gitignore must unignore owned lane-root .gitignore"
+assert_contains ".gitignore" "!contrib/.gitignore" "L1 parent .gitignore must unignore contrib lane-root .gitignore"
+assert_contains ".gitignore" "!infra/.gitignore" "L1 parent .gitignore must unignore infra lane-root .gitignore"
+assert_contains ".gitignore" "!agents/.gitignore" "L1 parent .gitignore must unignore agents lane-root .gitignore"
 assert_contains "diary/README.md" "YYYY-MM-DD--type-scope-summary.md" "L1 diary README should enforce descriptive filename convention"
 
 contract="contracts/layer-contract.yml"
@@ -264,12 +305,15 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
   assert_contains "copier/$tpl/copier.yml" "enable_release_pack" "L2 template $tpl must expose release pack toggle"
   assert_contains "copier/$tpl/copier.yml" "enable_vouch_gate" "L2 template $tpl must expose vouch gate toggle"
 done
+assert_contains "copier/tpl-project-repo/copier.yml" "org_docs_profile" "tpl-project-repo must expose org-context profile"
 
 assert_contains "scripts/new-repo-from-copier.sh" "tpl-agent-repo" "L1 wrapper must list tpl-agent-repo template"
 assert_contains "scripts/new-repo-from-copier.sh" "tpl-org-repo" "L1 wrapper must list tpl-org-repo template"
 assert_contains "scripts/new-repo-from-copier.sh" "tpl-project-repo" "L1 wrapper must list tpl-project-repo template"
 assert_contains "scripts/new-repo-from-copier.sh" "tpl-monorepo" "L1 wrapper must list tpl-monorepo template"
 assert_contains "scripts/new-repo-from-copier.sh" "tpl-package" "L1 wrapper must list tpl-package template"
+assert_contains "scripts/bootstrap-lane-root.sh" "--init-lane-git" "lane bootstrap helper must support lane git initialization"
+assert_contains "scripts/bootstrap-lane-root.sh" "tpl-project-repo" "lane bootstrap helper must render tpl-project-repo baseline"
 
 expected_pin='COPIER_VERSION="${COPIER_VERSION:-9.11.1}"'
 expected_uvx='uvx --from "copier==${COPIER_VERSION}" copier'
@@ -300,9 +344,15 @@ assert_contains ".githooks/pre-commit" "scripts/ci/smoke.sh" "pre-commit must ru
 assert_contains ".githooks/pre-push" "scripts/ci/full.sh" "pre-push must run full lane"
 assert_contains "scripts/ci/full.sh" "scripts/rocs.sh" "L1 full CI should use scripts/rocs.sh when ontology is present"
 assert_not_contains "scripts/install-hooks.sh" "copier/template-repo" "install-hooks must not reference removed legacy template-repo path"
+assert_contains "scripts/install-hooks.sh" "scripts/bootstrap-lane-root.sh" "install-hooks must normalize executable bit for lane bootstrap helper"
 for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package; do
   assert_contains "scripts/install-hooks.sh" "copier/$tpl/scripts/rocs.sh.j2" "install-hooks must include executable bit normalization for $tpl rocs wrapper"
   assert_contains "scripts/install-hooks.sh" "copier/$tpl/scripts/ci/smoke.sh" "install-hooks must include executable bit normalization for $tpl smoke lane"
+  if [ "$tpl" = "tpl-project-repo" ]; then
+    assert_contains "scripts/install-hooks.sh" "copier/$tpl/scripts/check-task-scope-snapshots.sh" "install-hooks must include executable bit normalization for $tpl task-scope checker"
+    assert_contains "scripts/install-hooks.sh" "copier/$tpl/scripts/preflight-repo-census.sh.j2" "install-hooks must include executable bit normalization for $tpl census wrapper"
+    assert_contains "scripts/install-hooks.sh" "copier/$tpl/scripts/ci/fast.sh" "install-hooks must include executable bit normalization for $tpl fast lane"
+  fi
   assert_contains "scripts/install-hooks.sh" "copier/$tpl/scripts/ci/full.sh" "install-hooks must include executable bit normalization for $tpl full lane"
 done
 assert_not_contains "scripts/ci/smoke.sh" "copier/template-repo/copier.yml" "L1 smoke lane must not lint removed legacy template-repo path"
@@ -413,6 +463,16 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
   assert_file "$l2_dir/CODEOWNERS"
   assert_file "$l2_dir/scripts/rocs.sh"
   assert_file "$l2_dir/scripts/ci/smoke.sh"
+  if [ "$tpl" = "tpl-project-repo" ]; then
+    assert_file "$l2_dir/ontology/manifest.yaml"
+    assert_not_dir "$l2_dir/ontology/dist"
+    assert_file "$l2_dir/scripts/check-task-scope-snapshots.sh"
+    assert_file "$l2_dir/scripts/preflight-repo-census.sh"
+    assert_file "$l2_dir/scripts/lib/check-task-scope-snapshots.py"
+    assert_file "$l2_dir/scripts/lib/copier-answers.sh"
+    assert_file "$l2_dir/scripts/lib/repo-surface.sh"
+    assert_file "$l2_dir/scripts/ci/fast.sh"
+  fi
   assert_file "$l2_dir/scripts/ci/full.sh"
   assert_file "$l2_dir/diary/README.md"
   assert_contains "$l2_dir/diary/README.md" "YYYY-MM-DD--type-scope-summary.md" "generated $tpl diary README should enforce descriptive filename convention"
@@ -422,6 +482,10 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
   assert_contains "$l2_dir/AGENTS.md" "scripts/rocs.sh" "generated $tpl AGENTS should reference scripts/rocs.sh"
   assert_contains "$l2_dir/AGENTS.md" "diary/" "generated $tpl AGENTS should reference repo-local diary"
   assert_contains "$l2_dir/README.md" "ROCS command flow" "generated $tpl README should include ROCS command flow section"
+  if [ "$tpl" = "tpl-project-repo" ]; then
+    assert_not_file "$l2_dir/.gitlab-ci.yml"
+    assert_not_dir "$l2_dir/gitlab"
+  fi
 
   # Initialize git for smoke + idempotency test (smoke requires git repo)
   (
@@ -478,6 +542,82 @@ assert_contains "$l2_dir/README.md" "ROCS command flow" "generated $tpl README s
   -d package_type=library \
   -d language=python \
   --defaults --overwrite >/dev/null
+
+# Elixir stack-contract smoke for project + package templates.
+elixir_project_dir="$tmp_root/tpl-project-repo-elixir"
+./scripts/new-repo-from-copier.sh tpl-project-repo "$elixir_project_dir" \
+  -d repo_slug=fixture-project-elixir \
+  -d language=elixir \
+  -d enable_software_pack=true \
+  --defaults --overwrite >/dev/null
+assert_file "$elixir_project_dir/mix.exs"
+assert_file "$elixir_project_dir/policy/stack-lane.json"
+assert_file "$elixir_project_dir/docs/tech-stack.local.md"
+assert_contains "$elixir_project_dir/policy/stack-lane.json" '"lane": "elixir"' "generated elixir project should declare the elixir stack lane"
+assert_contains "$elixir_project_dir/policy/stack-lane.json" '"ref": "workspace-local-unpinned"' "generated elixir project should record honest workspace-local provenance"
+assert_contains "$elixir_project_dir/docs/tech-stack.local.md" "tech_stack_core.command" "generated elixir project should point operators to the declared lane command"
+assert_not_contains "$elixir_project_dir/docs/tech-stack.local.md" "pins the upstream lane" "generated elixir project docs should not overstate lane pinning"
+assert_not_contains "$elixir_project_dir/docs/tech-stack.local.md" "--prefer-repo" "generated elixir project docs should not hardcode repo-preferred lane resolution"
+
+elixir_package_dir="$tmp_root/tpl-package-elixir"
+./scripts/new-repo-from-copier.sh tpl-package "$elixir_package_dir" \
+  -d package_name=fixture-elixir-core \
+  -d package_type=library \
+  -d language=elixir \
+  --defaults --overwrite >/dev/null
+assert_file "$elixir_package_dir/policy/stack-lane.json"
+assert_file "$elixir_package_dir/docs/tech-stack.local.md"
+assert_contains "$elixir_package_dir/policy/stack-lane.json" '"lane": "elixir"' "generated elixir package should declare the elixir stack lane"
+assert_contains "$elixir_package_dir/policy/stack-lane.json" '"ref": "workspace-local-unpinned"' "generated elixir package should record honest workspace-local provenance"
+assert_contains "$elixir_package_dir/docs/tech-stack.local.md" "tech_stack_core.command" "generated elixir package should point operators to the declared lane command"
+assert_not_contains "$elixir_package_dir/docs/tech-stack.local.md" "pins the upstream lane" "generated elixir package docs should not overstate lane pinning"
+assert_not_contains "$elixir_package_dir/docs/tech-stack.local.md" "--prefer-repo" "generated elixir package docs should not hardcode repo-preferred lane resolution"
+
+compact_project_dir="$tmp_root/tpl-project-repo-compact"
+./scripts/new-repo-from-copier.sh tpl-project-repo "$compact_project_dir" \
+  -d repo_slug=fixture-project-compact \
+  -d org_docs_profile=compact \
+  --defaults --overwrite >/dev/null
+assert_file "$compact_project_dir/docs/org_context/org-summary.md"
+assert_not_file "$compact_project_dir/docs/org_context/mission.md"
+assert_not_file "$compact_project_dir/docs/org_context/purpose.md"
+assert_not_file "$compact_project_dir/docs/org_context/vision.md"
+assert_not_file "$compact_project_dir/docs/org_context/strategic_objectives.md"
+assert_not_file "$compact_project_dir/docs/org_context/governance.md"
+
+rich_project_dir="$tmp_root/tpl-project-repo-rich"
+./scripts/new-repo-from-copier.sh tpl-project-repo "$rich_project_dir" \
+  -d repo_slug=fixture-project-rich \
+  -d org_docs_profile=rich \
+  --defaults --overwrite >/dev/null
+assert_file "$rich_project_dir/docs/org_context/org-summary.md"
+assert_file "$rich_project_dir/docs/org_context/mission.md"
+assert_file "$rich_project_dir/docs/org_context/purpose.md"
+assert_file "$rich_project_dir/docs/org_context/vision.md"
+assert_file "$rich_project_dir/docs/org_context/strategic_objectives.md"
+assert_file "$rich_project_dir/docs/org_context/governance.md"
+
+node_project_dir="$tmp_root/tpl-project-repo-node"
+./scripts/new-repo-from-copier.sh tpl-project-repo "$node_project_dir" \
+  -d repo_slug=fixture-project-node \
+  -d language=node \
+  -d enable_software_pack=true \
+  --defaults --overwrite >/dev/null
+assert_file "$node_project_dir/package.json"
+assert_not_file "$node_project_dir/tsconfig.json"
+assert_file "$node_project_dir/policy/stack-lane.json"
+assert_file "$node_project_dir/docs/tech-stack.local.md"
+
+typescript_project_dir="$tmp_root/tpl-project-repo-typescript"
+./scripts/new-repo-from-copier.sh tpl-project-repo "$typescript_project_dir" \
+  -d repo_slug=fixture-project-typescript \
+  -d language=typescript \
+  -d enable_software_pack=true \
+  --defaults --overwrite >/dev/null
+assert_file "$typescript_project_dir/package.json"
+assert_file "$typescript_project_dir/tsconfig.json"
+assert_file "$typescript_project_dir/policy/stack-lane.json"
+assert_file "$typescript_project_dir/docs/tech-stack.local.md"
 
 # Detailed check for tpl-project-repo (primary template)
 l2_dir="$tmp_root/tpl-project-repo"
