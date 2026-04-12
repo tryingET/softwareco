@@ -22,6 +22,19 @@ This package is managed by the parent monorepo. See monorepo root for:
 - CI/CD pipelines
 - Release process
 
+## Deferred work + task scope
+
+Package/app slices inherit deferred-work and explicit task-scope authority from the parent monorepo root.
+Do not create standalone AK state inside this member.
+
+When a package/app slice needs explicit task scope, author/export it from the monorepo root:
+
+```bash
+# from monorepo root
+ak task scope show <TASK-ID>
+mkdir -p governance/task-scopes && ak task scope export <TASK-ID> > governance/task-scopes/AK-<TASK-ID>.snapshot.json
+```
+
 ## Development
 
 ```bash
@@ -38,6 +51,9 @@ npm test --workspace=packages/{{ package_name }}
 - NO `.git` directory — managed by monorepo
 - NO `.github` workflows — CI from monorepo root
 - NO release config — released from monorepo root
+- Stack contract surface:
+  - `policy/stack-lane.json` when an upstream `tech-stack-core` lane exists
+  - `docs/tech-stack.local.md` for package-local overrides
 
 ## ROCS command flow
 

@@ -1,0 +1,16 @@
+{{ {
+  "company_slug": company_slug,
+  "company_name": company_name,
+  "repo_slug": repo_slug,
+  "package_manager": package_manager,
+  "org_docs_profile": org_docs_profile,
+  "enable_community_pack": enable_community_pack,
+  "enable_release_pack": enable_release_pack,
+  "enable_vouch_gate": enable_vouch_gate,
+  "kernel_ontology_ref": kernel_ontology_ref,
+  "company_ontology_ref": company_ontology_ref,
+  "core_owner_handle": core_owner_handle,
+  "org_owner_handle": org_owner_handle,
+  "project_owner_handle": project_owner_handle,
+  "template_source_sha": template_source_sha | default("unknown"),
+} | to_nice_yaml }}

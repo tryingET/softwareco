@@ -197,6 +197,7 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package
   if [ "$tpl" = "tpl-project-repo" ]; then
     assert_file "copier/$tpl/{{ _copier_conf.answers_file }}.j2"
     assert_not_file "copier/$tpl/.copier-answers.yml.j2"
+    assert_file "copier/$tpl/contracts/layer-contract.yml"
     assert_not_file "copier/$tpl/ontology/manifest.yaml"
     assert_not_dir "copier/$tpl/ontology/dist"
     assert_file "copier/$tpl/scripts/check-task-scope-snapshots.sh"
@@ -205,6 +206,25 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package
     assert_file "copier/$tpl/scripts/lib/copier-answers.sh"
     assert_file "copier/$tpl/scripts/lib/repo-surface.sh.j2"
     assert_file "copier/$tpl/scripts/ci/fast.sh"
+  fi
+  if [ "$tpl" = "tpl-monorepo" ]; then
+    assert_file "copier/$tpl/{{ _copier_conf.answers_file }}.j2"
+    assert_not_file "copier/$tpl/.copier-answers.yml.j2"
+    assert_file "copier/$tpl/contracts/layer-contract.yml"
+    assert_file "copier/$tpl/docs/org_context/README.md"
+    assert_file "copier/$tpl/docs/org_context/org-summary.md"
+    assert_file "copier/$tpl/governance/work-items.cue"
+    assert_file "copier/$tpl/governance/work-items.json.j2"
+    assert_file "copier/$tpl/scripts/check-task-scope-snapshots.sh"
+    assert_file "copier/$tpl/scripts/preflight-repo-census.sh.j2"
+    assert_file "copier/$tpl/scripts/lib/check-task-scope-snapshots.py"
+    assert_file "copier/$tpl/scripts/lib/copier-answers.sh"
+    assert_file "copier/$tpl/scripts/lib/repo-surface.sh.j2"
+  fi
+  if [ "$tpl" = "tpl-package" ]; then
+    assert_file "copier/$tpl/{{ _copier_conf.answers_file }}.j2"
+    assert_not_file "copier/$tpl/.copier-answers.yml.j2"
+    assert_file "copier/$tpl/contracts/layer-contract.yml"
   fi
   assert_file "copier/$tpl/scripts/ci/full.sh"
   assert_file "copier/$tpl/diary/README.md"
@@ -306,6 +326,9 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
   assert_contains "copier/$tpl/copier.yml" "enable_vouch_gate" "L2 template $tpl must expose vouch gate toggle"
 done
 assert_contains "copier/tpl-project-repo/copier.yml" "org_docs_profile" "tpl-project-repo must expose org-context profile"
+assert_contains "copier/tpl-monorepo/copier.yml" "org_docs_profile" "tpl-monorepo must expose org-context profile"
+assert_contains "copier/tpl-package/copier.yml" "package_owner_handle" "tpl-package must expose package owner handle"
+assert_contains "copier/tpl-package/copier.yml" "template_source_sha" "tpl-package must expose template source sha"
 
 assert_contains "scripts/new-repo-from-copier.sh" "tpl-agent-repo" "L1 wrapper must list tpl-agent-repo template"
 assert_contains "scripts/new-repo-from-copier.sh" "tpl-org-repo" "L1 wrapper must list tpl-org-repo template"
@@ -352,6 +375,10 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package
     assert_contains "scripts/install-hooks.sh" "copier/$tpl/scripts/check-task-scope-snapshots.sh" "install-hooks must include executable bit normalization for $tpl task-scope checker"
     assert_contains "scripts/install-hooks.sh" "copier/$tpl/scripts/preflight-repo-census.sh.j2" "install-hooks must include executable bit normalization for $tpl census wrapper"
     assert_contains "scripts/install-hooks.sh" "copier/$tpl/scripts/ci/fast.sh" "install-hooks must include executable bit normalization for $tpl fast lane"
+  fi
+  if [ "$tpl" = "tpl-monorepo" ]; then
+    assert_contains "scripts/install-hooks.sh" "copier/$tpl/scripts/check-task-scope-snapshots.sh" "install-hooks must include executable bit normalization for $tpl task-scope checker"
+    assert_contains "scripts/install-hooks.sh" "copier/$tpl/scripts/preflight-repo-census.sh.j2" "install-hooks must include executable bit normalization for $tpl census wrapper"
   fi
   assert_contains "scripts/install-hooks.sh" "copier/$tpl/scripts/ci/full.sh" "install-hooks must include executable bit normalization for $tpl full lane"
 done
@@ -464,6 +491,7 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
   assert_file "$l2_dir/scripts/rocs.sh"
   assert_file "$l2_dir/scripts/ci/smoke.sh"
   if [ "$tpl" = "tpl-project-repo" ]; then
+    assert_file "$l2_dir/contracts/layer-contract.yml"
     assert_file "$l2_dir/ontology/manifest.yaml"
     assert_not_dir "$l2_dir/ontology/dist"
     assert_file "$l2_dir/scripts/check-task-scope-snapshots.sh"
@@ -472,6 +500,18 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
     assert_file "$l2_dir/scripts/lib/copier-answers.sh"
     assert_file "$l2_dir/scripts/lib/repo-surface.sh"
     assert_file "$l2_dir/scripts/ci/fast.sh"
+  fi
+  if [ "$tpl" = "tpl-monorepo" ]; then
+    assert_file "$l2_dir/contracts/layer-contract.yml"
+    assert_file "$l2_dir/docs/org_context/README.md"
+    assert_file "$l2_dir/docs/org_context/org-summary.md"
+    assert_file "$l2_dir/governance/work-items.cue"
+    assert_file "$l2_dir/governance/work-items.json"
+    assert_file "$l2_dir/scripts/check-task-scope-snapshots.sh"
+    assert_file "$l2_dir/scripts/preflight-repo-census.sh"
+    assert_file "$l2_dir/scripts/lib/check-task-scope-snapshots.py"
+    assert_file "$l2_dir/scripts/lib/copier-answers.sh"
+    assert_file "$l2_dir/scripts/lib/repo-surface.sh"
   fi
   assert_file "$l2_dir/scripts/ci/full.sh"
   assert_file "$l2_dir/diary/README.md"
@@ -522,6 +562,7 @@ l2_dir="$tmp_root/$tpl"
   --defaults --overwrite >/dev/null
 
 assert_file "$l2_dir/.copier-answers.yml"
+assert_file "$l2_dir/contracts/layer-contract.yml"
 assert_file "$l2_dir/AGENTS.md"
 assert_file "$l2_dir/CODEOWNERS"
 assert_file "$l2_dir/scripts/rocs.sh"
@@ -535,6 +576,8 @@ assert_contains "$l2_dir/AGENTS.md" "Deterministic tooling policy" "generated $t
 assert_contains "$l2_dir/AGENTS.md" "scripts/rocs.sh" "generated $tpl AGENTS should reference scripts/rocs.sh"
 assert_contains "$l2_dir/AGENTS.md" "diary/" "generated $tpl AGENTS should reference repo-local diary"
 assert_contains "$l2_dir/README.md" "ROCS command flow" "generated $tpl README should include ROCS command flow section"
+assert_not_contains "$l2_dir/CODEOWNERS" "@package-owners" "generated tpl-package CODEOWNERS should not use hardcoded package owner placeholder"
+assert_contains "$l2_dir/CODEOWNERS" "@project-owners" "generated tpl-package CODEOWNERS should use the package owner handle surface"
 
 # tpl-package idempotency check (no git required)
 ./scripts/new-repo-from-copier.sh "$tpl" "$l2_dir" \

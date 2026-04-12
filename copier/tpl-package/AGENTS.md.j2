@@ -8,26 +8,37 @@ Package inside monorepo: {{ package_type }} ({{ language }})
 - NO `.git` — managed by parent monorepo.
 - NO `.github` — CI runs from monorepo root.
 - NO release tooling — released from monorepo root.
+- Deferred work and explicit task scope live at the monorepo root; do not create standalone AK/task-scope state in this member.
 
 ## Deterministic tooling policy (ROCS-first)
 - Run ROCS commands from monorepo root: `../../scripts/rocs.sh <args...>`
+- When package work needs AK context, run it from the monorepo root with plain installed `ak <args...>`.
 - For ontology/policy checks, use ROCS commands as the default execution path.
+
+## Stack contract
+- When this package language maps to a shared `tech-stack-core` lane, keep it explicit:
+  - `policy/stack-lane.json` declares the upstream lane reference and the executable retrieval command
+  - `docs/tech-stack.local.md` records package-local overrides on top of that lane contract
+  - consult `policy/stack-lane.json` before invoking `tech-stack-core` directly; do not assume package-local `lanes/` overrides exist
 
 ## Structure
 ```
 src/              # Source code
 tests/            # Test files
 docs/             # Package docs
-pyproject.toml    # Python (if language=python)
-package.json      # Node (if language=node|typescript)
-Cargo.toml        # Rust (if language=rust)
-go.mod            # Go (if language=go)
 ```
 
+Common language-specific files you may add as the package matures:
+- `pyproject.toml` — Python
+- `package.json` — Node / TypeScript
+- `Cargo.toml` — Rust
+- `go.mod` — Go
+- `mix.exs` — Elixir
+
 ## Recursion policy
-This is L3 (inside monorepo L2).
-- No further nesting allowed.
-- All packages in monorepo share root workspace config.
+This package is an internal member of an L2 monorepo, not a separate render layer.
+- No further nesting allowed inside this member.
+- All packages in the monorepo share root workspace config.
 
 ## Read order
 1) `docs/` — package docs
