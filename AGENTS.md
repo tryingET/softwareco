@@ -17,13 +17,16 @@ Coordinate Software Company work across explicit lanes:
 - `fork/` — maintained forks and deliberate divergence repos when upstream scope no longer fits
 
 ## Guardrails
-- No direct pushes to `main`; branch + MR workflow.
+- Main-first workflow: commit directly to `main` for normal work.
+- Use GitHub PRs only for releases or when the operator explicitly asks for a review gate.
 - Pick lane first, then follow lane policy and template contract.
 - No secrets in git.
 - Keep `.copier-answers.yml` committed in all repos.
 - Use repo-local `diary/` capture in descendant repos; do not invent a company-wide diary authority.
 
 ## Shared tooling
+- Docs discovery/scoping: `./scripts/docs-list.sh --task "<task>" --top 8`
+- Prompt read-scope allowlist: `./scripts/docs-list.sh --from-prompt <prompt-file> --paths-only --wikilink`
 - Repo census preflight: `./scripts/preflight-repo-census.sh [scope]`
 - Deterministic ROCS launcher: `./scripts/rocs.sh <rocs args...>`
 - New L2 repo from template: `./scripts/new-repo-from-copier.sh <template> <dest> -d repo_slug=<slug> --defaults`
