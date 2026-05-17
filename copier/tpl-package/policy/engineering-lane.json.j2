@@ -6,7 +6,29 @@
     "lane": "{{ "py" if language == "python" else "go" if language == "go" else "rust" if language == "rust" else "elixir" if language == "elixir" else "ts" }}",
     "repository": "https://github.com/lightningralf/engineering-core",
     "ref": "workspace-local-unpinned",
-    "command": "uv tool -n run --from ~/ai-society/core/engineering-core engineering-core show {{ "py" if language == "python" else "go" if language == "go" else "rust" if language == "rust" else "elixir" if language == "elixir" else "ts" }}"
+    "command": "uv tool -n run --from ~/ai-society/core/engineering-core engineering-core show {{ "py" if language == "python" else "go" if language == "go" else "rust" if language == "rust" else "elixir" if language == "elixir" else "ts" }}",
+    "catalog_command": "uv tool -n run --from ~/ai-society/core/engineering-core engineering-core catalog --pretty",
+    "list_disciplines_command": "uv tool -n run --from ~/ai-society/core/engineering-core engineering-core list-disciplines",
+    "list_templates_command": "uv tool -n run --from ~/ai-society/core/engineering-core engineering-core list-templates",
+    "selected_discipline_model": "Start with validation, testing, security-privacy, documentation, and dependency-governance; add optional disciplines only when package concerns require them.",
+    "optional_disciplines": [
+      "local-first-data",
+      "observability",
+      "accessibility",
+      "design-system",
+      "specification-and-dsls",
+      "engineering-reasoning",
+      "build-graph-acceleration"
+    ],
+    "conditional_addenda": [{% if language == "rust" %}
+      {
+        "lane": "rust-build-graph",
+        "requires": ["rust"],
+        "conditional": true,
+        "command": "uv tool -n run --from ~/ai-society/core/engineering-core engineering-core show rust-build-graph",
+        "note": "Use only for measured Rust build/test bottlenecks; Cargo remains canonical and Buck2/Bazel are optional acceleration overlays."
+      }
+    {% endif %}]
   }
 }
 {%- endif -%}

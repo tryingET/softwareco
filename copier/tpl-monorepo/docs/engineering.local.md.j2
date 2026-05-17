@@ -19,9 +19,24 @@ Primary model:
 
 Executable contract surface:
 
-- root `docs/engineering.local.md` explains monorepo control-plane deltas
-- package/app `policy/engineering-lane.json` declares the upstream `engineering-core` lane reference when one exists
+- root `docs/engineering.local.md` explains monorepo control-plane deltas and selected cross-language disciplines
+- package/app `policy/engineering-lane.json` declares the upstream `engineering-core` lane reference and catalog command when one exists
 - package/app `docs/engineering.local.md` records local overrides
+
+Upstream catalog retrieval:
+
+```bash
+uv tool -n run --from ~/ai-society/core/engineering-core engineering-core catalog --pretty
+uv tool -n run --from ~/ai-society/core/engineering-core engineering-core list-disciplines
+uv tool -n run --from ~/ai-society/core/engineering-core engineering-core list-templates
+```
+
+Common root disciplines:
+
+- `validation`, `testing`, `documentation`, `dependency-governance`
+- add `local-first-data`, `security-privacy`, `observability`, `design-system`, `accessibility`, `specification-and-dsls`, or `engineering-reasoning` when the monorepo root owns those concerns.
+- add `build-graph-acceleration` only for measured build/test/package-task graph acceleration work involving Buck2, Bazel, Pants, Nx/Turborepo, remote cache, or remote execution; native package/app commands remain canonical until repo-local acceptance says otherwise.
+- for Rust members, use `rust-build-graph` only as a conditional addendum after measured Rust build/test bottlenecks; Cargo remains canonical and Buck2/Bazel are optional acceleration overlays, not default requirements.
 
 Practical rule:
 

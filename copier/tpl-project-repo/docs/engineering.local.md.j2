@@ -13,21 +13,27 @@ system4d:
 
 # engineering.local (project repo)
 
-Primary lane:
+Selected upstream set:
 
-- `{%- if language == "python" -%}py{%- elif language in ["node", "typescript"] -%}ts{%- elif language == "go" -%}go{%- elif language == "rust" -%}rust{%- elif language == "elixir" -%}elixir{%- endif -%}`
-- executable upstream retrieval lives in `policy/engineering-lane.json` -> `engineering_core.command`
+- primary lane: `{%- if language == "python" -%}py{%- elif language in ["node", "typescript"] -%}ts{%- elif language == "go" -%}go{%- elif language == "rust" -%}rust{%- elif language == "elixir" -%}elixir{%- endif -%}`
+- selected disciplines: start with `validation`, `testing`, `security-privacy`, `documentation`, and `dependency-governance`; add `local-first-data`, `observability`, `accessibility`, `design-system`, `specification-and-dsls`, `engineering-reasoning`, or `build-graph-acceleration` only when the repo concern requires them.
+- `specification-and-dsls` is optional for schemas, generators, policy DSLs, or executable contracts; `engineering-reasoning` is optional for explicit decision/reasoning posture.
+- `build-graph-acceleration` is optional/evidence-gated for Buck2, Bazel, Pants, Nx/Turborepo, remote cache, or remote execution work; native language tooling remains canonical unless repo-local acceptance says otherwise.
+{%- if language == "rust" %}
+- conditional Rust addendum: `rust-build-graph` only when Rust build/test time is a measured bottleneck; Cargo remains canonical and Buck2/Bazel are optional acceleration overlays, not default Rust requirements.
+{%- endif %}
+- executable upstream retrieval lives in `policy/engineering-lane.json` -> `engineering_core.command`; use `engineering_core.catalog_command`, `engineering_core.list_disciplines_command`, and `engineering_core.list_templates_command` to inspect newly available lanes, addenda, disciplines, templates, and profiles.
 
 Executable contract surface:
 
-- `policy/engineering-lane.json` declares the upstream lane reference and retrieval command.
-- `docs/engineering.local.md` records repo-local deltas.
+- `policy/engineering-lane.json` declares the upstream lane reference, retrieval command, and catalog command.
+- `docs/engineering.local.md` records repo-local selected disciplines and deltas.
 - Repo validation should at least verify the declared lane metadata and may smoke the declared command when available.
 
 Repo-local emphasis:
 
-- This file is the local override layer on top of the upstream lane contract.
+- This file is the local override layer on top of the upstream lane/discipline catalog.
 - Keep workflow scripts and docs aligned with the declared lane contract.
 - Prefer local deterministic wrappers before ad-hoc commands.
-- Update this file when local practice intentionally diverges from the upstream lane.
+- Update this file when local practice intentionally diverges from the upstream lane or adopts a new discipline.
 {%- endif -%}
