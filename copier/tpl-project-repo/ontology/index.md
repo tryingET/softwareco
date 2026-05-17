@@ -1,3 +1,10 @@
+---
+summary: "Ontology index placeholder for generated project repos."
+read_when:
+  - "A generated project repo needs ontology index placement guidance."
+type: "reference"
+---
+
 # Ontology Index (repo)
 
 Start here when browsing manually.

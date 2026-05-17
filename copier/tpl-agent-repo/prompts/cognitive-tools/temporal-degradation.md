@@ -1,3 +1,10 @@
+---
+summary: "Cognitive-tool prompt for spotting time-based degradation."
+read_when:
+  - "An agent needs to reason about drift, decay, or aging assumptions."
+type: "reference"
+---
+
 # TEMPORAL DEGRADATION — Future-Proofing via Time Travel
 
 ## Invoke When

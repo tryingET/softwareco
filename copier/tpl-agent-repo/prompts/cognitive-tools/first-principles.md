@@ -1,3 +1,10 @@
+---
+summary: "Cognitive-tool prompt for first-principles reasoning."
+read_when:
+  - "An agent needs to strip assumptions and reason from fundamentals."
+type: "reference"
+---
+
 # FIRST PRINCIPLES — Axiomatic Reconstruction
 
 ## Invoke When

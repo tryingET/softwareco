@@ -1,3 +1,10 @@
+---
+summary: "Index of cognitive-tool prompts for generated agent repos."
+read_when:
+  - "A generated agent repo needs to explain available cognitive-tool prompts."
+type: "reference"
+---
+
 # Cognitive Tools
 
 Invocable frameworks for higher-order thinking.

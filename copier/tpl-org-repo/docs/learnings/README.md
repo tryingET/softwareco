@@ -1,3 +1,10 @@
+---
+summary: "Learnings directory placeholder for generated organization repos."
+read_when:
+  - "A generated organization repo needs a place for crystallized learnings."
+type: "reference"
+---
+
 # Learnings
 
 Capture organizational learnings about governance, culture, and operations.

@@ -1,3 +1,10 @@
+---
+summary: "Cognitive-tool prompt for inversion and alternative generation."
+read_when:
+  - "An agent needs to reason from failure modes or alternatives."
+type: "reference"
+---
+
 # INVERSION — Alternative Generation
 
 ## Invoke When

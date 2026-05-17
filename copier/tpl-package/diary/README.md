@@ -1,3 +1,10 @@
+---
+summary: "Diary directory placeholder for generated packages."
+read_when:
+  - "A generated package needs local diary capture guidance."
+type: "reference"
+---
+
 # Diary
 
 Repo-local session capture for KES (Knowledge Evolution System).

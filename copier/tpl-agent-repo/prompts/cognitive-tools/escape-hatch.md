@@ -1,3 +1,10 @@
+---
+summary: "Cognitive-tool prompt for finding lower-risk escape hatches."
+read_when:
+  - "An agent needs alternatives, reversibility, or a safer route."
+type: "reference"
+---
+
 # ESCAPE HATCH — Rollback-First Design
 
 ## Invoke When

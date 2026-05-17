@@ -1,3 +1,10 @@
+---
+summary: "Learnings directory placeholder for generated project repos."
+read_when:
+  - "A generated project repo needs a place for crystallized learnings."
+type: "reference"
+---
+
 # Learnings
 
 Capture what works, what doesn't, and what to try next.

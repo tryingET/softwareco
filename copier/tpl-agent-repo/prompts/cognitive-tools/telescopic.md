@@ -1,3 +1,10 @@
+---
+summary: "Cognitive-tool prompt for switching between detail and system views."
+read_when:
+  - "An agent needs to reason across micro and macro levels."
+type: "reference"
+---
+
 # TELESCOPIC — Simultaneous Micro-Macro Analysis
 
 ## Invoke When

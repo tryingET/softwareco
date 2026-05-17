@@ -1,3 +1,10 @@
+---
+summary: "Cognitive-tool prompt for elevating the frame of a task."
+read_when:
+  - "An agent needs to reframe a task at a higher abstraction level."
+type: "reference"
+---
+
 # ELEVATE — Document Transcendence
 
 ## Invoke When

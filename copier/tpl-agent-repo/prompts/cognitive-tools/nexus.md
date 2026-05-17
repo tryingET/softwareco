@@ -1,3 +1,10 @@
+---
+summary: "Cognitive-tool prompt for finding the highest-leverage nexus."
+read_when:
+  - "An agent needs to identify the central leverage point."
+type: "reference"
+---
+
 # NEXUS — The Single Highest-Leverage Intervention
 
 ## Invoke When

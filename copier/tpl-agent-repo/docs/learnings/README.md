@@ -1,3 +1,11 @@
+---
+summary: "Learnings directory placeholder for generated agent repos."
+read_when:
+  - "A generated agent repo needs a place for crystallized learnings."
+  - "Template docs strictness checks scan generated learnings README files."
+type: "reference"
+---
+
 # Learnings
 
 Capture what the agent learns through operation.

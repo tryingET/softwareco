@@ -1,3 +1,10 @@
+---
+summary: "Governance directory placeholder for generated monorepos."
+read_when:
+  - "A generated monorepo needs governance artifact placement guidance."
+type: "reference"
+---
+
 # Monorepo Work Items
 
 `governance/work-items.json` is the checked-in deterministic projection/mirror for this monorepo's Agent Kernel work-items state.

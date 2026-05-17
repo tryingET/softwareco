@@ -1,3 +1,10 @@
+---
+summary: "Diary directory placeholder for generated monorepos."
+read_when:
+  - "A generated monorepo needs local diary capture guidance."
+type: "reference"
+---
+
 # Diary
 
 Repo-local session capture for KES (Knowledge Evolution System).

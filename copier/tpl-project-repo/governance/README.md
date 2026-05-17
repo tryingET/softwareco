@@ -1,3 +1,10 @@
+---
+summary: "Governance directory placeholder for generated project repos."
+read_when:
+  - "A generated project repo needs governance artifact placement guidance."
+type: "reference"
+---
+
 # Project Work Items
 
 `governance/work-items.json` is the checked-in deterministic projection/mirror for this repository's Agent Kernel work-items state.

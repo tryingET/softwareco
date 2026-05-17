@@ -1,3 +1,10 @@
+---
+summary: "Cognitive-tool prompt for inventorying constraints."
+read_when:
+  - "An agent needs to identify and sort constraints before planning."
+type: "reference"
+---
+
 # CONSTRAINT INVENTORY — Real vs Imagined
 
 ## Invoke When
