@@ -1,6 +1,6 @@
 {%- if enable_software_pack and language in ["python", "node", "typescript", "go", "rust", "elixir"] -%}
 ---
-summary: "Repo-local override notes for the shared tech-stack-core lane used by this repo."
+summary: "Repo-local override notes for the shared engineering-core lane used by this repo."
 read_when:
   - "Aligning implementation decisions with the stack baseline for this project repo."
   - "Reconciling local workflow differences with shared lane guidance."
@@ -11,17 +11,17 @@ system4d:
   fog: "Upstream lane guidance may evolve independently of this repo."
 ---
 
-# tech-stack.local (project repo)
+# engineering.local (project repo)
 
 Primary lane:
 
 - `{%- if language == "python" -%}py{%- elif language in ["node", "typescript"] -%}ts{%- elif language == "go" -%}go{%- elif language == "rust" -%}rust{%- elif language == "elixir" -%}elixir{%- endif -%}`
-- executable upstream retrieval lives in `policy/stack-lane.json` -> `tech_stack_core.command`
+- executable upstream retrieval lives in `policy/engineering-lane.json` -> `engineering_core.command`
 
 Executable contract surface:
 
-- `policy/stack-lane.json` declares the upstream lane reference and retrieval command.
-- `docs/tech-stack.local.md` records repo-local deltas.
+- `policy/engineering-lane.json` declares the upstream lane reference and retrieval command.
+- `docs/engineering.local.md` records repo-local deltas.
 - Repo validation should at least verify the declared lane metadata and may smoke the declared command when available.
 
 Repo-local emphasis:

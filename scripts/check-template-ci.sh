@@ -594,13 +594,13 @@ elixir_project_dir="$tmp_root/tpl-project-repo-elixir"
   -d enable_software_pack=true \
   --defaults --overwrite >/dev/null
 assert_file "$elixir_project_dir/mix.exs"
-assert_file "$elixir_project_dir/policy/stack-lane.json"
-assert_file "$elixir_project_dir/docs/tech-stack.local.md"
-assert_contains "$elixir_project_dir/policy/stack-lane.json" '"lane": "elixir"' "generated elixir project should declare the elixir stack lane"
-assert_contains "$elixir_project_dir/policy/stack-lane.json" '"ref": "workspace-local-unpinned"' "generated elixir project should record honest workspace-local provenance"
-assert_contains "$elixir_project_dir/docs/tech-stack.local.md" "tech_stack_core.command" "generated elixir project should point operators to the declared lane command"
-assert_not_contains "$elixir_project_dir/docs/tech-stack.local.md" "pins the upstream lane" "generated elixir project docs should not overstate lane pinning"
-assert_not_contains "$elixir_project_dir/docs/tech-stack.local.md" "--prefer-repo" "generated elixir project docs should not hardcode repo-preferred lane resolution"
+assert_file "$elixir_project_dir/policy/engineering-lane.json"
+assert_file "$elixir_project_dir/docs/engineering.local.md"
+assert_contains "$elixir_project_dir/policy/engineering-lane.json" '"lane": "elixir"' "generated elixir project should declare the elixir stack lane"
+assert_contains "$elixir_project_dir/policy/engineering-lane.json" '"ref": "workspace-local-unpinned"' "generated elixir project should record honest workspace-local provenance"
+assert_contains "$elixir_project_dir/docs/engineering.local.md" "engineering_core.command" "generated elixir project should point operators to the declared lane command"
+assert_not_contains "$elixir_project_dir/docs/engineering.local.md" "pins the upstream lane" "generated elixir project docs should not overstate lane pinning"
+assert_not_contains "$elixir_project_dir/docs/engineering.local.md" "--prefer-repo" "generated elixir project docs should not hardcode repo-preferred lane resolution"
 
 elixir_package_dir="$tmp_root/tpl-package-elixir"
 ./scripts/new-repo-from-copier.sh tpl-package "$elixir_package_dir" \
@@ -608,13 +608,13 @@ elixir_package_dir="$tmp_root/tpl-package-elixir"
   -d package_type=library \
   -d language=elixir \
   --defaults --overwrite >/dev/null
-assert_file "$elixir_package_dir/policy/stack-lane.json"
-assert_file "$elixir_package_dir/docs/tech-stack.local.md"
-assert_contains "$elixir_package_dir/policy/stack-lane.json" '"lane": "elixir"' "generated elixir package should declare the elixir stack lane"
-assert_contains "$elixir_package_dir/policy/stack-lane.json" '"ref": "workspace-local-unpinned"' "generated elixir package should record honest workspace-local provenance"
-assert_contains "$elixir_package_dir/docs/tech-stack.local.md" "tech_stack_core.command" "generated elixir package should point operators to the declared lane command"
-assert_not_contains "$elixir_package_dir/docs/tech-stack.local.md" "pins the upstream lane" "generated elixir package docs should not overstate lane pinning"
-assert_not_contains "$elixir_package_dir/docs/tech-stack.local.md" "--prefer-repo" "generated elixir package docs should not hardcode repo-preferred lane resolution"
+assert_file "$elixir_package_dir/policy/engineering-lane.json"
+assert_file "$elixir_package_dir/docs/engineering.local.md"
+assert_contains "$elixir_package_dir/policy/engineering-lane.json" '"lane": "elixir"' "generated elixir package should declare the elixir stack lane"
+assert_contains "$elixir_package_dir/policy/engineering-lane.json" '"ref": "workspace-local-unpinned"' "generated elixir package should record honest workspace-local provenance"
+assert_contains "$elixir_package_dir/docs/engineering.local.md" "engineering_core.command" "generated elixir package should point operators to the declared lane command"
+assert_not_contains "$elixir_package_dir/docs/engineering.local.md" "pins the upstream lane" "generated elixir package docs should not overstate lane pinning"
+assert_not_contains "$elixir_package_dir/docs/engineering.local.md" "--prefer-repo" "generated elixir package docs should not hardcode repo-preferred lane resolution"
 
 compact_project_dir="$tmp_root/tpl-project-repo-compact"
 ./scripts/new-repo-from-copier.sh tpl-project-repo "$compact_project_dir" \
@@ -648,8 +648,8 @@ node_project_dir="$tmp_root/tpl-project-repo-node"
   --defaults --overwrite >/dev/null
 assert_file "$node_project_dir/package.json"
 assert_not_file "$node_project_dir/tsconfig.json"
-assert_file "$node_project_dir/policy/stack-lane.json"
-assert_file "$node_project_dir/docs/tech-stack.local.md"
+assert_file "$node_project_dir/policy/engineering-lane.json"
+assert_file "$node_project_dir/docs/engineering.local.md"
 
 typescript_project_dir="$tmp_root/tpl-project-repo-typescript"
 ./scripts/new-repo-from-copier.sh tpl-project-repo "$typescript_project_dir" \
@@ -659,8 +659,8 @@ typescript_project_dir="$tmp_root/tpl-project-repo-typescript"
   --defaults --overwrite >/dev/null
 assert_file "$typescript_project_dir/package.json"
 assert_file "$typescript_project_dir/tsconfig.json"
-assert_file "$typescript_project_dir/policy/stack-lane.json"
-assert_file "$typescript_project_dir/docs/tech-stack.local.md"
+assert_file "$typescript_project_dir/policy/engineering-lane.json"
+assert_file "$typescript_project_dir/docs/engineering.local.md"
 
 # Detailed check for tpl-project-repo (primary template)
 l2_dir="$tmp_root/tpl-project-repo"

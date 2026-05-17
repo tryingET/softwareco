@@ -1,6 +1,6 @@
 {%- if language in ["python", "node", "typescript", "go", "rust", "elixir"] -%}
 ---
-summary: "Package-local override notes for the shared tech-stack-core lane used by this package."
+summary: "Package-local override notes for the shared engineering-core lane used by this package."
 read_when:
   - "Aligning implementation decisions with the package stack baseline."
   - "Reconciling local workflow differences with shared lane guidance."
@@ -11,17 +11,17 @@ system4d:
   fog: "Package-local practice can drift from the declared lane contract unless the contract stays explicit."
 ---
 
-# tech-stack.local (package)
+# engineering.local (package)
 
 Primary lane:
 
 - `{%- if language == "python" -%}py{%- elif language in ["node", "typescript"] -%}ts{%- elif language == "go" -%}go{%- elif language == "rust" -%}rust{%- elif language == "elixir" -%}elixir{%- endif -%}`
-- executable upstream retrieval lives in `policy/stack-lane.json` -> `tech_stack_core.command`
+- executable upstream retrieval lives in `policy/engineering-lane.json` -> `engineering_core.command`
 
 Executable contract surface:
 
-- `policy/stack-lane.json` declares the upstream lane reference and retrieval command.
-- `docs/tech-stack.local.md` records package-local deltas.
+- `policy/engineering-lane.json` declares the upstream lane reference and retrieval command.
+- `docs/engineering.local.md` records package-local deltas.
 - Package or monorepo validation should at least verify the declared lane metadata and may smoke the declared command when available.
 
 Package-local emphasis:
