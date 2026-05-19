@@ -1,0 +1,15 @@
+[Unit]
+Description=Pull all git repos under contrib workspace
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/tryinget/ai-society/softwareco/contrib
+ExecStart=/home/tryinget/ai-society/softwareco/contrib/scripts/pull-all-local-contrib-repos.sh --root /home/tryinget/ai-society/softwareco/contrib --jobs 4
+Environment=JITTER_MAX_MS=1000
+Environment=PI_COMPAT_RELAY_MODE=workflow
+Environment=PI_COMPAT_PROFILE=upgrade
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

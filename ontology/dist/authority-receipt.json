@@ -1,0 +1,47 @@
+{
+  "command_files": {
+    "build": "authority-receipt.build.json"
+  },
+  "commands": {
+    "build": {
+      "authoritative": false,
+      "authority_mode": "best_effort_workspace_loose",
+      "ci_profile": null,
+      "command": "build",
+      "layer_sources": [
+        {
+          "kind": "path",
+          "locator_kind": "path",
+          "name": "company",
+          "origin": "src",
+          "source": "path"
+        },
+        {
+          "kind": "ref",
+          "locator_kind": "repo",
+          "name": "core",
+          "origin": "<repo:core/ontology-kernel@main>",
+          "source": "workspace"
+        }
+      ],
+      "locator_kinds_present": [
+        "path",
+        "repo"
+      ],
+      "loose_workspace_ref_layers_used": 1,
+      "ok": true,
+      "profile": null,
+      "ref_layer_count": 1,
+      "ref_layers_present": true,
+      "repo": "/home/tryinget/ai-society/softwareco/ontology",
+      "resolve_refs_requested": true,
+      "schema_version": 3,
+      "version": "0.1.4",
+      "workspace_ref_mode": "loose"
+    }
+  },
+  "last_command": "build",
+  "repo": "/home/tryinget/ai-society/softwareco/ontology",
+  "schema_version": 3,
+  "version": "0.1.4"
+}

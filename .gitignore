@@ -3,6 +3,9 @@
 tmp/
 *.tmp
 *.log
+.pi/
+.pi-subagent-sessions/
+clone/
 
 # Python generated artifacts
 __pycache__/
@@ -169,3 +172,6 @@ fork/*
 !fork/tools/
 !fork/tools/**
 # End lane root: fork
+
+# Local Pi state inside lane roots
+owned/.pi/

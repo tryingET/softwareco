@@ -1,0 +1,22 @@
+{
+  "layers": [
+    {
+      "kind": "path",
+      "name": "company",
+      "origin": "src",
+      "source": "path",
+      "src_root": "/home/tryinget/ai-society/softwareco/ontology/src"
+    },
+    {
+      "kind": "ref",
+      "name": "core",
+      "origin": "<repo:core/ontology-kernel@main>",
+      "source": "workspace",
+      "src_root": "/home/tryinget/ai-society/core/ontology-kernel/ontology/src"
+    }
+  ],
+  "profile": null,
+  "repo": "/home/tryinget/ai-society/softwareco/ontology",
+  "schema_version": 2,
+  "version": "0.1.4"
+}

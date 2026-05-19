@@ -1,0 +1,4 @@
+# Optional cron fallback (use this OR the systemd timer, not both):
+# Every hour at minute 17 with non-overlap lock.
+# Includes the pi-mono -> pi-extensions compatibility relay in workflow/upgrade mode.
+17 * * * * PI_COMPAT_RELAY_MODE=workflow PI_COMPAT_PROFILE=upgrade flock -n /home/tryinget/ai-society/softwareco/contrib/.locks/git-pull-all.lock /home/tryinget/ai-society/softwareco/contrib/scripts/pull-all-local-contrib-repos.sh --root /home/tryinget/ai-society/softwareco/contrib --jobs 4 >> /home/tryinget/ai-society/softwareco/contrib/.logs/github-sync/cron.log 2>&1

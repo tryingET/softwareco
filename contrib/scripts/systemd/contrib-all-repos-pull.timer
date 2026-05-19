@@ -1,0 +1,12 @@
+[Unit]
+Description=Periodic pull for all contrib git repos
+
+[Timer]
+OnBootSec=10m
+OnCalendar=hourly
+RandomizedDelaySec=20m
+Persistent=true
+Unit=contrib-all-repos-pull.service
+
+[Install]
+WantedBy=timers.target
