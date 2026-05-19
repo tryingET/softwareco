@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-19T08:46:57.778232+00:00",
+  "generated_at": "2026-05-19T13:09:55.290456+00:00",
   "include_packages": true,
   "include_scope_root": false,
   "records": [
@@ -2286,35 +2286,40 @@
       "structural_notes": []
     },
     {
-      "disciplines": [],
-      "has_catalog_command": false,
+      "disciplines": [
+        "validation",
+        "testing",
+        "security-privacy",
+        "documentation",
+        "dependency-governance",
+        "observability",
+        "specification-and-dsls",
+        "engineering-reasoning"
+      ],
+      "has_catalog_command": true,
       "has_engineering_doc": true,
-      "has_engineering_policy": false,
+      "has_engineering_policy": true,
       "has_justfile": false,
       "has_legacy_doc": false,
       "has_legacy_policy": false,
-      "has_list_disciplines_command": false,
-      "has_list_templates_command": false,
+      "has_list_disciplines_command": true,
+      "has_list_templates_command": true,
       "implementation_stack": [],
       "kind": "package",
       "lane_status": null,
-      "lanes": [],
+      "lanes": [
+        "ts",
+        "pi-ts"
+      ],
       "name": "pi-extensions:packages/pi-interaction",
-      "notes": [
-        "docs/engineering.local.md exists without policy/engineering-lane.json",
-        "package_policy_has_no_selected_disciplines"
-      ],
+      "notes": [],
       "path": "pi-extensions/packages/pi-interaction",
-      "ref": null,
+      "ref": "workspace-local-unpinned",
       "scope": "/home/tryinget/ai-society/softwareco/owned",
-      "semantic_flags": [
-        "package_policy_has_no_selected_disciplines"
-      ],
-      "semantic_status": "needs-review",
-      "status": "doc-only",
-      "structural_notes": [
-        "docs/engineering.local.md exists without policy/engineering-lane.json"
-      ]
+      "semantic_flags": [],
+      "semantic_status": "ok",
+      "status": "adopted",
+      "structural_notes": []
     },
     {
       "disciplines": [
@@ -2790,35 +2795,40 @@
       "structural_notes": []
     },
     {
-      "disciplines": [],
-      "has_catalog_command": false,
+      "disciplines": [
+        "validation",
+        "testing",
+        "security-privacy",
+        "documentation",
+        "dependency-governance",
+        "observability",
+        "specification-and-dsls",
+        "engineering-reasoning"
+      ],
+      "has_catalog_command": true,
       "has_engineering_doc": true,
-      "has_engineering_policy": false,
+      "has_engineering_policy": true,
       "has_justfile": false,
       "has_legacy_doc": false,
       "has_legacy_policy": false,
-      "has_list_disciplines_command": false,
-      "has_list_templates_command": false,
+      "has_list_disciplines_command": true,
+      "has_list_templates_command": true,
       "implementation_stack": [],
       "kind": "package",
       "lane_status": null,
-      "lanes": [],
+      "lanes": [
+        "ts",
+        "pi-ts"
+      ],
       "name": "pi-extensions-autoresearch-candidate:packages/pi-interaction",
-      "notes": [
-        "docs/engineering.local.md exists without policy/engineering-lane.json",
-        "package_policy_has_no_selected_disciplines"
-      ],
+      "notes": [],
       "path": "pi-extensions-autoresearch-candidate/packages/pi-interaction",
-      "ref": null,
+      "ref": "workspace-local-unpinned",
       "scope": "/home/tryinget/ai-society/softwareco/owned",
-      "semantic_flags": [
-        "package_policy_has_no_selected_disciplines"
-      ],
-      "semantic_status": "needs-review",
-      "status": "doc-only",
-      "structural_notes": [
-        "docs/engineering.local.md exists without policy/engineering-lane.json"
-      ]
+      "semantic_flags": [],
+      "semantic_status": "ok",
+      "status": "adopted",
+      "structural_notes": []
     },
     {
       "disciplines": [
@@ -2994,7 +3004,7 @@
       "name": "pi-extensions-template:copier-template",
       "notes": [],
       "path": "pi-extensions-template/copier-template",
-      "ref": "4bd813dbb9ebbd9cb279c7293cd941fd1154d59e",
+      "ref": "f9f2bdccb354bcaa3b12985f6c7698eba9df256d",
       "scope": "/home/tryinget/ai-society/softwareco/owned",
       "semantic_flags": [],
       "semantic_status": "ok",
@@ -3108,82 +3118,17 @@
     }
   ],
   "repo_discovery": "immediate",
-  "review_candidates": [
-    {
-      "disciplines": [],
-      "has_catalog_command": false,
-      "has_engineering_doc": true,
-      "has_engineering_policy": false,
-      "has_justfile": false,
-      "has_legacy_doc": false,
-      "has_legacy_policy": false,
-      "has_list_disciplines_command": false,
-      "has_list_templates_command": false,
-      "implementation_stack": [],
-      "kind": "package",
-      "lane_status": null,
-      "lanes": [],
-      "name": "pi-extensions:packages/pi-interaction",
-      "notes": [
-        "docs/engineering.local.md exists without policy/engineering-lane.json",
-        "package_policy_has_no_selected_disciplines"
-      ],
-      "path": "pi-extensions/packages/pi-interaction",
-      "ref": null,
-      "scope": "/home/tryinget/ai-society/softwareco/owned",
-      "semantic_flags": [
-        "package_policy_has_no_selected_disciplines"
-      ],
-      "semantic_status": "needs-review",
-      "status": "doc-only",
-      "structural_notes": [
-        "docs/engineering.local.md exists without policy/engineering-lane.json"
-      ]
-    },
-    {
-      "disciplines": [],
-      "has_catalog_command": false,
-      "has_engineering_doc": true,
-      "has_engineering_policy": false,
-      "has_justfile": false,
-      "has_legacy_doc": false,
-      "has_legacy_policy": false,
-      "has_list_disciplines_command": false,
-      "has_list_templates_command": false,
-      "implementation_stack": [],
-      "kind": "package",
-      "lane_status": null,
-      "lanes": [],
-      "name": "pi-extensions-autoresearch-candidate:packages/pi-interaction",
-      "notes": [
-        "docs/engineering.local.md exists without policy/engineering-lane.json",
-        "package_policy_has_no_selected_disciplines"
-      ],
-      "path": "pi-extensions-autoresearch-candidate/packages/pi-interaction",
-      "ref": null,
-      "scope": "/home/tryinget/ai-society/softwareco/owned",
-      "semantic_flags": [
-        "package_policy_has_no_selected_disciplines"
-      ],
-      "semantic_status": "needs-review",
-      "status": "doc-only",
-      "structural_notes": [
-        "docs/engineering.local.md exists without policy/engineering-lane.json"
-      ]
-    }
-  ],
+  "review_candidates": [],
   "scope_summaries": [
     {
       "packages": 45,
       "repos": 40,
       "scope": "/home/tryinget/ai-society/softwareco/owned",
       "semantic_status_counts": {
-        "needs-review": 2,
-        "ok": 83
+        "ok": 85
       },
       "status_counts": {
-        "adopted": 83,
-        "doc-only": 2
+        "adopted": 85
       },
       "total": 85
     }
@@ -3192,23 +3137,19 @@
     "/home/tryinget/ai-society/softwareco/owned"
   ],
   "semantic_status_counts": {
-    "needs-review": 2,
-    "ok": 83
+    "ok": 85
   },
   "status_counts": {
-    "adopted": 83,
-    "doc-only": 2
+    "adopted": 85
   },
   "summary": {
     "packages": 45,
     "repos": 40,
     "semantic_status_counts": {
-      "needs-review": 2,
-      "ok": 83
+      "ok": 85
     },
     "status_counts": {
-      "adopted": 83,
-      "doc-only": 2
+      "adopted": 85
     },
     "total": 85
   },

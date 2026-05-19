@@ -7,7 +7,7 @@ type: "generated-report"
 
 # Engineering-core adoption coverage
 
-Generated: `2026-05-19T08:46:57.778232+00:00`
+Generated: `2026-05-19T13:09:55.290456+00:00`
 
 ## Summary
 
@@ -18,21 +18,18 @@ Generated: `2026-05-19T08:46:57.778232+00:00`
 - Repos: `40`
 - Packages/member surfaces: `45`
 - Total records: `85`
-- Structural status counts: `{"adopted": 83, "doc-only": 2}`
-- Semantic status counts: `{"needs-review": 2, "ok": 83}`
+- Structural status counts: `{"adopted": 85}`
+- Semantic status counts: `{"ok": 85}`
 
 ## Scope summaries
 
 | Scope | Repos | Packages | Total | Structural counts | Semantic counts |
 |---|---:|---:|---:|---|---|
-| `/home/tryinget/ai-society/softwareco/owned` | 40 | 45 | 85 | `{"adopted": 83, "doc-only": 2}` | `{"needs-review": 2, "ok": 83}` |
+| `/home/tryinget/ai-society/softwareco/owned` | 40 | 45 | 85 | `{"adopted": 85}` | `{"ok": 85}` |
 
 ## Review candidates
 
-| Scope | Path | Name | Kind | Structural | Semantic | Lanes | Disciplines | Policy | Docs | Legacy | Catalog/list | Justfile | Notes |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `owned` | `pi-extensions/packages/pi-interaction` | `pi-extensions:packages/pi-interaction` | package | doc-only | needs-review | - | - | no | yes | no | no | no | docs/engineering.local.md exists without policy/engineering-lane.json; package_policy_has_no_selected_disciplines |
-| `owned` | `pi-extensions-autoresearch-candidate/packages/pi-interaction` | `pi-extensions-autoresearch-candidate:packages/pi-interaction` | package | doc-only | needs-review | - | - | no | yes | no | no | no | docs/engineering.local.md exists without policy/engineering-lane.json; package_policy_has_no_selected_disciplines |
+No structural or semantic review candidates found.
 
 ## Full coverage
 
@@ -100,7 +97,7 @@ Generated: `2026-05-19T08:46:57.778232+00:00`
 | `owned` | `pi-extensions/packages/pi-context-overlay` | `pi-extensions:packages/pi-context-overlay` | package | adopted | ok | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, observability, accessibility, design-system, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
 | `owned` | `pi-extensions/packages/pi-designmd-foundry` | `pi-extensions:packages/pi-designmd-foundry` | package | adopted | ok | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, design-system, accessibility, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
 | `owned` | `pi-extensions/packages/pi-evalset-lab` | `pi-extensions:packages/pi-evalset-lab` | package | adopted | ok | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| `owned` | `pi-extensions/packages/pi-interaction` | `pi-extensions:packages/pi-interaction` | package | doc-only | needs-review | - | - | no | yes | no | no | no | docs/engineering.local.md exists without policy/engineering-lane.json; package_policy_has_no_selected_disciplines |
+| `owned` | `pi-extensions/packages/pi-interaction` | `pi-extensions:packages/pi-interaction` | package | adopted | ok | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
 | `owned` | `pi-extensions/packages/pi-little-helpers` | `pi-extensions:packages/pi-little-helpers` | package | adopted | ok | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
 | `owned` | `pi-extensions/packages/pi-model-selection` | `pi-extensions:packages/pi-model-selection` | package | adopted | ok | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
 | `owned` | `pi-extensions/packages/pi-ontology-workflows` | `pi-extensions:packages/pi-ontology-workflows` | package | adopted | ok | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning, observability | yes | yes | no | yes | no | - |
@@ -114,7 +111,7 @@ Generated: `2026-05-19T08:46:57.778232+00:00`
 | `owned` | `pi-extensions/packages/pi-workstation-inference-provider` | `pi-extensions:packages/pi-workstation-inference-provider` | package | adopted | ok | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
 | `owned` | `pi-extensions-autoresearch-candidate/packages/pi-autoresearch` | `pi-extensions-autoresearch-candidate:packages/pi-autoresearch` | package | adopted | ok | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
 | `owned` | `pi-extensions-autoresearch-candidate/packages/pi-context-overlay` | `pi-extensions-autoresearch-candidate:packages/pi-context-overlay` | package | adopted | ok | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| `owned` | `pi-extensions-autoresearch-candidate/packages/pi-interaction` | `pi-extensions-autoresearch-candidate:packages/pi-interaction` | package | doc-only | needs-review | - | - | no | yes | no | no | no | docs/engineering.local.md exists without policy/engineering-lane.json; package_policy_has_no_selected_disciplines |
+| `owned` | `pi-extensions-autoresearch-candidate/packages/pi-interaction` | `pi-extensions-autoresearch-candidate:packages/pi-interaction` | package | adopted | ok | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
 | `owned` | `pi-extensions-autoresearch-candidate/packages/pi-little-helpers` | `pi-extensions-autoresearch-candidate:packages/pi-little-helpers` | package | adopted | ok | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
 | `owned` | `pi-extensions-autoresearch-candidate/packages/pi-ontology-workflows` | `pi-extensions-autoresearch-candidate:packages/pi-ontology-workflows` | package | adopted | ok | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
 | `owned` | `pi-extensions-autoresearch-candidate/packages/pi-society-orchestrator` | `pi-extensions-autoresearch-candidate:packages/pi-society-orchestrator` | package | adopted | ok | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
