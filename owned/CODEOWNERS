@@ -1,5 +1,6 @@
 # Location: owned
-# Language: python# Core + org context snapshots
+# Language: python
+
 docs/_core/** @core-owner
 docs/org_context/** @org-owners
 
@@ -9,8 +10,15 @@ docs/system4d/** @softwareco-owners
 docs/decisions/** @softwareco-owners
 docs/dev/** @softwareco-owners
 policy/** @softwareco-owners
+governance/** @softwareco-owners
+ontology/** @softwareco-owners
 
 # Code
 scripts/** @softwareco-owners
 src/** @softwareco-owners
 tests/** @softwareco-owners
+
+# Root control-plane files
+AGENTS.md @softwareco-owners
+README.md @softwareco-owners
+next_session_prompt.md @softwareco-owners

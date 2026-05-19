@@ -1,3 +1,10 @@
+---
+summary: "How to capture and propagate project learnings."
+read_when:
+  - "When recording a new learning for this repo"
+  - "When deciding whether a diary note should crystallize into docs/learnings"
+---
+
 # Learnings
 
 Capture what works, what doesn't, and what to try next.

@@ -13,3 +13,11 @@ if [ -x "./scripts/rocs.sh" ] && [ -f "./ontology/manifest.yaml" ]; then
   ./scripts/rocs.sh build --repo . --resolve-refs --clean
   ./scripts/rocs.sh validate --repo . --resolve-refs
 fi
+
+if [ -x "./scripts/test-pi-mono-compatibility-relay.sh" ]; then
+  ./scripts/test-pi-mono-compatibility-relay.sh
+fi
+
+if [ -x "./scripts/test-pi-mono-compatibility-evidence-index.sh" ]; then
+  ./scripts/test-pi-mono-compatibility-evidence-index.sh
+fi

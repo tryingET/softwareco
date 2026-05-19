@@ -1,5 +1,19 @@
-# Track lane baseline only.
-# Ignore child repositories and ad-hoc lane entries by default.
+# Local artifacts
+.tmp/
+tmp/
+.candidate-worktrees/
+*.tmp
+*.log
+
+# Python generated artifacts
+__pycache__/
+*.pyc
+
+# Migration snapshots
+.migration-backup/
+
+# Child repositories in this lane root
+# Keep the infra lane baseline tracked while ignoring nested child repos by default.
 *
 !.gitignore
 !.copier-answers.yml
@@ -25,3 +39,7 @@
 !tests/**
 !tools/
 !tools/**
+
+# Promote the tracker migration repo into lane visibility so it can be packaged and committed.
+!issue-tracker/
+!issue-tracker/**

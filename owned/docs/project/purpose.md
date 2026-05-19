@@ -6,5 +6,4 @@ read_when:
 
 # Purpose
 
-TBD.
-
+Provide the lane-root control plane for `softwareco/owned/`: shared navigation, governance, ontology, and deterministic tooling that help operators find the right child repo and act safely without duplicating child-repo authority.

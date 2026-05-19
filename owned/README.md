@@ -1,86 +1,79 @@
-# owned
+---
+summary: "Lane-root overview and operator entrypoint for softwareco/owned."
+read_when:
+  - "Starting work at the softwareco/owned lane root"
+  - "Deciding whether a change belongs in the lane root or a child repo"
+---
 
-Software Company project repository.
+# softwareco/owned lane root
 
-## Context
-
-- **Location**: owned
-- **Language**: python
+Brownfield lane-root repository for Software Company's directly operated delivery repos under `softwareco/owned/`.
 
 ## Purpose
 
-Project repository with:
-- Project documentation (`docs/project/`)
-- Organization context (`docs/org_context/`)
-- Decision records (`docs/decisions/`)
-- Learnings capture (`docs/learnings/`)
-- Ontology support (`ontology/`)
-- ROCS tooling (`tools/rocs-cli/`)
-- CI baseline (`scripts/ci/`)
+This repo is the control plane above the child repos nested inside it. It exists to:
 
-## Usage
+- provide shared navigation and operating context for the owned lane
+- hold lane-root-local governance, ontology, and deterministic helper scripts
+- give operators a trustworthy starting point before they drop into a child repo
+- route fresh-context operators into the correct child repo via `docs/project/repo-capability-map.md`
+- converge control-plane template improvements without erasing meaningful lane-local state
 
-From an L1 templates repository:
+## Scope boundary
 
-```bash
-./scripts/new-repo-from-copier.sh tpl-project-repo /path/to/<project> \
-  -d repo_slug=<project> \
-  -d project_owner_handle=@<owner> \
-  --defaults --overwrite
-```
+### What belongs here
 
-## Structure
+- lane-root documentation and operating rules
+- shared scripts such as `./scripts/preflight-repo-census.sh` and `./scripts/rocs.sh`
+- lane-root-local planning and its checked-in projection in `governance/work-items.json`
+- session handoff and diary capture for this repo itself
 
-```
-<project>/
-├── AGENTS.md              # Project-specific instructions
-├── next_session_prompt.md # Active handoff for the next session
-├── docs/
-│   ├── _core/             # Vendored governance (immutable)
-│   ├── org_context/       # Organization context summary
-│   ├── project/           # Project definition
-│   │   ├── vision.md
-│   │   ├── mission.md
-│   │   ├── purpose.md
-│   │   ├── model.md
-│   │   ├── strategic_goals.md
-│   │   └── tactical_goals.md
-│   ├── decisions/         # ADR-style decision records
-│   ├── learnings/         # Captured learnings (TIP candidates)
-│   └── system4d/          # System 4D context
-├── diary/                 # Repo-local session capture (KES raw input)
-├── ontology/              # ROCS ontology
-│   └── src/system4d.yaml
-├── tools/rocs-cli/        # ROCS validation tooling
-├── src/                   # Source code
-├── tests/                 # Test suite
-└── scripts/ci/            # CI scripts
-```
+### What does not belong here
 
-## Customization
+- implementation work that belongs to a child repo
+- duplicated task state for child repos
+- ad-hoc TODO tracking outside the authoritative AK/work-items flow
+- template re-renders that overwrite lane-root semantics without review
 
-- `repo_slug`: Project identifier
-- `project_owner_handle`: CODEOWNERS entry for project paths
-- `org_owner_handle`: CODEOWNERS entry for org paths
-- `kernel_ontology_ref`: ROCS core ontology reference
-- `company_ontology_ref`: ROCS company ontology reference
-- `enable_community_pack`, `enable_release_pack`, `enable_vouch_gate`:
-  inherited compatibility flags from the parent L1 profile; currently metadata-only in `tpl-project-repo` (no extra file overlays)
+## Operator workflow
 
-## ROCS command flow
+1. Read `next_session_prompt.md`
+2. Review `governance/work-items.json` and, when needed, reconcile it with AK using `ak work-items check --repo . --path governance/work-items.json`
+3. Run `./scripts/preflight-repo-census.sh .`
+4. Pick one lane-root-local slice
+5. Validate with `./scripts/ci/smoke.sh`, `./scripts/ci/fast.sh`, and, when appropriate, `./scripts/ci/full.sh`
 
-Use the repository wrapper for deterministic execution:
+## Key files
+
+- `AGENTS.md` — lane/root operating contract inherited by descendant repos
+- `docs/project/` — purpose, mission, vision, goals
+- `docs/project/repo-capability-map.md` — routing substrate for selecting the correct owned repo from arbitrary working directories
+- `docs/project/ghostty-ak-task-launcher.md` — how to open one Ghostty + Pi instance per AK task with a pre-submitted task prompt
+- `docs/decisions/` — durable decisions about how this lane root should operate
+- `docs/system4d/` — boundary, outcomes, invariants, and risks
+- `governance/README.md` — AK-first work-items projection rules for this repo
+- `governance/work-items.json` — checked-in lane-root projection/mirror
+- `diary/` — raw session capture
+
+## Useful operator helpers
 
 ```bash
-./scripts/rocs.sh --doctor
-./scripts/rocs.sh build --repo . --resolve-refs --clean
-./scripts/rocs.sh validate --repo . --resolve-refs
+./scripts/preflight-repo-census.sh .
+ak work-items check --repo . --path governance/work-items.json
+./scripts/check-task-scope-snapshots.sh
+./scripts/launch-pi-ak-task-ghostty.sh --justfile-rollout-pilots
+./scripts/launch-pi-ak-task-ghostty.sh --focus-last 609 610 611
+./scripts/launch-pi-ak-task-ghostty.sh --interactive 610
+./scripts/launch-pi-ak-task-ghostty.sh --print --hold-open 609
 ```
 
-This wrapper prefers vendored `tools/rocs-cli` and falls back to workspace/global runners.
+## Validation
 
-## Knowledge Evolution
+```bash
+./scripts/ci/smoke.sh
+./scripts/ci/fast.sh
+./scripts/ci/full.sh
+./scripts/preflight-repo-census.sh .
+```
 
-Projects capture raw sessions in `diary/` and crystallize durable patterns in `docs/learnings/`. Learnings that apply beyond this project should be proposed as TIPs to the parent L1 templates.
-
-See parent L1 `tips/` directory for TIP templates and process.
+Use repo-local deterministic wrappers when possible and keep work in this repo limited to lane-root concerns.

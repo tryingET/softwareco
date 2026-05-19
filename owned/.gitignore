@@ -7,6 +7,9 @@
 !CODEOWNERS
 !README.md
 !next_session_prompt.md
+!.pi/
+!.pi/prompts/
+!.pi/prompts/**
 !diary/
 !diary/**
 !docs/
@@ -15,8 +18,12 @@
 !governance/**
 !ontology/
 !ontology/**
+ontology/dist/.authority-receipt.lock
+ontology/dist/authority-receipt*.json
 !policy/
 !policy/**
+!contracts/
+!contracts/**
 !scripts/
 !scripts/**
 !src/

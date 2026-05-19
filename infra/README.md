@@ -15,8 +15,12 @@ Project repository with:
 - Decision records (`docs/decisions/`)
 - Learnings capture (`docs/learnings/`)
 - Ontology support (`ontology/`)
-- ROCS tooling (`tools/rocs-cli/`)
+- ROCS wrapper (`scripts/rocs.sh`)
 - CI baseline (`scripts/ci/`)
+
+## Routing substrate
+
+- `docs/project/repo-capability-map.md` — routing substrate for selecting the correct infra repo from arbitrary working directories
 
 ## Usage
 
@@ -51,7 +55,6 @@ From an L1 templates repository:
 ├── diary/                 # Repo-local session capture (KES raw input)
 ├── ontology/              # ROCS ontology
 │   └── src/system4d.yaml
-├── tools/rocs-cli/        # ROCS validation tooling
 ├── src/                   # Source code
 ├── tests/                 # Test suite
 └── scripts/ci/            # CI scripts
@@ -77,7 +80,7 @@ Use the repository wrapper for deterministic execution:
 ./scripts/rocs.sh validate --repo . --resolve-refs
 ```
 
-This wrapper prefers vendored `tools/rocs-cli` and falls back to workspace/global runners.
+It resolves ROCS via the workspace core checkout (or `ROCS_BIN` / `rocs` on `PATH`).
 
 ## Knowledge Evolution
 

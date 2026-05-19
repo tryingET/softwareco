@@ -6,6 +6,8 @@ read_when:
 
 # Tactical Goals
 
-- Goal:
-- Definition of done:
+- Goal: Keep lane-root docs truthful now that the first child repo exists.
+  - Definition of done: `README.md`, `next_session_prompt.md`, and `governance/work-items.json` point operators into `pi-mono/` for active repo-local execution.
 
+- Goal: Preserve the lane-root as policy + inventory, not a shadow execution repo.
+  - Definition of done: new work for forked products lands in child repos, while lane-root changes stay limited to shared lane guidance and inventory updates.

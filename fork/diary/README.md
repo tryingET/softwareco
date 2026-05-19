@@ -1,34 +1,15 @@
+---
+summary: "How to capture raw session notes for the fork lane root."
+read_when:
+  - "When adding a lane-root diary entry"
+  - "When deciding whether raw context belongs in the lane root or a child repo"
+---
+
 # Diary
 
-Repo-local session capture for KES (Knowledge Evolution System).
+Use `diary/` for raw lane-root session notes.
 
 ## Rule
 
-Use `./diary/` as the canonical raw log for this repository.
-
-- Entry file: `YYYY-MM-DD--type-scope-summary.md`
-- Multiple sessions/day: `YYYY-MM-DD--type-scope-summary--2.md`
-- Crystallize to: `docs/learnings/` and TIP proposals when patterns generalize
-
-Filename convention:
-- Start from a commit-style header: `type(scope): summary`
-- Slug it into filename-safe form: `type-scope-summary`
-
-## Entry template
-
-```markdown
-# YYYY-MM-DD — [Session Focus]
-
-## What I Did
-- [Actions]
-
-## What Surprised Me
-- [Unexpected outcomes]
-
-## Patterns
-- [Repeated structures]
-
-## Crystallization Candidates
-- → docs/learnings/
-- → TIP proposal
-```
+If the work is specific to a child repo, prefer that child repo's own `diary/`.
+Use the lane-root diary only for shared lane policy, inventory, or routing changes.

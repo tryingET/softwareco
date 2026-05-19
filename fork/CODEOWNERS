@@ -1,14 +1,20 @@
-# Location: owned
-# Language: python# Core + org context snapshots
+# Location: fork
+# Language: python
+
+# Core + org context snapshots
 docs/_core/** @core-owner
 docs/org_context/** @org-owners
 
-# Project delivery + governance
+# Lane-root policy + inventory
 docs/project/** @softwareco-owners
 docs/system4d/** @softwareco-owners
 docs/decisions/** @softwareco-owners
 docs/dev/** @softwareco-owners
+diary/** @softwareco-owners
+governance/** @softwareco-owners
 policy/** @softwareco-owners
+README.md @softwareco-owners
+next_session_prompt.md @softwareco-owners
 
 # Code
 scripts/** @softwareco-owners

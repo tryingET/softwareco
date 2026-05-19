@@ -1,33 +1,11 @@
+---
+summary: "How to capture durable lane-root learnings."
+read_when:
+  - "When promoting a repeated fork-lane lesson into durable guidance"
+  - "When checking whether a lane-root pattern is already documented"
+---
+
 # Learnings
 
-Capture what works, what doesn't, and what to try next.
-
-## Structure
-
-- `YYYY-MM-DD-topic.md` — dated learning entries
-- Link to TIPs if learning should propagate
-
-## Template
-
-```markdown
-# [Topic]
-
-## Context
-What situation triggered this learning?
-
-## Discovery
-What did we learn?
-
-## Evidence
-How do we know it's true?
-
-## Application
-Where else does this apply?
-
-## TIP Candidate
-Should this become a TIP? Why/why not?
-```
-
-## Propagation
-
-Learnings that apply beyond this project should be proposed as TIPs to the parent L1 templates.
+Capture durable lessons that apply to the fork lane as a whole.
+If the lesson is specific to one child repo, document it there first.

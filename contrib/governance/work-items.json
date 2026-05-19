@@ -1,13 +1,26 @@
 {
   "schema_version": 1,
-  "updated_at": "",
+  "updated_at": "2026-04-01",
   "owner": "@project-owners",
   "project_name": "contrib",
   "milestones": [
     {
       "id": "M1",
-      "title": "Initial Setup",
-      "issues": []
+      "title": "DB Task Projection",
+      "issues": [
+        {
+          "id": "AK-TASK-0295",
+          "title": "Remove repo-local rocs_cli GitLab baseline-resolution compatibility path",
+          "state": "doing",
+          "tasks": [
+            {
+              "text": "Remove repo-local rocs_cli GitLab baseline-resolution compatibility path (task #295)",
+              "done": false
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded."
+        }
+      ]
     }
   ]
 }

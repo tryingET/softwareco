@@ -1,13 +1,105 @@
 {
   "schema_version": 1,
-  "updated_at": "",
+  "updated_at": "2026-04-05",
   "owner": "@project-owners",
   "project_name": "owned",
   "milestones": [
     {
       "id": "M1",
-      "title": "Initial Setup",
-      "issues": []
+      "title": "DB Task Projection",
+      "issues": [
+        {
+          "id": "AK-TASK-0309",
+          "title": "Remove repo-local rocs_cli GitLab baseline-resolution compatibility path",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Remove repo-local rocs_cli GitLab baseline-resolution compatibility path (task #309)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-01"
+        },
+        {
+          "id": "AK-TASK-0827",
+          "title": "Fix doctor command output formatting",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Fix doctor command output formatting (task #827)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-05"
+        },
+        {
+          "id": "AK-TASK-0828",
+          "title": "Add HTML body extraction fallback for LLM classification",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Add HTML body extraction fallback for LLM classification (task #828)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-05"
+        },
+        {
+          "id": "AK-TASK-0829",
+          "title": "Add token refresh retry for Office365 provider",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Add token refresh retry for Office365 provider (task #829)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-05"
+        },
+        {
+          "id": "AK-TASK-0830",
+          "title": "Add retry/backoff for LLM classification failures",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Add retry/backoff for LLM classification failures (task #830)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-05"
+        },
+        {
+          "id": "AK-TASK-0831",
+          "title": "Add keyboard shortcuts to review UI",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Add keyboard shortcuts to review UI (task #831)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-05"
+        },
+        {
+          "id": "AK-TASK-0832",
+          "title": "Add search/filter to review UI",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Add search/filter to review UI (task #832)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-05"
+        }
+      ]
     }
   ]
 }

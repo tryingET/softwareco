@@ -27,15 +27,17 @@ Do not ask for permission to start.
 - Raw session capture: `diary/`
 
 ## ACTIVE HANDOFF
-- `fork/` lane baseline was materialized from `tpl-project-repo` and lane-root git is now initialized.
-- Immediate intended use: host local forks for DSPY-related work that will no longer be pursued through `badlogic/pi-mono` upstream requests.
-- Next bounded slice: create the first actual repo under `softwareco/fork/` and document why the fork exists.
+- `fork/` lane baseline remains the control-plane shell for the softwareco fork lane.
+- The first actual child repo now exists: `softwareco/fork/pi-mono`.
+- Lane-root work is now mostly policy/inventory; repo-local execution should happen inside child repos.
+- Next bounded slice for the DSPY line lives in `pi-mono/`: decide upstream import/sync posture and pick the first executable local slice.
+- Latest diary entry: `diary/2026-03-13--feat-first-fork-repo-bootstrap.md`
 
 ## SESSION PREFLIGHT (FILL BEFORE EXECUTION)
-- Objective (one sentence): initialize first actual fork repo under this lane
-- Constraints (hard limits): keep fork rationale explicit in docs/decisions; do not route normal first-party work into this lane by default
-- Assumptions (max 3): fork lane remains for long-lived divergence, not casual mirrors; parent `softwareco/` repo owns company-wide lane policy; first fork likely comes from DSPY/pi-mono needs
-- Blockers (none or list): first actual fork repo not created yet
+- Objective (one sentence): keep lane-root policy truthful and route real work into child repos.
+- Constraints (hard limits): keep fork rationale explicit; do not re-centralize child-repo execution back into the lane root.
+- Assumptions (max 3): fork lane remains for long-lived divergence; `pi-mono/` is the active child repo for the current DSPY line; future fork repos should follow the same rationale-first pattern.
+- Blockers (none or list): none at lane-root level.
 
 ## READ-FIRST ALLOWLIST (STARTUP BUDGET)
 1. `AGENTS.md`
@@ -54,12 +56,12 @@ Do not ask for permission to start.
 4. Update source-of-truth artifacts before commit.
 
 ## SESSION CHECKPOINT (UPDATE BEFORE /commit)
-- Slice executed:
-- Outcome:
-- Files changed:
-- Validation commands + results:
-- Deferred tasks updated in `governance/work-items.json`:
-- Next-session starting point:
+- Slice executed: create the first concrete repo under `softwareco/fork/`
+- Outcome: `pi-mono/` now exists as the first child repo; lane-root handoff now points execution into that child repo
+- Files changed: lane-root README/mission/goals/work-items/diary/handoff
+- Validation commands + results: `./scripts/ci/smoke.sh` (pass); `node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs docs --strict` (pass)
+- Deferred tasks updated in `governance/work-items.json`: yes
+- Next-session starting point: repo-local work should start in `pi-mono/`
 
 ## END-OF-SESSION
 Run `/commit` and ensure this file reflects the real checkpoint for the next operator/agent.

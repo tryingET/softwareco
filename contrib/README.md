@@ -15,7 +15,7 @@ Project repository with:
 - Decision records (`docs/decisions/`)
 - Learnings capture (`docs/learnings/`)
 - Ontology support (`ontology/`)
-- ROCS tooling (`tools/rocs-cli/`)
+- ROCS tooling (via `scripts/rocs.sh`)
 - CI baseline (`scripts/ci/`)
 
 ## Usage
@@ -51,7 +51,7 @@ From an L1 templates repository:
 ├── diary/                 # Repo-local session capture (KES raw input)
 ├── ontology/              # ROCS ontology
 │   └── src/system4d.yaml
-├── tools/rocs-cli/        # ROCS validation tooling
+
 ├── src/                   # Source code
 ├── tests/                 # Test suite
 └── scripts/ci/            # CI scripts
@@ -77,7 +77,27 @@ Use the repository wrapper for deterministic execution:
 ./scripts/rocs.sh validate --repo . --resolve-refs
 ```
 
-This wrapper prefers vendored `tools/rocs-cli` and falls back to workspace/global runners.
+This wrapper resolves ROCS from the workspace core (`~/ai-society/core/rocs-cli`) and falls back to `rocs` on PATH.
+
+## Upstream Pi compatibility relay
+
+This repo now bridges upstream `pi-mono` movement to downstream extension validation.
+
+Key paths:
+
+- `scripts/pull-all-local-contrib-repos.sh`
+- `scripts/pi-mono-compatibility-relay.sh`
+- `scripts/pi-mono-compatibility-evidence-index.mjs`
+- `docs/project/pi-mono-compatibility-relay.md`
+- `docs/project/pi-mono-compatibility-evidence-index.md`
+
+Behavior summary:
+
+- scheduled contrib pulls still own upstream checkout freshness
+- relevant `pi-mono` changes under `packages/coding-agent` or `packages/tui` trigger the downstream `pi-extensions` compatibility canary
+- relay receipts are written under `.logs/pi-mono-compatibility-relay/`
+- relay state is persisted under `.state/pi-mono-compatibility-relay/`
+- a queryable evidence index is rebuilt at `.state/pi-mono-compatibility-relay/evidence-index.json`
 
 ## Knowledge Evolution
 
