@@ -30,6 +30,18 @@ run_task_scope_snapshots() {
   fi
 }
 
+run_document_policy() {
+  [ -f "./scripts/check-document-policy.sh" ] || {
+    echo "error: missing required document policy checker" >&2
+    return 1
+  }
+  [ -x "./scripts/check-document-policy.sh" ] || {
+    echo "error: document policy checker is not executable" >&2
+    return 1
+  }
+  ./scripts/check-document-policy.sh
+}
+
 run_rocs() {
   if [ -x "./scripts/rocs.sh" ] && [ -f "./ontology/manifest.yaml" ]; then
     ./scripts/rocs.sh version
@@ -54,6 +66,14 @@ else
   task_scopes_status=$?
 fi
 
+say "==> document policy"
+document_policy_status=0
+if run_document_policy >"$log_dir/document-policy.log" 2>&1; then
+  document_policy_status=0
+else
+  document_policy_status=$?
+fi
+
 say "==> rocs"
 rocs_status=0
 if run_rocs >"$log_dir/rocs.log" 2>&1; then
@@ -66,13 +86,16 @@ say "--- work-items output ---"
 cat "$log_dir/work-items.log"
 say "--- task-scope output ---"
 cat "$log_dir/task-scopes.log"
+say "--- document-policy output ---"
+cat "$log_dir/document-policy.log"
 say "--- rocs output ---"
 cat "$log_dir/rocs.log"
 
-if [ "$work_items_status" -ne 0 ] || [ "$task_scopes_status" -ne 0 ] || [ "$rocs_status" -ne 0 ]; then
+if [ "$work_items_status" -ne 0 ] || [ "$task_scopes_status" -ne 0 ] || [ "$document_policy_status" -ne 0 ] || [ "$rocs_status" -ne 0 ]; then
   err "error: full.sh failed"
   [ "$work_items_status" -eq 0 ] || err "- work-items exit=$work_items_status"
   [ "$task_scopes_status" -eq 0 ] || err "- task-scope snapshots exit=$task_scopes_status"
+  [ "$document_policy_status" -eq 0 ] || err "- document policy exit=$document_policy_status"
   [ "$rocs_status" -eq 0 ] || err "- rocs exit=$rocs_status"
   exit 1
 fi

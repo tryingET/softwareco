@@ -8,7 +8,8 @@ read_when:
 
 This project captures:
 - Purpose / mission / vision
-- Strategic + tactical goals
+- Durable vision plus the stable living posture at `docs/project/product_posture.md`
+- Dated documents only for time-bounded transition, migration, status, or seam-specific current-vs-target snapshots
 - Constraints + resources
 - System4D (Container/Compass/Engine/Fog)
 

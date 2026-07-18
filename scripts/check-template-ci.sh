@@ -87,6 +87,87 @@ assert_command_succeeds() {
   fail "$label"
 }
 
+check_document_policy_regressions() {
+  policy_source="$repo_root/copier/tpl-project-repo/scripts/check-document-policy.sh"
+  tmp_dir="$(mktemp -d)"
+
+  if (
+    set -eu
+    cd "$tmp_dir" || exit 1
+    git init -q || exit 1
+    git config user.name template-check || exit 1
+    git config user.email template-check@example.invalid || exit 1
+    mkdir -p docs/project scripts || exit 1
+    cp "$policy_source" scripts/check-document-policy.sh || exit 1
+    chmod +x scripts/check-document-policy.sh || exit 1
+    printf '# Evidence\n' > README.md || exit 1
+    git add README.md scripts/check-document-policy.sh || exit 1
+    git commit -qm baseline || exit 1
+    baseline="$(git rev-parse HEAD)" || exit 1
+    today="$(date -u +%F)" || exit 1
+
+    cat > docs/project/product_posture.md <<EOF
+---
+summary: "test posture"
+read_when:
+  - "testing document policy"
+type: "reference"
+as_of: "$today"
+last_validated: "$today"
+last_validated_commit: "$baseline"
+evidence_paths:
+  - "README.md"
+---
+EOF
+    git add docs/project/product_posture.md || exit 1
+    git commit -qm valid-posture || exit 1
+    PRODUCT_POSTURE_TEST_MODE=1 PRODUCT_POSTURE_TODAY="$today" ./scripts/check-document-policy.sh >/dev/null || exit 1
+
+    git reset -q --hard "$baseline" || exit 1
+    mkdir -p docs/project || exit 1
+    cat > docs/project/product_posture.md <<EOF
+---
+summary: "pathspec injection"
+read_when:
+  - "testing document policy"
+type: "reference"
+as_of: "$today"
+last_validated: "$today"
+last_validated_commit: "$baseline"
+evidence_paths:
+  - ":(exclude,glob)docs/**"
+---
+EOF
+    git add docs/project/product_posture.md || exit 1
+    git commit -qm pathspec-injection || exit 1
+    if PRODUCT_POSTURE_TEST_MODE=1 PRODUCT_POSTURE_TODAY="$today" ./scripts/check-document-policy.sh >/dev/null 2>&1; then
+      exit 1
+    fi
+
+    git reset -q --hard "$baseline" || exit 1
+    mkdir -p docs/project || exit 1
+    cat > docs/project/product_posture.md <<EOF
+# Missing frontmatter delimiters
+as_of: "$today"
+last_validated: "$today"
+last_validated_commit: "$baseline"
+evidence_paths:
+  - "README.md"
+EOF
+    git add docs/project/product_posture.md || exit 1
+    git commit -qm malformed-frontmatter || exit 1
+    if PRODUCT_POSTURE_TEST_MODE=1 PRODUCT_POSTURE_TODAY="$today" ./scripts/check-document-policy.sh >/dev/null 2>&1; then
+      exit 1
+    fi
+  ); then
+    rm -rf "$tmp_dir"
+    return 0
+  fi
+
+  rm -rf "$tmp_dir"
+  fail "document-policy regression: valid posture must pass while pathspec injection and body-only metadata fail closed"
+}
+
 suffix_policy_lib="$repo_root/scripts/lib/suffix-policy.sh"
 [ -f "$suffix_policy_lib" ] || fail "missing file: $suffix_policy_lib"
 # shellcheck source=/dev/null
@@ -201,6 +282,9 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package
     assert_not_file "copier/$tpl/ontology/manifest.yaml"
     assert_not_dir "copier/$tpl/ontology/dist"
     assert_file "copier/$tpl/scripts/check-task-scope-snapshots.sh"
+    assert_file "copier/$tpl/scripts/check-document-policy.sh"
+    assert_exec "copier/$tpl/scripts/check-document-policy.sh"
+    assert_contains "copier/$tpl/scripts/ci/full.sh" "check-document-policy.sh" "tpl-project-repo full CI should enforce document freshness policy"
     assert_file "copier/$tpl/scripts/preflight-repo-census.sh.j2"
     assert_file "copier/$tpl/scripts/lib/check-task-scope-snapshots.py"
     assert_file "copier/$tpl/scripts/lib/copier-answers.sh"
@@ -243,7 +327,17 @@ done
 if [ -f "next_session_prompt.md" ]; then
   assert_command_succeeds "softwareco docs-list wrapper should parse repo next-session prompt" ./scripts/docs-list.sh --from-prompt next_session_prompt.md --paths-only --wikilink
 fi
+assert_file "copier/tpl-project-repo/docs/project/product_posture.md"
+assert_contains "copier/tpl-project-repo/docs/project/product_posture.md" "last_validated_commit:" "tpl-project-repo posture should declare a commit evidence baseline"
+assert_contains "copier/tpl-project-repo/docs/project/product_posture.md" "evidence_paths:" "tpl-project-repo posture should declare evidence paths"
+assert_contains "copier/tpl-project-repo/docs/project/product_posture.md" "YYYY-MM-DD--current-vs-target--<scope>.md" "tpl-project-repo posture should document dated snapshot naming"
+assert_contains "copier/tpl-project-repo/next_session_prompt.md" "Do not store an active handoff window" "tpl-project-repo next-session prompt should remain procedural rather than carry status"
+assert_not_file "copier/tpl-project-repo/docs/project/strategic_goals.md"
+assert_not_file "copier/tpl-project-repo/docs/project/tactical_goals.md"
+assert_not_file "copier/tpl-project-repo/docs/project/operating_plan.md"
+assert_not_file "copier/tpl-project-repo/docs/project/operational_plan.md"
 assert_command_succeeds "softwareco docs-list wrapper should parse tpl-project-repo next-session prompt" ./scripts/docs-list.sh --from-prompt copier/tpl-project-repo/next_session_prompt.md --paths-only --wikilink
+check_document_policy_regressions
 assert_not_contains "copier/tpl-project-repo/scripts/ci/full.sh" "./scripts/ak.sh" "tpl-project-repo CI should use plain installed ak via AK_CMD"
 assert_not_contains "copier/tpl-project-repo/scripts/ci/full.sh" "uvx -n --from ./tools/rocs-cli rocs" "tpl-project-repo CI should not hardcode uvx vendored invocation"
 
@@ -254,6 +348,7 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
   assert_not_contains "copier/$tpl/AGENTS.md.j2" 'No direct pushes to `main`' "L2 template $tpl AGENTS should not retain stale branch-only policy"
 done
 
+
 check_multi_pass_suffix_policy
 
 required_exec="
@@ -262,6 +357,7 @@ scripts/bootstrap-lane-root.sh
 scripts/docs-list.sh
 scripts/rocs.sh
 scripts/check-template-ci.sh
+copier/tpl-project-repo/scripts/check-document-policy.sh
 scripts/install-hooks.sh
 scripts/ci/smoke.sh
 scripts/ci/full.sh

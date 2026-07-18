@@ -1,200 +1,134 @@
 ---
-summary: "Canonical file contract for tpl-project-repo across L0 -> L1 -> L2, including deep-review findings and simplification decisions."
+summary: "Softwareco L1 contract for the embedded tpl-project-repo output, freshness policy, and validation surface."
 read_when:
-  - "When changing tpl-project-repo structure"
-  - "When asking 'what goes where' during L0 -> L1 -> L2 generation"
-  - "When deciding whether project template files are too much or too little"
-system4d:
-  container:
-    boundary: "tpl-project-repo file surface and generation path only."
-    edges:
-      - "[[README.md]]"
-      - "[[scripts/new-l1-from-copier.sh]]"
-      - "[[scripts/preview-l1-diff.sh]]"
-      - "[[copier/tpl-project-repo/copier.yml]]"
-      - "[[copier/tpl-project-repo/README.md.j2]]"
-  compass:
-    driver: "Make project-template structure legible, minimal, and auditable."
-    outcome: "One authoritative map replaces scattered or stale explanations."
-  engine:
-    invariants:
-      - "L0 authoring path is canonical; L1/L2 are rendered artifacts."
-      - "Every shipped file must have a reason; generated artifacts must stay out of git."
-      - "Schema docs must match schema files and seed data."
-  fog:
-    risks:
-      - "Documentation drift between README/AGENTS/template files"
-      - "Template bloat from accidental generated artifacts"
-      - "Validation theater (schemas that look real but do not constrain output)"
+  - "When changing the Softwareco tpl-project-repo structure or generated L2 output."
+  - "When deciding whether a project document is living authority, a dated snapshot, or runtime-owned state."
+type: "reference"
 ---
 
-# tpl-project-repo File Contract (L0 -> L1 -> L2)
+# `tpl-project-repo` file contract
 
-This is the **single authoritative document** for what `tpl-project-repo` contains, why it contains it, and where each piece lives across layers.
+This document describes the **current Softwareco L1 projection** of `tpl-project-repo`. The L0 authoring architecture remains owned by `core/tpl-template-repo`; changes made here must either remain an explicit L1 specialization or be promoted through that owner rather than being presented as L0 truth.
 
-If another doc disagrees with this one, treat this doc as the source to reconcile from.
+## Render boundary
 
-## 0) Executive answer (what goes where)
-
-| Layer | What lives here | Canonical path |
+| Layer | Role | Path |
 |---|---|---|
-| **L0** | Authoring source of the project template | `core/tpl-template-repo/copier-template/copier/tpl-project-repo/` |
-| **L1** | Company root repository embedding the project template | `<company>/copier/tpl-project-repo/` |
-| **L2** | Instantiated project repository | `<company>/<repo>/` |
+| L0 | canonical template architecture and propagation owner | `core/tpl-template-repo/` |
+| L1 | Softwareco company template and embedded L2 baselines | `softwareco/copier/tpl-project-repo/` |
+| L2 | rendered standalone project repository | selected Softwareco lane/repository path |
 
-Render chain:
-1. L0 -> L1 via `[[scripts/new-l1-from-copier.sh]]` + `[[copier.yml]]`
-2. L1 -> L2 via `[[scripts/new-repo-from-copier.sh]]` + `[[copier/tpl-project-repo/copier.yml]]`
+The allowed render edges are `L0 -> L1` and `L1 -> L2`. A package generated inside an L2 monorepo is an internal member, not an additional repository layer.
 
----
+## Output domains
 
-## 1) tpl-project-repo output inventory (default, software pack off)
+### Repository control plane
 
-Default L2 output is intentionally split into 6 domains:
+- `.copier-answers.yml` — render provenance; committed.
+- `AGENTS.md` — repository-specific operating rules.
+- `CODEOWNERS` — review routing, not proof of a live appointment.
+- `README.md` — human entrypoint.
+- `next_session_prompt.md` — stable startup procedure, not a mutable status handoff.
 
-### A. Repo control plane (must exist)
-- `.copier-answers.yml` (render provenance)
-- `AGENTS.md` (repo operating contract)
-- `CODEOWNERS` (review authority boundaries)
-- `README.md` (entrypoint)
+### Product and organizational documentation
 
-### B. Delivery documentation (minimal but complete)
-- `docs/_core/` (core snapshot placeholder)
-- `docs/org_context/` (org constraints snapshot)
-- `docs/project/` (purpose/mission/vision/model/goals)
-- `docs/system4d/` (container/compass/engine/fog)
-- `next_session_prompt.md` (single active handoff prompt; replaces status/next-steps split)
-- `docs/decisions/`, `docs/learnings/`
+- `docs/project/purpose.md`, `mission.md`, and `vision.md` — durable narrative direction.
+- `docs/project/product_posture.md` — stable living current/target maturity surface.
+- `docs/project/model.md` — concise project-model navigation.
+- `docs/org_context/` — inherited organizational context, selected by profile.
+- `docs/decisions/` and `docs/learnings/` — human-readable decisions and crystallized learning; accepted runtime authority still belongs to the owning runtime.
+- `diary/` — dated raw session capture, not canonical task or decision state.
 
-### C. Governance model
-- `governance/work-items.cue` (validation contract)
-- `governance/work-items.json` (seed planning model)
-- `governance/README.md` (usage + boundaries)
+The template does not scaffold `strategic_goals.md`, `tactical_goals.md`, `operating_plan.md`, or `operational_plan.md`. AK-native direction, waves, tasks, decisions, and evidence own live execution state where those surfaces are implemented and accepted.
 
-### D. Ontology + validation toolchain
-- `ontology/manifest.yaml`, `ontology/src/**`
-- `scripts/rocs.sh`
-- `tools/rocs-cli/` (vendored deterministic runner source)
+### Governance and validation
 
-### E. CI surface
-- `scripts/ci/smoke.sh`, `scripts/ci/full.sh`
+- `governance/work-items.json` — checked-in AK projection, not live authority.
+- `governance/work-items.cue` — projection validation contract.
+- `governance/task-scopes/` — optional frozen AK exports.
+- `scripts/check-task-scope-snapshots.sh` — snapshot drift check.
+- `scripts/check-document-policy.sh` — posture freshness and dated-snapshot check.
+- `scripts/ci/fast.sh` and `scripts/ci/full.sh` — staged validation.
+- `scripts/rocs.sh` and `tools/rocs-cli/` — deterministic semantic tooling path.
 
-### F. Product-code placeholders
-- `src/.gitkeep`
-- `tests/.gitkeep`
-- `policy/.gitkeep`
-- `scripts/.gitkeep`
+## Product-posture freshness contract
 
-### Conditional files (software pack)
-Enabled only when `enable_software_pack=true`:
-- Python: `pyproject.toml`
-- Node: `package.json`
-- TypeScript: `package.json`, `tsconfig.json`
-- Rust: `Cargo.toml`
-- Go: `go.mod`
+`docs/project/product_posture.md` keeps a stable path because it is the living product-wide posture, not a serial status report. It requires:
 
----
-
-## 2) Deep Review (adversarial stack)
-
-## 2.1 INVERSION (Shadow Analysis)
-- **Hidden bug:** template looked deterministic while shipping compiled artifacts (`__pycache__`, `build/`, `*.egg-info`) in L0 source.
-  - Assumption that hid it: "exclude rules in L2 copier.yml are enough".
-  - Pattern genus: generated-artifact contamination in template sources.
-- **Hidden bug:** work-items docs/schema/seed looked coherent but were semantically misaligned.
-  - Assumption that hid it: "presence of CUE file implies real validation".
-  - Pattern genus: validation theater.
-- **Hidden gap:** L1 docs mentioned `docs/project/governance_overlay.md` that did not exist.
-  - Assumption that hid it: copied historical narrative without path verification.
-  - Pattern genus: stale topology references.
-
-## 2.2 TELESCOPIC (Micro + Macro)
-- **Micro issues**
-  - accidental generated artifacts in `tools/rocs-cli` source tree
-  - mismatched `work-items.cue` vs `work-items.json`
-  - misleading field guidance (`TODO comments`) in governance README
-- **Macro issue**
-  - no single file-contract doc, causing duplication and drift across README/AGENTS/template docs
-- **Synthesis**
-  - macro drift produced micro contradictions; micro contradictions then obscured trust in the template baseline.
-
-## 2.3 NEXUS (Highest-Leverage Intervention)
-**Intervention:** establish one canonical file-contract document and force adjacent docs to link to it.
-
-Cascade:
-1. immediate: removes ambiguity about L0/L1/L2 placement
-2. secondary: exposes stale references quickly
-3. tertiary: makes template changes reviewable by contract
-4. fourth-order: enables deterministic drift checks as policy, not folklore
-
-## 2.4 AUDIT (Quality Tetrahedron)
-- **BUGS**
-  - generated artifacts committed in template source
-  - stale governance overlay references
-- **DEBT**
-  - duplicate descriptions of project-template layering across multiple docs
-- **SMELLS**
-  - parameter surfaces that imply behavior not visible in file topology
-- **GAPS**
-  - missing canonical map from L0 source path to L1/L2 output paths
-- **Root cause**
-  - documentation authority was distributed instead of centralized.
-
-## 2.5 BLAST RADIUS (Impact Mapping)
-- **Direct:** project-template docs, governance schema seed, and source cleanliness
-- **Secondary:** generated L1 fixture and generated L2 fixture outputs
-- **Tertiary:** operator onboarding speed and confidence in template contracts
-- **Failure scenarios if wrong:** broken fixture parity or stale link targets; mitigated by `[[scripts/check-l0-fixtures.sh]]` and `[[scripts/check-l0-guardrails.sh]]`
-
-## 2.6 ESCAPE HATCH (Rollback Design)
-- **Class:** reversible
-- **Rollback procedure:**
-  1. `git restore -- copier-template/copier/tpl-project-repo`
-  2. `git restore -- copier-template/README.md.jinja copier-template/AGENTS.md README.md`
-  3. `git restore -- fixtures/l1/template-repo fixtures/l2/tpl-project-repo`
-
-## 2.7 RANKED BUGS
-| Bug | File | Severity | Underground time |
-|---|---|---:|---:|
-| Generated artifact contamination | `copier/tpl-project-repo/tools/rocs-cli/**` | High | Long |
-| Schema/seed mismatch | `copier/tpl-project-repo/governance/work-items.*` | High | Long |
-| Stale path reference | `README.md.jinja`, `AGENTS.md` (L1 template) | Medium | Long |
-
-## 2.8 ROLLBACK COMMANDS
-```bash
-# If this change set is wrong, revert the touched surface:
-git restore -- \
-  copier-template/copier/tpl-project-repo \
-  copier-template/README.md.jinja \
-  copier-template/AGENTS.md \
-  README.md \
-  fixtures/l1/template-repo \
-  fixtures/l2/tpl-project-repo
+```yaml
+as_of: "YYYY-MM-DD"
+last_validated: "YYYY-MM-DD"
+last_validated_commit: "<full 40-character commit SHA>"
+evidence_paths:
+  - "README.md"
+  - "src/"
+  - "tests/"
 ```
 
-## 2.9 CRYSTALLIZED LEARNINGS
-- Canonical docs must be singular; all other docs should point, not re-describe.
-- Template repos should never carry build outputs or interpreter caches.
-- A schema file is not a contract unless seed data actually conforms and validation constrains root fields.
+Field meaning:
 
----
+- `as_of` is the latest UTC date through which the current-posture claims intend to be accurate.
+- `last_validated` is when an accountable owner checked those claims against all declared evidence paths.
+- `last_validated_commit` is the exact reviewed evidence baseline.
+- `evidence_paths` are repo-relative literal tracked files or directory prefixes that substantiate current-state claims.
 
-## 3) Decisions in this pass
+The posture is stale when either:
 
-1. **Kept** the overall project template shape (docs/governance/ontology/code placeholders).
-2. **Removed** generated Python build/cache metadata from template source.
-3. **Aligned** `work-items.cue`, `work-items.json`, and governance README semantics.
-4. **Corrected** L1 docs that referenced non-existent governance overlay paths.
-5. **Consolidated** authority here; other docs now link instead of duplicating outdated explanations.
+1. more than 30 calendar days have passed since either `as_of` or `last_validated`; or
+2. a reachable commit after `last_validated_commit` changes a declared evidence path.
 
----
+Any baseline that is missing, not an ancestor of `HEAD`, or unavailable in a shallow clone makes freshness **unverifiable**. CI fails closed rather than claiming freshness.
 
-## 4) Maintenance rule (non-negotiable)
+CI also fails when declared evidence or the posture has uncommitted changes, when any intervening commit touched declared evidence even if later reverted, or when the commit sequence does not contain exactly one posture-validation commit after the evidence baseline. That last rule prevents later claim edits from inheriting an older validation stamp.
 
-When changing `tpl-project-repo`, update in this order:
-1. `[[copier/tpl-project-repo/**]]`
-2. this file (`[[docs/dev/tpl-project-repo-file-contract.md]]`)
-3. regenerate fixtures (`[[scripts/sync-l0-fixtures.sh]]`)
-4. validate (`[[scripts/check-l0.sh]]`)
+A commit cannot truthfully contain its own SHA. Refresh in two commits: first land the evidence state; then validate and update the posture metadata to point at that earlier commit.
 
-If step 2 is skipped, the change is incomplete.
+## Dated time-bounded documents
+
+Separate transition, migration, seam-specific current-vs-target, and status snapshots use:
+
+```text
+YYYY-MM-DD--transition--<scope>.md
+YYYY-MM-DD--migration--<scope>.md
+YYYY-MM-DD--current-vs-target--<scope>.md
+YYYY-MM-DD--status--<scope>.md
+```
+
+The prefix is the snapshot/validation date, not a promise of continuing freshness. Newer relevant commits or the 30-day horizon require revalidation or a new dated snapshot. Old snapshots remain historical evidence and must not be routed as current truth.
+
+This policy does not date:
+
+- the stable living `product_posture.md` path;
+- durable purpose, mission, vision, architecture, or accepted policy merely because they discuss transitions;
+- diary files, which already follow their own dated naming contract.
+
+The checker validates explicit `--transition--`, `--migration--`, `--current-vs-target--`, and `--status--` grammar plus a narrow set of unambiguously snapshot-shaped legacy names. It deliberately does not classify arbitrary prose filenames such as `database-migration-guide.md` or `http-status-codes.md`; owner review and the inventory process still govern semantic classification.
+
+## Validation
+
+From the Softwareco root, validate the embedded template with:
+
+```bash
+bash ./scripts/check-template-ci.sh
+```
+
+A rendered L2 project runs:
+
+```bash
+./scripts/check-document-policy.sh
+./scripts/ci/full.sh
+```
+
+The generated product posture intentionally starts as `UNVALIDATED`; full validation must fail until a real owner supplies evidence-backed metadata.
+
+## Change order
+
+When changing the Softwareco L1 projection:
+
+1. update `copier/tpl-project-repo/`;
+2. update this contract when topology or semantics changed;
+3. update adjacent README/AGENTS guidance by reference rather than copying volatile status;
+4. run `bash ./scripts/check-template-ci.sh`;
+5. promote reusable architecture changes to `core/tpl-template-repo` through its owner workflow when appropriate.
+
+Do not cite removed L0-only fixture commands from this L1 repository, and do not imply that editing this rendered projection automatically changes L0 or existing L2 repositories.
