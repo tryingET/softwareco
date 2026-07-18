@@ -4,10 +4,11 @@ read_when:
   - "Designing another Factory Flow pilot or evidence-preserving repository retirement."
   - "Considering Factory Flow propagation into Softwareco or L0/L2 templates."
 type: "learning"
-status: "accepted_candidate_pending_terminal_decision"
+status: "accepted_pilot_learning"
 date: "2026-07-18"
 decision_id: 62
 pilot_id: "SOFTWARECO-FACTORY-PILOT-001"
+terminal_decision: "complete"
 ---
 
 # Learning — preservation-first retirement is an owner-routing intervention

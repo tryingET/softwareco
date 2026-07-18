@@ -1,11 +1,11 @@
 ---
-summary: "Current linked operator view for Factory Flow pilot 001 after bounded source retirement and independent outcome testing."
+summary: "Terminal linked operator view for completed Factory Flow pilot 001."
 read_when:
-  - "Operating, reviewing, or terminally reconciling Factory Flow pilot 001."
+  - "Reviewing completed Factory Flow pilot 001 or its retained evidence and limits."
   - "Checking current FCOS ownership and fcos-proving-lane retirement without private coaching."
 type: "operator-packet"
-status: "awaiting_human_terminal_decision"
-as_of: "2026-07-18T05:40:02Z"
+status: "complete_historical_packet"
+as_of: "2026-07-18T06:02:23Z"
 decision_id: 62
 pilot_id: "SOFTWARECO-FACTORY-PILOT-001"
 ---
@@ -21,14 +21,14 @@ This is a **post-ADR linked view**, not canonical authority. Owner-native Git/ru
 | Field | Current value |
 |---|---|
 | packet revision | 3; supersedes the pre-ADR revision 2 in Git history |
-| reconciled through | `2026-07-18T05:40:02Z` |
-| reconciliation owner | `softwareco-cto-agent` under task `#4028`; human operator retains terminal authority |
+| reconciled through | `2026-07-18T06:02:23Z` |
+| reconciliation owner | `softwareco-cto-agent` under task `#4028`; higher-level human operator selected terminal `complete` |
 | freshness | stale on referenced source/owner Git change, AK decision/task/direction lifecycle change, delegation change, or human terminal decision |
 | accepted decision | AK `#62`, `unblocked / accepted` |
 | governing ADR | `docs/decisions/2026-07-18-software-factory-flow-protocol-pilot.md` |
 | reviewed RFC blob / SHA-256 | `ff27c45a112e152dd891d9f7ddb79db34055d8eb` / `9b0c14de59e5f2f55519d28e5272588f883eed857cc33e70971eb1b05c1531a7` |
-| strategic frame / wave | `SF1` / `IW-SF1-PILOT-001`, active pending terminal reconciliation |
-| coordination task | `#4028`, active pending terminal decision |
+| strategic frame / wave | `SF1` / `IW-SF1-PILOT-001`, archived after terminal completion |
+| coordination task | `#4028`, done |
 | preservation task | `#4035`, done |
 | source retirement task | `#4036`, done |
 | preserved source HEAD / status SHA-256 | `aa9fe9e6a5d2b636ea91ab18d2e01d6de2a9588f` / `12e79926370c511fe887ca7053a36786662ee581ec0f498d9928d8e1997b07f9` |
@@ -38,8 +38,9 @@ This is a **post-ADR linked view**, not canonical authority. Owner-native Git/ru
 | current FCOS owner revision | `holdingco/fcos-control-board@7152e0d713011b4a6416be8666fdd41d65461b59` with a dirty owner worktree; native read-only status still reports this repo as live FCOS product home |
 | source status | preserved historical/non-product evidence; no physical deletion |
 | residual accountable authority | current higher-level human operator |
-| technical delegate | Softwareco CTO Agent until terminal decision or revocation |
-| packet state | G0–G4 passed; G5 awaiting human `continue`, `stop`, `redirect`, or `complete` |
+| technical delegate | Softwareco CTO Agent pilot delegation expired at `2026-07-18T06:02:23Z` |
+| human terminal decision | `complete`; AK evidence `#4781` |
+| packet state | G0–G5 passed; terminally reconciled |
 
 ## Canonical-source map
 
@@ -88,7 +89,7 @@ Expected interpretation:
 - its dirty migration/history state remains preserved;
 - physical deletion is not authorized;
 - reactivation requires a new accepted owner decision;
-- the human terminal pilot decision is still required.
+- the human terminal decision was `complete`, without authorizing physical deletion or broader rollout.
 
 ## Completed gate evidence
 
@@ -99,7 +100,7 @@ Expected interpretation:
 | G2 restoration | evidence `#4750`; exact file/metadata/index/HEAD/status match and passing `git fsck` |
 | G3 bounded rollout | source commit `71b1a6a`; evidence `#4758`–`#4760`; zero unclassified paths |
 | G4 operator outcome | `docs/project/2026-07-18-factory-flow-pilot-cold-start-receipt.md`; clean scout `scoutpeer-mrpxs64n-873ecae4`: 56 seconds, 0 wrong-owner claims, 0 unsafe mutation attempts, 0 errors |
-| G5 closure | outcome and KES learning prepared; human terminal decision pending |
+| G5 closure | outcome and KES learning tracked/attached; human `complete` recorded as evidence `#4781`; direction/task/delegation reconciled |
 
 No FCOS item was created because no active multi-owner gate emerged. Softwareco routing maps did not claim the proving lane as an active FCOS product, so no capability-map mutation was required.
 
@@ -118,11 +119,8 @@ On staleness or conflict:
 
 Emergency containment may stop automation and copy bytes read-only. It may not delete, clean, reset, reactivate, or reassign authority.
 
-## Terminal decision menu
+## Terminal result
 
-- **complete** — accept conformance and effectiveness `improved` for pilot 001; archive pilot direction, complete task `#4028`, expire the bounded CTO-Agent delegation, retain evidence and task `#3455` deferral.
-- **continue** — keep the pilot active and name the additional evidence/gate required.
-- **redirect** — preserve current evidence, name a replacement outcome/owner, and explicitly reconcile direction/tasks/delegation.
-- **stop** — close the pilot as stopped, retain all evidence, and unwind active direction/delegation without physical deletion.
+The higher-level human operator selected **`complete pilot 001`**. The pilot direction is archived, task `#4028` is done, and the bounded CTO-Agent pilot delegation is expired.
 
-None of these choices authorizes factory-wide rollout, physical deletion, another pilot, or template propagation.
+This completion does not authorize factory-wide rollout, physical deletion, another pilot, FCOS authority changes, or template propagation. Reactivation or further retirement requires a new accepted owner decision.

@@ -1,11 +1,11 @@
 ---
-summary: "Measured protocol-conformance and effectiveness outcome for Softwareco Factory Flow pilot 001 before the human terminal decision."
+summary: "Completed protocol-conformance, effectiveness, and human terminal outcome for Softwareco Factory Flow pilot 001."
 read_when:
   - "Reviewing whether Factory Flow pilot 001 satisfied its execution and outcome gates."
-  - "Preparing the human terminal continue, stop, redirect, or complete decision."
+  - "Reviewing the human terminal completion and retained pilot limits."
 type: "pilot-outcome"
-status: "awaiting_human_terminal_decision"
-as_of: "2026-07-18T05:40:02Z"
+status: "complete"
+as_of: "2026-07-18T06:02:23Z"
 decision_id: 62
 pilot_id: "SOFTWARECO-FACTORY-PILOT-001"
 ---
@@ -16,12 +16,12 @@ pilot_id: "SOFTWARECO-FACTORY-PILOT-001"
 
 | Verdict | Result | Basis |
 |---|---|---|
-| protocol conformance | **pass through G4; G5 awaits the human terminal decision** | accepted ADR and plans; active AK direction; lossless preservation; exact restoration; zero unclassified paths; bounded owner-doc rollout; independent cold-start result; KES learning prepared |
+| protocol conformance | **pass, G0–G5** | accepted ADR and plans; governed AK execution; lossless preservation; exact restoration; zero unclassified paths; bounded owner-doc rollout; independent cold-start result; attached KES learning; human terminal completion |
 | effectiveness | **improved** | a clean-context operator identified the native owner, retired status, no-deletion boundary, and escalation path in 56 seconds with zero wrong-owner claims and zero unsafe mutation attempts |
 | physical deletion | **not performed / not authorized** | Decision 62 and the source retirement record prohibit it |
 | factory-wide or template propagation | **not justified** | this is one internal evidence-retirement pilot, not a materially different human-facing delivery pilot |
 
-`complete` remains a human decision. This report does not exercise that authority.
+The higher-level human operator selected **`complete`** at `2026-07-18T06:02:23Z`. AK evidence `#4781` records that terminal authority.
 
 ## Gate results
 
@@ -29,8 +29,8 @@ pilot_id: "SOFTWARECO-FACTORY-PILOT-001"
 
 - Decision `#62`: `unblocked / accepted`.
 - Governing ADR: `docs/decisions/2026-07-18-software-factory-flow-protocol-pilot.md`.
-- Direction: `SF1` and `IW-SF1-PILOT-001` are active; Decision 62 governs both; task `#4028` is linked to `SF1`.
-- Human residual authority and bounded CTO-Agent delegation remain unchanged.
+- Direction: `SF1` and `IW-SF1-PILOT-001` governed execution and are archived at terminal reconciliation; Decision 62 governs both; task `#4028` is linked to `SF1`.
+- Human residual authority remained unchanged; the bounded CTO-Agent pilot delegation expired at terminal completion.
 
 ### G1 — preservation completeness: pass
 
@@ -79,18 +79,16 @@ The operator correctly concluded:
 
 Primary consulted owner evidence included the proving-lane `README.md`, `AGENTS.md`, retirement record, FCOS Control Board owner docs and native status, Decision 62, tasks `#3455`/`#4036`, and evidence `#4758`–`#4760`.
 
-### G5 — closure: pending human terminal decision
-
-Recorded before the decision request:
+### G5 — closure: pass
 
 - protocol conformance verdict: this report;
-- effectiveness verdict: this report;
+- effectiveness verdict: this report and evidence `#4771`;
 - recovery result: G2 and evidence `#4750`;
-- independent outcome: `docs/project/2026-07-18-factory-flow-pilot-cold-start-receipt.md`;
-- overhead and blocked-age observations: below;
-- mandatory KES learning: `docs/learnings/2026-07-18-factory-flow-pilot-001.md`.
-
-Remaining gate: the higher-level human operator must choose `continue`, `stop`, `redirect`, or `complete`. Only after that choice may AK task/direction state and the operator packet be terminally reconciled.
+- independent outcome: `docs/project/2026-07-18-factory-flow-pilot-cold-start-receipt.md` and evidence `#4769`;
+- overhead and blocked-age observations: below and evidence `#4772`;
+- mandatory KES learning: `docs/learnings/2026-07-18-factory-flow-pilot-001.md`, attached to Decision 62;
+- human terminal decision: **`complete`**, evidence `#4781`;
+- reconciliation: pilot direction archived, task `#4028` completed, and bounded CTO-Agent pilot delegation expired.
 
 ## Time and flow observations
 
@@ -114,13 +112,15 @@ The 43m 52s interval includes governance readback, AK authoring, archive verific
 - No FCOS board item was needed: the pilot did not require an active multi-owner gate.
 - Physical deletion, a second pilot, and template/L0 propagation remain outside Decision 62.
 
-## Recommended human decision
+## Human terminal decision
 
-**Recommend `complete` for pilot 001**, meaning:
+The higher-level human operator selected **`complete pilot 001`**.
 
-- accept protocol conformance and effectiveness `improved` for this bounded pilot;
-- archive `SF1` and `IW-SF1-PILOT-001` after recording the choice;
-- complete coordination task `#4028` with the attached evidence;
-- expire the CTO-Agent pilot delegation;
-- retain task `#3455` as explicitly deferred unless a later owner decision supersedes retirement;
-- do not authorize physical deletion, factory-wide claims, template propagation, or a second pilot.
+Terminal meaning:
+
+- protocol conformance and effectiveness `improved` are accepted for this bounded pilot;
+- `SF1` and `IW-SF1-PILOT-001` are archived;
+- coordination task `#4028` is completed with the attached evidence;
+- the CTO-Agent pilot delegation is expired;
+- task `#3455` remains explicitly deferred unless a later owner decision supersedes retirement;
+- physical deletion, factory-wide claims, template propagation, and a second pilot remain unauthorized.
