@@ -36,7 +36,7 @@ system4d:
 - status: draft
 - date: 2026-07-12
 - accountable authority: current higher-level human operator for this bounded decision
-- technical steward: Softwareco CTO Agent under revocable bounded delegation; no residual human accountability
+- proposed post-ADR technical steward: Softwareco CTO Agent under revocable bounded delegation; pre-ADR work is limited to scoped packet preparation under task `#4028`
 - selected pilot: safe evidence-preserving retirement of `softwareco/owned/fcos-proving-lane`
 - reviewers: four first-cycle adversarial tracks completed; tracked revised-cycle review pending
 - decision_deadline: after a tracked revision receives a controlling `ready_for_adr` review synthesis
@@ -57,7 +57,7 @@ Softwareco already has strong engineering, governance, execution, infrastructure
 
 This RFC proposes a **Factory Flow Protocol**: a small federated operating contract over existing owner surfaces. It does not create another platform or database. AK remains canonical for direction/tasks/decisions/evidence; FCOS coordinates only genuinely cross-repo concerns; product and service owners execute in their repositories; Pi provides execution; KES and DSPx handle learning and empirical analysis through their existing boundaries.
 
-The requested decision is whether this protocol is precise and safe enough to become the basis for an ADR authorizing one bounded pilot—not factory-wide rollout.
+The requested decision is whether this protocol is precise and safe enough to become the basis for an ADR authorizing one bounded **internal retirement-corridor pilot**—not factory-wide rollout. This first pilot can prove preservation, authority, WIP, packet, recovery, and outcome-review behavior; it cannot by itself prove normal product discovery-to-operated-outcome delivery.
 
 ## Vocabulary preflight
 
@@ -194,7 +194,7 @@ Every committed flow must make the following fields discoverable:
 | service posture | owner, health check, reliability target, incident and restore path where applicable | runtime/service owner |
 | outcome evidence | technical and user/product measures with timestamp | source owner; linked into AK evidence |
 | terminal decision | `continue`, `stop`, `redirect`, or `complete` | controlling AK decision when company commitment changes; source-owner decision only when effect is purely local |
-| learning route | diary/learning/TIP; waiver allowed only for `continue`/`complete` with rationale | KES/source owner |
+| learning route | mandatory diary/learning closure for every pilot counted toward protocol adoption or propagation | KES/source owner |
 
 The pilot should initially implement this as a human-readable linked packet plus owner-native records. A machine schema may be proposed later only if repeated operation proves the need and ROCS/AK owner reviews approve it.
 
@@ -214,7 +214,7 @@ The pilot must use the following deterministic authority rules. If an exact exis
 | service retirement | source-owner decision, linked to AK if company commitment changes | service owner plus portfolio steward for company effect | users/support and data-retention owners consulted |
 | learning promotion | KES/source-owner process | learning owner | no effect on runtime authority without separate owner action |
 
-The pilot-selection packet identifies the current higher-level human operator as appointing and residual accountable authority and the Softwareco CTO Agent as a bounded technical steward. The delegation is revocable and excludes unilateral ADR acceptance, destructive retirement, company portfolio authority, and residual human accountability. Post-ADR source-owner tasks must name their own maintainer/release/incident authorities before mutation.
+The pilot-selection packet records the human operator's selection and proposes the Softwareco CTO Agent as a bounded post-ADR technical steward. Before ADR acceptance, the agent holds no durable company role; it only prepares the decision packet under scoped AK task `#4028`. Human ADR acceptance activates the proposed revocable pilot delegation, which excludes destructive retirement, company portfolio authority, and residual human accountability. Post-ADR source-owner tasks must name their own maintainer/release/incident authorities before mutation.
 
 Conflict order is: safety/security incident authority for immediate containment; release/runtime owner for promotion safety; product/service owner for implementation facts; outcome owner for evidence interpretation; portfolio steward for company commitment/capacity. Disputes that alter authority, policy, or durable commitments require an AK decision membrane. No meeting note or protocol packet breaks a tie.
 
@@ -485,7 +485,7 @@ The first pilot must include:
 - one operated release or an explicit non-deployment learning outcome;
 - one outcome review;
 - one `continue`, `stop`, `redirect`, or `complete` decision;
-- one learning closure; a waiver is allowed only for `continue` or `complete`, with explicit rationale. Failure, `stop`, `redirect`, or insufficient evidence always require learning capture.
+- one mandatory learning closure. No pilot may count toward adoption or propagation without crystallized learning; failure, `stop`, `redirect`, or insufficient evidence also require learning capture.
 
 It must not include:
 
@@ -550,7 +550,7 @@ Review:
 - authority drift or shadow-state incidents;
 - whether another pilot is justified.
 
-Only after at least two materially different successful pilots should template propagation or machine-readable protocol schemas be proposed.
+Only after at least two materially different successful pilots should template propagation or machine-readable protocol schemas be proposed. A countable pilot requires protocol conformance, effectiveness `improved`, canonical terminal decision, cold-start and drift/recovery evidence, overhead evidence, and mandatory learning crystallization. The second pilot must be human-facing. Even then, propagation is only eligible for a separate template-owner proposal, preview/migration plan, validation, and rollback decision; it is never automatic L1-to-L0 mutation.
 
 ## Rollback and escape hatch
 

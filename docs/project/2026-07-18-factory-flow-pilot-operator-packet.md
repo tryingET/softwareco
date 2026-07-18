@@ -19,16 +19,20 @@ This is a **worked pre-ADR packet** for safe retirement of `softwareco/owned/fco
 | Field | Value |
 |---|---|
 | packet ID | `SOFTWARECO-FACTORY-PILOT-001` |
+| packet revision | `2` — supersedes revision 1 in Git history because Decision 62 now exists |
+| generated/reconciled | 2026-07-18; exact timestamp and source revisions are frozen in the next tracked revision |
+| reconciliation owner | `softwareco-cto-agent` under scoped preparation task `#4028`; human operator retains decision authority |
+| freshness | stale after 24 hours or immediately on any referenced AK/Git/FCOS/delegation change |
 | work class | committed-flow candidate; not admitted before ADR |
 | risk tier | R2 shared/stateful evidence concern |
 | selected outcome | make the proving lane unambiguously historical while preserving all unique evidence |
 | residual accountable authority | current higher-level human operator |
-| technical steward | Softwareco CTO Agent, bounded delegate |
+| proposed post-ADR technical steward | Softwareco CTO Agent; pre-ADR authority is limited to scoped packet preparation under task `#4028` |
 | source owner | `softwareco/owned/fcos-proving-lane` |
 | current FCOS product owner | `holdingco/fcos-control-board` |
-| canonical pilot decision | not yet created |
-| canonical strategic frame | not yet created |
-| canonical execution task | not yet created |
+| canonical pilot decision | AK Decision `#62`, currently `review_pending`; not authorizing |
+| canonical strategic frame | not yet created; prohibited before ADR acceptance |
+| canonical execution task | preparation task `#4028`; post-ADR source-owner task not yet created |
 | FCOS item | not required unless a later cross-owner gate proves necessary |
 | packet status | proposed / fail-closed for mutation |
 
@@ -49,6 +53,8 @@ This is a **worked pre-ADR packet** for safe retirement of `softwareco/owned/fco
 ```bash
 # 1. Confirm Softwareco factory direction is not yet active.
 ak direction export -r ~/ai-society/softwareco
+ak decision show 62
+ak decision passport 62
 
 # 2. Inspect the selected source owner without mutating it.
 cd ~/ai-society/softwareco/owned/fcos-proving-lane
@@ -103,8 +109,8 @@ Only after ADR acceptance:
 2. create one bounded implementation wave if grouping is useful;
 3. create a source-owner AK task with explicit allowed/required/forbidden paths;
 4. create a preservation bundle outside destructive paths;
-5. hash and classify every changed/untracked path;
-6. rehearse restoration in a disposable directory;
+5. inventory and hash tracked changes, untracked files, ignored files, refs, stashes, object reachability, nested repos/submodules, and relevant file metadata;
+6. rehearse full restoration in a disposable directory and compare manifests;
 7. route misplaced work through the owning repo;
 8. update active maps/scans only through their owners;
 9. record validation evidence;
@@ -113,17 +119,37 @@ Only after ADR acceptance:
 ## Required preservation manifest fields
 
 ```text
-repo HEAD
-worktree status bytes + SHA-256
-tracked diff patch + SHA-256
+canonical repository path and filesystem identity
+repo HEAD plus all refs, tags, branches, and stash inventory
+reachable/unreachable object inventory or verified bundle/fsck receipt
+worktree porcelain-v1 -z bytes + SHA-256
+tracked binary-safe diff patch + SHA-256
 untracked file manifest + per-file SHA-256
-submodule/nested-repo inventory
-classification per changed path
+ignored-file manifest + per-file SHA-256
+file type, executable bit, symlink target, size, and permission metadata where restoration depends on it
+submodule/nested-repo/worktree inventory
+classification per changed, untracked, and ignored path
 source owner per retained artifact
-restoration command and observed result
+restoration command, disposable target, and byte/metadata comparison result
+recovery commander, decision deadline, blast-radius boundary, dependencies, and reconciliation owner
 excluded/destructive actions
 human acceptance reference
 ```
+
+## Failure containment and organizational unwind
+
+| Concern | Pilot value |
+|---|---|
+| containment commander | human operator; CTO Agent may immediately stop automation and perform read-only capture |
+| decision deadline | containment is immediate; human continue/stop/redirect decision within 30 minutes of an integrity/authority trigger when available |
+| recovery horizon | restoration proof must complete inside the initial four-hour execution budget or the pilot stops/continues through explicit human decision |
+| blast radius | `fcos-proving-lane` bytes plus a new external preservation directory; no FCOS product, fleet, capability-map, or source-owner mutation until restoration passes |
+| dependencies | Git object database, local filesystem/storage, SHA-256 tooling, AK readback, and explicit owner routes for misplaced artifacts |
+| reconciliation owner | CTO Agent prepares reconciliation; human operator accepts authority/retirement consequences |
+| protocol unwind | mark packet historical, close/supersede pilot task and delegation, leave canonical owner state intact |
+| organizational unwind | restore displaced task/capacity posture, notify affected owner surfaces, and preserve the stop/redirect rationale |
+
+An irreversible migration has no place in the first wave. Physical repository deletion is a separate later decision.
 
 ## Stop conditions
 
@@ -152,3 +178,5 @@ Record separately:
 - human terminal decision.
 
 A complete packet with no outcome improvement is not a successful pilot.
+
+A pilot counts toward later propagation only when it has: protocol conformance, effectiveness `improved`, canonical terminal decision, cold-start and recovery evidence, overhead evidence, and mandatory KES learning crystallization. A second materially different human-facing pilot and a separate template-owner decision remain required.

@@ -132,7 +132,7 @@ The Pi loader source confirms that the global context is loaded first and ancest
 
 Review of `core/tpl-template-repo` found that the generic L0 AGENTS templates already carry the reusable owner/AK/projection guardrails needed by this RFC. Factory-specific WIP, cadence, packet, risk-tier, and terminal-decision language must not propagate to L0 before two successful, materially different pilots.
 
-A separate Softwareco-local contradiction was found: the company AGENTS policy is main-first, while three L2 AGENTS templates still said never to push to main. The project template had already been corrected. The Softwareco templates and deterministic check are aligned as a separate company-policy repair, not as Factory Flow propagation.
+A separate Softwareco-local contradiction was found: the company AGENTS policy is main-first, while the tracked L2 AGENTS templates retained branch-only language; the org README already contradicted its own AGENTS template. Commit `42e59aa61ccb7e45df44581eb43d882b9e4b2d15` aligns all four standalone L2 AGENTS templates and adds a deterministic drift check. This is a separate company-policy repair, not Factory Flow propagation. No `core/tpl-template-repo` mutation was made.
 
 ### 9. Selected pilot evidence
 

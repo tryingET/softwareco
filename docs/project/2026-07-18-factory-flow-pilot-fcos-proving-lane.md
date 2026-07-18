@@ -46,16 +46,21 @@ The lawful interpretation under proposed Softwareco governance is:
 | Role | Designation | Authority in this pilot |
 |---|---|---|
 | appointing and residual accountable authority | current higher-level human operator | grants/revokes delegation; accepts/rejects ADR; reserves irreversible retirement and final terminal decision |
-| technical pilot steward | **Softwareco CTO Agent** | prepares evidence and options; coordinates bounded work; enforces accepted gates; may stop unsafe agent execution; recommends terminal decision |
+| proposed post-ADR technical pilot steward | **Softwareco CTO Agent** | after human ADR acceptance: prepares evidence and options, coordinates bounded work, enforces accepted gates, may stop unsafe agent execution, and recommends terminal decision |
 | source-owner executor | later AK assignee in `fcos-proving-lane` | executes only the post-ADR scoped task |
 | FCOS product owner | `holdingco/fcos-control-board` owner surface | consulted only if retirement requires product-owner reference or compatibility changes |
 
+Before ADR acceptance, `softwareco-cto-agent` acts only as the scoped assignee for AK task `#4028` under the operator's direct instruction to prepare the decision packet. The durable CTO-Agent delegation is proposed by Decision `#62` and becomes effective only if the human operator accepts its ADR. Decision `#62` is the canonical decision record; this packet is a supporting artifact, not the delegation source.
+
 The CTO Agent may not appoint itself, accept the RFC/ADR, authorize destructive retirement, waive preservation, or become residual human accountability.
 
-Delegation review/expiry:
+Proposed post-ADR delegation review/expiry:
 
-- scope: this pilot and its RFC/ADR preparation;
+- delegator and residual accountable authority: current higher-level human operator;
+- scope: this pilot only;
+- reserved decisions: ADR acceptance, irreversible retirement, physical deletion, and final terminal decision;
 - review: at every terminal decision and before any destructive step;
+- expiry: pilot terminal decision or human revocation, whichever comes first;
 - revocation: immediate human operator instruction or evidence of authority drift;
 - emergency stop: CTO Agent may stop automated mutation when preservation, scope, or owner boundaries are uncertain.
 
@@ -100,12 +105,15 @@ Read-only inspection on 2026-07-18 found:
 | Field | Preregistered value |
 |---|---|
 | primary outcome | Operators can discover that `fcos-control-board` is the sole active FCOS product and that `fcos-proving-lane` is preserved historical evidence, without relying on private memory. |
-| baseline | proving lane has 48 dirty status entries, no AK direction, one generic ready task, active-looking name/docs, and no explicit accepted retirement state |
-| target | preservation manifest complete; every dirty/untracked path classified; unique evidence retained with hashes; misplaced work routed; active maps/scans no longer imply product activity; repository marked historical/retired through accepted owner surfaces |
+| baseline | the initiating operator could not determine unaided why two FCOS-named repos existed or which was current; proving lane has 48 dirty status entries, no AK direction, one generic ready task, active-looking name/docs, and no explicit accepted retirement state |
+| target | preservation manifest complete; every dirty/untracked path classified; unique evidence retained with hashes; misplaced work routed; active maps/scans no longer imply product activity; repository marked historical/retired through accepted owner surfaces; an independent cold-start operator identifies the native FCOS owner and proving-lane status without private coaching |
 | horizon | one bounded implementation wave after ADR; no calendar promise overrides preservation safety |
 | guardrails | zero unreviewed file loss; zero FCOS product-authority mutation; zero packet-only state changes; no physical deletion in the first pilot wave |
-| evidence source | Git manifest/hashes, AK task/evidence, owner docs, capability/fleet projections, deterministic validation |
-| stop threshold | any unclassified dirty path, hash mismatch, unknown owner, or destructive step without tested restoration |
+| evidence source | Git manifest/hashes, AK task/evidence, owner docs, capability/fleet projections, deterministic validation, and raw cold-start operator observation |
+| discovery test | give an operator who did not author the packet only the AI Society root; record start/end timestamps, paths consulted, errors, escalation, and final owner/status answer |
+| improved threshold | within 10 minutes, zero wrong-owner claims, zero unsafe mutation attempts, cites `fcos-control-board` owner evidence, and identifies `fcos-proving-lane` as preserved historical/non-product evidence |
+| sampling | one pre-change observation is the initiating operator's recorded confusion; one independent post-change cold-start run is the minimum pilot test, with raw transcript/receipt retained |
+| stop threshold | any unclassified dirty path, hash mismatch, unknown owner, failed restoration, or destructive step without tested recovery |
 | redirect threshold | evidence shows unique active capability or a current owner dependency that requires continued canary operation |
 | completion threshold | target evidence is satisfied and the human operator accepts the terminal decision |
 
@@ -141,16 +149,21 @@ Preserve and classify first; route unique facts; mark historical/retired; remove
 
 ## Capacity and WIP
 
+- pilot review horizon: one post-ADR wave with an initial budget of four CTO-Agent execution hours and two 30-minute human decision gates; continuation beyond that budget requires an explicit `continue` decision;
 - pilot constrained resource: human/CTO-Agent review attention for preservation and classification;
-- WIP limit: one active retirement flow;
-- reserved maintenance/exception capacity: urgent security or data-loss containment may pre-empt;
+- available slots: one active retirement flow;
+- total known competing load: proving-lane task `#3455` plus unrelated template modernization; both are deferred from the pilot and may not run concurrently on the same paths;
+- exploration budget: zero during the preservation slice; new unknowns trigger `continue`/`redirect` rather than silent expansion;
+- reserved maintenance/exception capacity: at most one urgent security or data-loss containment interrupt may pre-empt; it must be reconciled at the next review;
 - displaced/deferred work:
   - broad Factory Flow template/schema propagation;
   - a second factory pilot;
   - physical repository deletion;
   - unrelated proving-lane template modernization;
 - admission authority: human operator through the eventual accepted ADR and post-ADR task;
-- constraint signal: count of unclassified paths and unresolved owner routes.
+- causal constraint hypothesis: classification and owner-routing review, not file copying, limits safe retirement throughput;
+- buffer signal: unclassified-path count; green at zero, warning at 1–5, stop above 5 or on any unknown owner;
+- moved-constraint rule: after the unclassified count reaches zero, two consecutive blocked checks in restoration or owner acceptance shift the named constraint through an AK-recorded `continue` decision.
 
 ## Cross-repo boundary
 
