@@ -247,6 +247,13 @@ assert_command_succeeds "softwareco docs-list wrapper should parse tpl-project-r
 assert_not_contains "copier/tpl-project-repo/scripts/ci/full.sh" "./scripts/ak.sh" "tpl-project-repo CI should use plain installed ak via AK_CMD"
 assert_not_contains "copier/tpl-project-repo/scripts/ci/full.sh" "uvx -n --from ./tools/rocs-cli rocs" "tpl-project-repo CI should not hardcode uvx vendored invocation"
 
+main_first_policy='Main-first workflow: commit directly to `main` for normal work.'
+for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
+  assert_contains "copier/$tpl/AGENTS.md.j2" "$main_first_policy" "L2 template $tpl AGENTS should match Softwareco main-first policy"
+  assert_not_contains "copier/$tpl/AGENTS.md.j2" 'Never push to `main`' "L2 template $tpl AGENTS should not contradict Softwareco main-first policy"
+  assert_not_contains "copier/$tpl/AGENTS.md.j2" 'No direct pushes to `main`' "L2 template $tpl AGENTS should not retain stale branch-only policy"
+done
+
 check_multi_pass_suffix_policy
 
 required_exec="

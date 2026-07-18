@@ -5,7 +5,7 @@ Template for an **agent repo**: one repo per agent, no hierarchy, work via propo
 
 ## Guardrails
 - No secrets in git (use CI variables + local secret manager references).
-- Never push to `main`; open branches + MRs.
+- Main-first workflow: commit directly to `main` for normal work. Use a review branch/PR only for releases, when the operator explicitly requests a gate, or when a repo-local accepted policy documents a narrower exception.
 - Treat `docs/_core/**` as immutable (vendored snapshot from `governance-kernel`; no submodules).
 
 ## AK-native route guardrails

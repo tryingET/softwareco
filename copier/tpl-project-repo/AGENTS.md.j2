@@ -5,7 +5,7 @@ Template for a delivery project repo (project context + code + tests).
 
 ## Guardrails
 - No secrets in git.
-- Never push to `main`; MRs only.
+- Main-first workflow: commit directly to `main` for normal work. Use a review branch/PR only for releases, when the operator explicitly requests a gate, or when a repo-local accepted policy documents a narrower exception.
 - Treat `docs/_core/**` as immutable.
 - Track deferred work in Agent Kernel; keep `governance/work-items.json` as the exported projection via plain installed `ak` (avoid ad-hoc TODO comments and manual JSON authority confusion).
 - When explicit task scope is in play, author it in AK and freeze repo-consumption snapshots via `ak task scope show|export ...`; treat `governance/task-scopes/AK-*.snapshot.json` as AK exports, not hand-authored truth.
@@ -16,7 +16,8 @@ Template for a delivery project repo (project context + code + tests).
 - Treat closeout/readiness rows as gate inputs, not lifecycle authorization.
 - Treat docs, work-items JSON, task-scope snapshots, and generated exports as projections unless the repo declares otherwise; AK DB remains runtime authority for AK tasks, direction, evidence, and decisions.
 - Handoff instead of editing by convenience when facts belong to Prompt Vault, ROCS, Pi/runtime, KES, steward/publication, template propagation, Oracle/DSPx, or another repo owner.
-- Do not revive SG/TG/OP markdown planning where AK-native direction authority is declared; legacy `strategic_goals.md`, `tactical_goals.md`, `operating_plan.md`, or `operational_plan.md` files are archive/projection only unless a repo-local owner decision explicitly says otherwise.
+- Treat `docs/project/vision.md` as durable direction and `docs/project/product_posture.md` as a maturity bridge, not a queue.
+- Do not recreate SG/TG/OP markdown planning; live direction and execution belong in AK-native strategic frames, implementation waves, tasks, and evidence.
 
 ## Deterministic tooling policy (ROCS-first)
 - Prefer `ak work-items <import|export|check> ...` for repo-local work-items projection operations.
