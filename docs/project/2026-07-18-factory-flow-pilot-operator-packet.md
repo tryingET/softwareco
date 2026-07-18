@@ -20,9 +20,14 @@ This is a **worked pre-ADR packet** for safe retirement of `softwareco/owned/fco
 |---|---|
 | packet ID | `SOFTWARECO-FACTORY-PILOT-001` |
 | packet revision | `2` — supersedes revision 1 in Git history because Decision 62 now exists |
-| generated/reconciled | 2026-07-18; exact timestamp and source revisions are frozen in the next tracked revision |
+| generated/reconciled | `2026-07-18T07:08:24+02:00` |
 | reconciliation owner | `softwareco-cto-agent` under scoped preparation task `#4028`; human operator retains decision authority |
-| freshness | stale after 24 hours or immediately on any referenced AK/Git/FCOS/delegation change |
+| freshness | stale after `2026-07-19T07:08:24+02:00` or immediately on any referenced AK/Git/FCOS/delegation change |
+| RFC source commit | `8dc33555b72da0ae4433da7db3364fde9173549f` |
+| RFC Git blob / SHA-256 | `ff27c45a112e152dd891d9f7ddb79db34055d8eb` / `9b0c14de59e5f2f55519d28e5272588f883eed857cc33e70971eb1b05c1531a7` |
+| pilot-selection blob / SHA-256 | `3f80f68002e23e53846f97f6437cc0def1590392` / `8808383d5480b832afc74b658a9a51cef8a901bbee0768d5953f8edf9b3bf0a8` |
+| proving-lane HEAD / status SHA-256 | `aa9fe9e6a5d2b636ea91ab18d2e01d6de2a9588f` / `12e79926370c511fe887ca7053a36786662ee581ec0f498d9928d8e1997b07f9` |
+| FCOS owner revision | `holdingco/fcos-control-board@2550115102fd562349beb9114d4e89375a8019da` |
 | work class | committed-flow candidate; not admitted before ADR |
 | risk tier | R2 shared/stateful evidence concern |
 | selected outcome | make the proving lane unambiguously historical while preserving all unique evidence |
