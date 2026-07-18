@@ -1,21 +1,56 @@
+---
+summary: "Softwareco company and L1 control-plane entrypoint: identity, operating model, architecture navigation, lanes, and template capabilities."
+read_when:
+  - "Starting at the Softwareco root."
+  - "Looking for Softwareco identity, operating guidance, architecture anchors, or L2 template entrypoints."
+type: "reference"
+---
+
 # softwareco
 
-This is an **L1 template repository** generated from `core/tpl-template-repo` (L0).
+Softwareco's constitutional role is **AI Society's product-engineering company**. It builds these systems and operates them only where a named owner, support boundary, and runtime evidence prove that responsibility. Portfolio descriptions route intent; owner repositories prove current capability.
 
-- Profile: ``
-- Maintainer: `@template-owner`
+This repository is also Softwareco's **L1 company template/control-plane repo**, generated from `core/tpl-template-repo` (L0). Those roles are complementary: company policy and navigation live here, implementation belongs in owner repositories, and reusable L2 baselines are authored under `copier/`.
+
+- Accountable company role: `Softwareco Org Owner` (appointment belongs in accepted governance/AK state)
 - L1 organization docs profile: `rich`
-- Default L2 organization docs profile: ``
-- Baseline L2 template family: `agent`, `project`, `org`, `monorepo`, `package`
+- Baseline L2 standalone-repo templates: `agent`, `project`, `org`, `monorepo`
+- Internal monorepo-member template: `package` (not a separate L2 layer)
+
+## Start here
+
+### Softwareco
+
+- [[softwareco/docs/org/operating_model.md|Softwareco Operating Model]] — identity, lanes, ownership, flow, cadence, authority, and navigation hub.
+- [[softwareco/docs/org/purpose.md|Purpose]]
+- [[softwareco/docs/org/mission.md|Mission]]
+- [[softwareco/docs/org/vision.md|Vision]]
+- [[softwareco/docs/org/strategic_objectives.md|Strategic Objectives]]
+- [[softwareco/docs/org/governance.md|Governance]]
+- [[softwareco/docs/org/values_ethics.md|Values and Ethics]]
+- [[softwareco/docs/project/2026-07-12--status--softwareco-company-claim-validation.md|2026-07-12 Company-Claim Validation]] — dated evidence snapshot; revalidate after relevant commits.
+- [[softwareco/docs/project/2026-07-12--status--transition-document-inventory.md|2026-07-12 Transition-Document Inventory]] — owner-repo migration inventory, not current authority.
+
+### AI Society architecture
+
+- [[/home/tryinget/ai-society/README.md|AI Society Workspace Entrypoint]]
+- [[/home/tryinget/ai-society/holdingco/governance-kernel/docs/core/definitions/ai-society-stack-map.md|AI Society Stack Map]] — architectural/authority layer orientation.
+- [[/home/tryinget/ai-society/holdingco/governance-kernel/docs/core/definitions/runtime-authority-matrix.md|Runtime Authority Matrix]] — current and target concern owners.
+- [[/home/tryinget/ai-society/softwareco/owned/agent-kernel/docs/project/ai-society-convergence-architecture.md|AI Society Convergence Architecture]] — system assembly.
+- [[/home/tryinget/ai-society/softwareco/owned/agent-kernel/docs/project/layer-12-protocol.md|Layer-12 Protocol]] — purpose-to-publication workflow and traceability spine.
+- [[/home/tryinget/ai-society/core/tpl-template-repo/docs/dev/architecture/layer-taxonomy-and-propagation-architecture.md|L0/L1/L2 Layer Taxonomy]] — render lineage; distinct from architectural layers and Layer 12.
 
 ## What this repo provides
 
-- **L2 Templates**:
+Current lane note: `owned/`, `infra/`, `contrib/`, and `fork/` are materialized. `agents/` is a declared target lane but is not materialized as of 2026-07-12; the separate `softwareco-agents/` path currently exists and must not be silently treated as the target lane.
+
+- **L2 standalone-repo templates**:
   - `copier/tpl-agent-repo/` — AI agent repositories
-  - `copier/tpl-project-repo/` — Delivery projects
-  - `copier/tpl-org-repo/` — Organization handbooks
-  - `copier/tpl-monorepo/` — Monorepo workspaces
-  - `copier/tpl-package/` — Packages inside monorepos
+  - `copier/tpl-project-repo/` — delivery projects
+  - `copier/tpl-org-repo/` — organization handbooks
+  - `copier/tpl-monorepo/` — monorepo workspaces
+- **Internal L2-monorepo member template**:
+  - `copier/tpl-package/` — package/app members inside an L2 monorepo; not an L3 or separate L2 repo
 - Opinionated local hooks (`.githooks/`) and CI lane scripts (`scripts/ci/`).
 - Layer contract enforcement via `contracts/layer-contract.yml`.
 - Baseline structure in this generated L1 repo: `docs/`, `examples/`, `external/`, `ontology/`, `policy/`, `src/`, `tests/`.
@@ -31,6 +66,8 @@ Validate this L1 template repo:
 ```bash
 bash ./scripts/check-template-ci.sh
 ```
+
+Document freshness policy: living `product-posture.md` paths remain stable and carry `as_of`, `last_validated`, `last_validated_commit`, and `evidence_paths`. Separate transition, migration, current-vs-target, and status snapshots are date-prefixed. See [[softwareco/docs/dev/tpl-project-repo-file-contract.md|tpl-project-repo File Contract]].
 
 Bootstrap a lane root before nesting child repos:
 
@@ -78,7 +115,7 @@ Generate an L2 **monorepo** workspace:
   --defaults --overwrite
 ```
 
-Generate an L2 **package** (inside monorepos):
+Generate an internal **monorepo member package** inside an L2 monorepo:
 
 ```bash
 ./scripts/new-repo-from-copier.sh tpl-package /path/to/packages/<name> \
@@ -106,7 +143,7 @@ git diff --no-index -- /tmp/<repo>-template /absolute/path/to/<existing-repo>
 
 3) Adopt control-plane first (`AGENTS.md`, `CODEOWNERS`, `scripts/`, `governance/`, `docs/`, `ontology/`), then reconcile product code.
 
-4) Validate and open MR.
+4) Validate and commit the relevant changes to `main` for normal work. Use a PR only for releases or when the operator explicitly requests a review gate.
 
 Install local hooks in a generated repo:
 
@@ -156,7 +193,7 @@ metrics/README.md          # Effectiveness tracking
 
 - Domain TIPs improve this L1
 - Meta TIPs escalate to L0
-- All L2 inherit improvements
+- Future L2 renders inherit accepted template improvements; existing L2 repositories require explicit propagation and validation
 
 Diary contract (repo-local diary for KES):
 - L1 logs in `./diary/`
@@ -167,12 +204,12 @@ See `tips/README.md` for TIP process.
 
 ## Archetype profile
 
-- L2 repos are generated via explicit template selection:
+- L2 standalone repos are generated through:
   - `tpl-agent-repo`
   - `tpl-project-repo`
   - `tpl-org-repo`
   - `tpl-monorepo`
-  - `tpl-package`
+- `tpl-package` generates internal package/app members inside an L2 monorepo; it does not create another render layer.
 - Detailed project-template file map (canonical):
   - `docs/dev/tpl-project-repo-file-contract.md`
   - wikilink: `[[docs/dev/tpl-project-repo-file-contract.md]]`
@@ -180,8 +217,8 @@ See `tips/README.md` for TIP process.
 ## Organization docs profile
 
 - This L1 repository currently ships **rich** organization docs in `docs/org/`.
-- Generated L2 repositories default to **** via `scripts/new-repo-from-copier.sh` inheritance from `.copier-answers.yml` (`l2_org_docs_default`).
-- Override at L2 generation time with:
+- `.copier-answers.yml` currently leaves `l2_org_docs_default` unset. Until Softwareco accepts a company default, choose the profile explicitly for each generated L2 repo.
+- Select at L2 generation time with:
   - `-d org_docs_profile=compact`
   - `-d org_docs_profile=rich`
 
