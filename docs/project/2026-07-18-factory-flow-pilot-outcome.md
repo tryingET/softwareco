@@ -5,7 +5,7 @@ read_when:
   - "Reviewing the human terminal completion and retained pilot limits."
 type: "pilot-outcome"
 status: "complete"
-as_of: "2026-07-18T06:02:23Z"
+as_of: "2026-07-18T08:12:36Z"
 decision_id: 62
 pilot_id: "SOFTWARECO-FACTORY-PILOT-001"
 ---
@@ -21,7 +21,7 @@ pilot_id: "SOFTWARECO-FACTORY-PILOT-001"
 | physical deletion | **not performed / not authorized** | Decision 62 and the source retirement record prohibit it |
 | factory-wide or template propagation | **not justified** | this is one internal evidence-retirement pilot, not a materially different human-facing delivery pilot |
 
-The higher-level human operator selected **`complete`** at `2026-07-18T06:02:23Z`. AK evidence `#4781` records that terminal authority.
+The timeout-derived form result recorded as evidence `#4781` had consent ambiguity because the recommended option was preselected while the operator was AFK. The higher-level human operator subsequently and explicitly affirmed **`complete`** by replying `1` at `2026-07-18T08:12:36Z`. AK evidence `#4822` is the controlling terminal-authority confirmation.
 
 ## Gate results
 
@@ -87,7 +87,7 @@ Primary consulted owner evidence included the proving-lane `README.md`, `AGENTS.
 - independent outcome: `docs/project/2026-07-18-factory-flow-pilot-cold-start-receipt.md` and evidence `#4769`;
 - overhead and blocked-age observations: below and evidence `#4772`;
 - mandatory KES learning: `docs/learnings/2026-07-18-factory-flow-pilot-001.md`, attached to Decision 62;
-- human terminal decision: **`complete`**, evidence `#4781`;
+- human terminal decision: **`complete`**, explicitly confirmed by evidence `#4822` after resolving the timeout/preselection ambiguity in `#4781`;
 - reconciliation: implementation wave archived; `SF1` retained as the required active terminal anchor with no active work; task `#4028` completed; bounded CTO-Agent pilot delegation expired.
 
 ## Time and flow observations

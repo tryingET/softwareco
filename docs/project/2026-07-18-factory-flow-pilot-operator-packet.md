@@ -5,7 +5,7 @@ read_when:
   - "Checking current FCOS ownership and fcos-proving-lane retirement without private coaching."
 type: "operator-packet"
 status: "complete_historical_packet"
-as_of: "2026-07-18T06:02:23Z"
+as_of: "2026-07-18T08:12:36Z"
 decision_id: 62
 pilot_id: "SOFTWARECO-FACTORY-PILOT-001"
 ---
@@ -21,7 +21,7 @@ This is a **post-ADR linked view**, not canonical authority. Owner-native Git/ru
 | Field | Current value |
 |---|---|
 | packet revision | 3; supersedes the pre-ADR revision 2 in Git history |
-| reconciled through | `2026-07-18T06:02:23Z` |
+| reconciled through | `2026-07-18T08:12:36Z` |
 | reconciliation owner | `softwareco-cto-agent` under task `#4028`; higher-level human operator selected terminal `complete` |
 | freshness | stale on referenced source/owner Git change, AK decision/task/direction lifecycle change, delegation change, or human terminal decision |
 | accepted decision | AK `#62`, `unblocked / accepted` |
@@ -39,7 +39,7 @@ This is a **post-ADR linked view**, not canonical authority. Owner-native Git/ru
 | source status | preserved historical/non-product evidence; no physical deletion |
 | residual accountable authority | current higher-level human operator |
 | technical delegate | Softwareco CTO Agent pilot delegation expired at `2026-07-18T06:02:23Z` |
-| human terminal decision | `complete`; AK evidence `#4781` |
+| human terminal decision | `complete`; explicit post-AFK confirmation evidence `#4822` controls over ambiguous timeout-derived evidence `#4781` |
 | packet state | G0–G5 passed; terminally reconciled |
 
 ## Canonical-source map
@@ -100,7 +100,7 @@ Expected interpretation:
 | G2 restoration | evidence `#4750`; exact file/metadata/index/HEAD/status match and passing `git fsck` |
 | G3 bounded rollout | source commit `71b1a6a`; evidence `#4758`–`#4760`; zero unclassified paths |
 | G4 operator outcome | `docs/project/2026-07-18-factory-flow-pilot-cold-start-receipt.md`; clean scout `scoutpeer-mrpxs64n-873ecae4`: 56 seconds, 0 wrong-owner claims, 0 unsafe mutation attempts, 0 errors |
-| G5 closure | outcome and KES learning tracked/attached; human `complete` recorded as evidence `#4781`; direction/task/delegation reconciled |
+| G5 closure | outcome and KES learning tracked/attached; human `complete` explicitly confirmed as evidence `#4822`; direction/task/delegation reconciled |
 
 No FCOS item was created because no active multi-owner gate emerged. Softwareco routing maps did not claim the proving lane as an active FCOS product, so no capability-map mutation was required.
 
