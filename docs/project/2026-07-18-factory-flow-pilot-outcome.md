@@ -29,7 +29,7 @@ The higher-level human operator selected **`complete`** at `2026-07-18T06:02:23Z
 
 - Decision `#62`: `unblocked / accepted`.
 - Governing ADR: `docs/decisions/2026-07-18-software-factory-flow-protocol-pilot.md`.
-- Direction: `SF1` and `IW-SF1-PILOT-001` governed execution and are archived at terminal reconciliation; Decision 62 governs both; task `#4028` is linked to `SF1`.
+- Direction: `IW-SF1-PILOT-001` is done. AK requires exactly one active strategic root, so `SF1` is retained as `terminal_anchor_no_active_wave` rather than leaving the graph invalid; Decision 62 governs both and task `#4028` is linked to `SF1`.
 - Human residual authority remained unchanged; the bounded CTO-Agent pilot delegation expired at terminal completion.
 
 ### G1 — preservation completeness: pass
@@ -88,7 +88,7 @@ Primary consulted owner evidence included the proving-lane `README.md`, `AGENTS.
 - overhead and blocked-age observations: below and evidence `#4772`;
 - mandatory KES learning: `docs/learnings/2026-07-18-factory-flow-pilot-001.md`, attached to Decision 62;
 - human terminal decision: **`complete`**, evidence `#4781`;
-- reconciliation: pilot direction archived, task `#4028` completed, and bounded CTO-Agent pilot delegation expired.
+- reconciliation: implementation wave archived; `SF1` retained as the required active terminal anchor with no active work; task `#4028` completed; bounded CTO-Agent pilot delegation expired.
 
 ## Time and flow observations
 
@@ -119,7 +119,7 @@ The higher-level human operator selected **`complete pilot 001`**.
 Terminal meaning:
 
 - protocol conformance and effectiveness `improved` are accepted for this bounded pilot;
-- `SF1` and `IW-SF1-PILOT-001` are archived;
+- `IW-SF1-PILOT-001` is archived; `SF1` is retained as AK's required active terminal anchor with `state_detail=terminal_anchor_no_active_wave`, not as active pilot work;
 - coordination task `#4028` is completed with the attached evidence;
 - the CTO-Agent pilot delegation is expired;
 - task `#3455` remains explicitly deferred unless a later owner decision supersedes retirement;

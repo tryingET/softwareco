@@ -27,7 +27,7 @@ This is a **post-ADR linked view**, not canonical authority. Owner-native Git/ru
 | accepted decision | AK `#62`, `unblocked / accepted` |
 | governing ADR | `docs/decisions/2026-07-18-software-factory-flow-protocol-pilot.md` |
 | reviewed RFC blob / SHA-256 | `ff27c45a112e152dd891d9f7ddb79db34055d8eb` / `9b0c14de59e5f2f55519d28e5272588f883eed857cc33e70971eb1b05c1531a7` |
-| strategic frame / wave | `SF1` / `IW-SF1-PILOT-001`, archived after terminal completion |
+| strategic frame / wave | `SF1` retained as required `terminal_anchor_no_active_wave`; `IW-SF1-PILOT-001` done |
 | coordination task | `#4028`, done |
 | preservation task | `#4035`, done |
 | source retirement task | `#4036`, done |
@@ -121,6 +121,6 @@ Emergency containment may stop automation and copy bytes read-only. It may not d
 
 ## Terminal result
 
-The higher-level human operator selected **`complete pilot 001`**. The pilot direction is archived, task `#4028` is done, and the bounded CTO-Agent pilot delegation is expired.
+The higher-level human operator selected **`complete pilot 001`**. The implementation wave is done, task `#4028` is done, and the bounded CTO-Agent pilot delegation is expired. Because AK direction validation requires exactly one active strategic root, `SF1` remains only as `terminal_anchor_no_active_wave`; it authorizes no active pilot work or second pilot.
 
 This completion does not authorize factory-wide rollout, physical deletion, another pilot, FCOS authority changes, or template propagation. Reactivation or further retirement requires a new accepted owner decision.
