@@ -48,12 +48,12 @@
         "warning_count": 0
       },
       "schema_version": 3,
-      "version": "0.1.4",
+      "version": "0.2.1",
       "workspace_ref_mode": "loose"
     }
   },
   "last_command": "validate",
   "repo": "/home/tryinget/ai-society/softwareco/infra",
   "schema_version": 3,
-  "version": "0.1.4"
+  "version": "0.2.1"
 }

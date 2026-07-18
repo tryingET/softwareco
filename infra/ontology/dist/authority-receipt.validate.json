@@ -43,6 +43,6 @@
     "warning_count": 0
   },
   "schema_version": 3,
-  "version": "0.1.4",
+  "version": "0.2.1",
   "workspace_ref_mode": "loose"
 }

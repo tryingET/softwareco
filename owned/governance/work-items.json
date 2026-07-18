@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-04-05",
+  "updated_at": "2026-07-18",
   "owner": "@project-owners",
   "project_name": "owned",
   "milestones": [
@@ -98,6 +98,214 @@
           ],
           "dod": "Task reaches done in society.db with evidence recorded.",
           "completed_at": "2026-04-05"
+        },
+        {
+          "id": "AK-TASK-1305",
+          "title": "Umbrella: create zotero-plugins monorepo and truthful apply transport",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Umbrella: create zotero-plugins monorepo and truthful apply transport (task #1305)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-15"
+        },
+        {
+          "id": "AK-TASK-1306",
+          "title": "Bootstrap zotero-plugins monorepo from tpl-monorepo",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Bootstrap zotero-plugins monorepo from tpl-monorepo (task #1306)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-14"
+        },
+        {
+          "id": "AK-TASK-1307",
+          "title": "Define Zotero plugin execution-request and result contract",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Define Zotero plugin execution-request and result contract (task #1307)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-14"
+        },
+        {
+          "id": "AK-TASK-1308",
+          "title": "Scaffold zotero-safe-update-bridge plugin package and install surface",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Scaffold zotero-safe-update-bridge plugin package and install surface (task #1308)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-14"
+        },
+        {
+          "id": "AK-TASK-1309",
+          "title": "Implement safe-field execution-request apply engine in Zotero plugin",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Implement safe-field execution-request apply engine in Zotero plugin (task #1309)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-14"
+        },
+        {
+          "id": "AK-TASK-1310",
+          "title": "Implement plugin result receipt and readback emission",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Implement plugin result receipt and readback emission (task #1310)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-14"
+        },
+        {
+          "id": "AK-TASK-1311",
+          "title": "Add local install and smoke harness for zotero-safe-update-bridge",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Add local install and smoke harness for zotero-safe-update-bridge (task #1311)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-14"
+        },
+        {
+          "id": "AK-TASK-1336",
+          "title": "Implement installed-add-on request claim and processing loop for zotero-safe-update-bridge",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Implement installed-add-on request claim and processing loop for zotero-safe-update-bridge (task #1336)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-15"
+        },
+        {
+          "id": "AK-TASK-1337",
+          "title": "Add installed-add-on end-to-end smoke verification for zotero-safe-update-bridge",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Add installed-add-on end-to-end smoke verification for zotero-safe-update-bridge (task #1337)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-15"
+        },
+        {
+          "id": "AK-TASK-1338",
+          "title": "Document live zotero-safe-update-bridge runtime configuration and operator workflow",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Document live zotero-safe-update-bridge runtime configuration and operator workflow (task #1338)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-15"
+        },
+        {
+          "id": "AK-TASK-1772",
+          "title": "[DISCOVERABILITY][UMBRELLA] Harden owned-lane capability-map wording against overstated or overlapping cues",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "[DISCOVERABILITY][UMBRELLA] Harden owned-lane capability-map wording against overstated or overlapping cues (task #1772)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1773",
+          "title": "[DISCOVERABILITY][OWNED] Tighten the zotero-plugins row so routing summaries do not outrun owner-layer capability proof",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "[DISCOVERABILITY][OWNED] Tighten the zotero-plugins row so routing summaries do not outrun owner-layer capability proof (task #1773)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1774",
+          "title": "[DISCOVERABILITY][OWNED] Tighten the pi-extensions row so authority-vs-integration cues stay explicit",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "[DISCOVERABILITY][OWNED] Tighten the pi-extensions row so authority-vs-integration cues stay explicit (task #1774)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-1775",
+          "title": "[DISCOVERABILITY][OWNED] Clarify the workstation-capabilities row against infra/workstation packaging and runtime-control-plane ownership",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "[DISCOVERABILITY][OWNED] Clarify the workstation-capabilities row against infra/workstation packaging and runtime-control-plane ownership (task #1775)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-04-19"
+        },
+        {
+          "id": "AK-TASK-4057",
+          "title": "Refresh owned routing and engineering-core adoption projections",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Refresh owned routing and engineering-core adoption projections (task #4057)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-07-18"
+        },
+        {
+          "id": "AK-TASK-4064",
+          "title": "Refresh owned AK work-items projection after closeout",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Refresh owned AK work-items projection after closeout (task #4064)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-07-18"
         }
       ]
     }
