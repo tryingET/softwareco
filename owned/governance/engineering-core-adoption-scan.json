@@ -1,7 +1,7 @@
 {
   "completeness": "complete",
   "failures": [],
-  "generated_at": "2026-07-18T09:49:05.383950+00:00",
+  "generated_at": "2026-07-20T02:03:55.486619+00:00",
   "include_packages": true,
   "include_scope_root": false,
   "limits": {
@@ -11,7 +11,7 @@
     "max_repositories": 1000
   },
   "loop_validation_status_counts": {
-    "complete": 119
+    "complete": 118
   },
   "omissions": [],
   "records": [
@@ -762,55 +762,6 @@
       "name": "email-copilot",
       "notes": [],
       "path": "email-copilot",
-      "ref": "v0.7.0",
-      "scope": "/home/tryinget/ai-society/softwareco/owned",
-      "semantic_flags": [],
-      "semantic_status": "ok",
-      "status": "adopted",
-      "structural_notes": []
-    },
-    {
-      "disciplines": [
-        "validation",
-        "testing",
-        "security-privacy",
-        "documentation",
-        "dependency-governance",
-        "specification-and-dsls",
-        "engineering-reasoning"
-      ],
-      "has_catalog_command": true,
-      "has_engineering_doc": true,
-      "has_engineering_policy": true,
-      "has_justfile": true,
-      "has_legacy_doc": false,
-      "has_legacy_policy": false,
-      "has_list_disciplines_command": true,
-      "has_list_templates_command": true,
-      "has_loop_validation_contract": true,
-      "implementation_stack": [
-        "docs",
-        "evidence",
-        "governance"
-      ],
-      "kind": "repo",
-      "lane_status": "no_language_lane",
-      "lanes": [],
-      "loop_validation_commands": [
-        "loop-doctor",
-        "loop-verify-fast",
-        "loop-impact-plan",
-        "loop-impact-run",
-        "loop-impact-wide",
-        "loop-landing-check"
-      ],
-      "loop_validation_missing_commands": [],
-      "loop_validation_notes": [],
-      "loop_validation_status": "complete",
-      "loop_validation_version": "repo-loop-validation-v1",
-      "name": "fcos-proving-lane",
-      "notes": [],
-      "path": "fcos-proving-lane",
       "ref": "v0.7.0",
       "scope": "/home/tryinget/ai-society/softwareco/owned",
       "semantic_flags": [],
@@ -5884,47 +5835,47 @@
   "scope_summaries": [
     {
       "loop_validation_status_counts": {
-        "complete": 119
+        "complete": 118
       },
       "packages": 77,
-      "repos": 42,
+      "repos": 41,
       "scope": "/home/tryinget/ai-society/softwareco/owned",
       "semantic_status_counts": {
-        "ok": 119
+        "ok": 118
       },
       "status_counts": {
-        "adopted": 119
+        "adopted": 118
       },
-      "total": 119
+      "total": 118
     }
   ],
   "scopes": [
     "/home/tryinget/ai-society/softwareco/owned"
   ],
   "semantic_status_counts": {
-    "ok": 119
+    "ok": 118
   },
   "status_counts": {
-    "adopted": 119
+    "adopted": 118
   },
   "summary": {
     "loop_validation_status_counts": {
-      "complete": 119
+      "complete": 118
     },
     "packages": 77,
-    "repos": 42,
+    "repos": 41,
     "semantic_status_counts": {
-      "ok": 119
+      "ok": 118
     },
     "status_counts": {
-      "adopted": 119
+      "adopted": 118
     },
-    "total": 119
+    "total": 118
   },
-  "total": 119,
+  "total": 118,
   "usage": {
-    "files": 57643,
-    "read_bytes": 697448,
-    "repositories": 42
+    "files": 57595,
+    "read_bytes": 691946,
+    "repositories": 41
   }
 }

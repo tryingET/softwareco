@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-18",
+  "updated_at": "2026-07-20",
   "owner": "@project-owners",
   "project_name": "owned",
   "milestones": [
@@ -306,6 +306,19 @@
           ],
           "dod": "Task reaches done in society.db with evidence recorded.",
           "completed_at": "2026-07-18"
+        },
+        {
+          "id": "AK-TASK-4076",
+          "title": "Delete retired fcos-proving-lane after final recoverability capture",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Delete retired fcos-proving-lane after final recoverability capture (task #4076)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-07-20"
         }
       ]
     }

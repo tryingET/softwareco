@@ -7,7 +7,7 @@ type: "generated-report"
 
 # Engineering-core adoption coverage
 
-Generated: 2026-07-18T09:49:05.383950+00:00
+Generated: 2026-07-20T02:03:55.486619+00:00
 
 ## Summary
 
@@ -18,18 +18,18 @@ Generated: 2026-07-18T09:49:05.383950+00:00
 - Per-path failures: `0`
 - Include scope root: `False`
 - Package/member surfaces included: `True`
-- Repos: `42`
+- Repos: `41`
 - Packages/member surfaces: `77`
-- Total records: `119`
-- Structural status counts: `{"adopted": 119}`
-- Semantic status counts: `{"ok": 119}`
-- Loop validation status counts: `{"complete": 119}`
+- Total records: `118`
+- Structural status counts: `{"adopted": 118}`
+- Semantic status counts: `{"ok": 118}`
+- Loop validation status counts: `{"complete": 118}`
 
 ## Scope summaries
 
 | Scope | Repos | Packages | Total | Structural counts | Semantic counts | Loop validation counts |
 |---|---:|---:|---:|---|---|---|
-| /home/tryinget/ai-society/softwareco/owned | 42 | 77 | 119 | `{"adopted": 119}` | `{"ok": 119}` | `{"complete": 119}` |
+| /home/tryinget/ai-society/softwareco/owned | 41 | 77 | 118 | `{"adopted": 118}` | `{"ok": 118}` | `{"complete": 118}` |
 
 ## Review candidates
 
@@ -54,7 +54,6 @@ No structural or semantic review candidates found.
 | owned | dotfiles-managed | dotfiles-managed | repo | adopted | ok | complete | lane_status:no_language_lane | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | yes | - |
 | owned | dspx | dspx | repo | adopted | ok | complete | py | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | yes | - |
 | owned | email-copilot | email-copilot | repo | adopted | ok | complete | py, ts, ts-frontend | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning, design-system, accessibility | yes | yes | no | yes | yes | - |
-| owned | fcos-proving-lane | fcos-proving-lane | repo | adopted | ok | complete | lane_status:no_language_lane | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | yes | - |
 | owned | feedbackApp | feedbackApp | repo | adopted | ok | complete | lane_status:no_first_class_android_kotlin_lane | validation, testing, local-first-data, security-privacy, observability, documentation, dependency-governance, specification-and-dsls, engineering-reasoning, accessibility | yes | yes | no | yes | yes | - |
 | owned | german-tts-voice-lab | german-tts-voice-lab | repo | adopted | ok | complete | py | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | yes | - |
 | owned | glimpseui-linux | glimpseui-linux | repo | adopted | ok | complete | ts, ts-frontend | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning, design-system, accessibility | yes | yes | no | yes | yes | - |
