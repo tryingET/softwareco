@@ -1,17 +1,18 @@
 ---
-summary: "Pre-terminal outcome for Factory Flow pilot 002: protocol and cold-start truthfulness passed, but canonical issue #30/cursor reconciliation blocks review readiness."
+summary: "Redirected Factory Flow pilot 002 outcome: protocol and cold-start truthfulness passed, but canonical issue #30/cursor reconciliation blocks review readiness."
 read_when:
   - "Choosing the terminal action for Factory Flow pilot 002."
   - "Reviewing whether the issue-tracker canary justifies broader template propagation."
 type: "pilot-outcome"
-status: "awaiting_human_terminal_decision"
-as_of: "2026-07-20T18:29:34Z"
+status: "redirected"
+as_of: "2026-07-20T18:41:25Z"
 decision_id: 68
 pilot_id: "SOFTWARECO-FACTORY-PILOT-002"
-recommended_terminal_decision: "redirect"
+terminal_decision: "redirect"
+terminal_evidence_id: 4981
 ---
 
-# Factory Flow pilot 002 — pre-terminal outcome
+# Factory Flow pilot 002 — redirected outcome
 
 ## Verdicts
 
@@ -37,7 +38,7 @@ Reconciliation performed:
 - linked completed Softwareco integration task `#4094`, active closeout task `#4096`, and Decision 68;
 - `ak direction check` passes.
 
-`IW3` remains active only until the accountable human selects the terminal action.
+The accountable human selected `redirect`; `IW3` is archived during terminal reconciliation and a separately bounded successor slice owns any design/review follow-up.
 
 ## Step 2 — independent cold-start
 
@@ -85,17 +86,19 @@ The next documented action is:
 
 No reviewed executable procedure currently exists in the operator docs, and AK evidence assertions do not authenticate non-replayable human consent. The canary therefore stops rather than improvising an import, sequence advancement, GitHub query, or external mutation.
 
-## Human terminal decision required
+## Human terminal decision
 
-Available choices:
+At `2026-07-20T18:41:25Z`, the accountable human explicitly selected:
 
-- **complete** — accept truthful blocked classification as the terminal pilot outcome; do not claim a review-ready end-to-end loop;
-- **continue** — keep `IW3` active and gather more evidence without changing the outcome contract;
-- **redirect** — recommended: authorize a new bounded design/review slice for issue `#30` canonical reconciliation, then rerun the cold-start test;
-- **stop** — archive the pilot without reconciliation or propagation.
+> **Redirect — design and review a bounded reconciliation/dedupe path for issue #30, then rerun the cold start.**
 
-No terminal choice is inferred from validation or this report.
+AK evidence `#4981` is controlling. The authorization covers only the follow-on design/review slice. It does **not** authorize AK issue/cursor mutation, GitHub mutation, external effects, or template propagation.
 
-## Propagation gate
+## Step 5 — propagation gate result
 
-Step 5 remains blocked until the accountable human terminal decision. Even after a favorable decision, broader propagation requires a separate template-owner decision that generalizes only the shared invariants above.
+Because the terminal action is `redirect`, not `complete`, broader L2/L0 propagation is **not authorized**. The comparative invariants remain candidate evidence only. A future propagation attempt requires both:
+
+1. a reconciled review-ready follow-on outcome; and
+2. a separate accepted template-owner decision.
+
+The immediate successor is a bounded design/review slice for issue `#30`, followed by another independent cold-start test before any renewed terminal or propagation decision.

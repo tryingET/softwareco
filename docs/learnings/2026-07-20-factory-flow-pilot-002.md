@@ -4,11 +4,12 @@ read_when:
   - "Designing external-issue operator loops or Factory Flow propagation."
   - "Interpreting passing validation, sequence cursors, or projection coherence as readiness."
 type: "learning"
-status: "accepted_pilot_learning_pending_terminal_decision"
+status: "accepted_redirected_pilot_learning"
 date: "2026-07-20"
 decision_id: 68
 pilot_id: "SOFTWARECO-FACTORY-PILOT-002"
-terminal_decision: "pending"
+terminal_decision: "redirect"
+terminal_evidence_id: 4981
 ---
 
 # Learning — truthful observability must precede authorized reconciliation
@@ -68,9 +69,9 @@ Never infer readiness from `halted=false`, a zero-exit validator, a clean worktr
 
 ## Limit and recommendation
 
-Pilot 002 proves safe, rapid detection of a blocked external-issue workflow. It does not yet prove a review-ready or submission-ready end-to-end loop. The recommended terminal choice is **redirect** to a bounded, separately reviewed reconciliation/dedupe procedure for existing issue `#30`, followed by another cold-start run.
+Pilot 002 proves safe, rapid detection of a blocked external-issue workflow. It does not yet prove a review-ready or submission-ready end-to-end loop. The accountable human selected **redirect** to a bounded, separately reviewed reconciliation/dedupe design for existing issue `#30`, followed by another cold-start run (evidence `#4981`).
 
-Broader L2/L0 propagation remains gated by the human terminal decision and a separate template-owner decision.
+Broader L2/L0 propagation is not authorized by this redirected outcome. It remains gated by a later successful outcome and a separate template-owner decision.
 
 ## Evidence
 
@@ -79,5 +80,7 @@ Broader L2/L0 propagation remains gated by the human terminal decision and a sep
 - issue-tracker commits `a0ebbd9` and `518ab43`;
 - Softwareco gitlink commit `3456898`;
 - AK correction evidence `#4971`–`#4975`;
+- cold-start and closeout evidence `#4976`–`#4980`;
+- human terminal redirect evidence `#4981`;
 - cold-start peer `scoutpeer-mrtk5n7j-b8934ad1`;
 - `docs/project/2026-07-20-factory-flow-pilot-002-cold-start-receipt.md`.
