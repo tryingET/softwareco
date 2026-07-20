@@ -30,6 +30,12 @@ The allowed render edges are `L0 -> L1` and `L1 -> L2`. A package generated insi
 - `README.md` — human entrypoint.
 - `next_session_prompt.md` — stable startup procedure, not a mutable status handoff.
 
+### Delegation and flow contract
+
+Generated `AGENTS.md` files are company-neutral and do not appoint organizational roles. They require accepted delegation discovery, scoped owner-native task admission, finite WIP, separation of validation from outcomes/effects, explicit authority for external and terminal actions, and fail-closed escalation on owner ambiguity. CTO/technical-steward packets remain freshness-bounded projections rather than task or authority stores.
+
+Decision 68 authorizes this L1 source contract and fresh-render testing before the issue-tracker canary. It does not authorize production generation of new L2 repos or non-canary L2 updates; those remain frozen until a separate accepted template-owner AK decision.
+
 ### Product and organizational documentation
 
 - `docs/project/purpose.md`, `mission.md`, and `vision.md` — durable narrative direction.

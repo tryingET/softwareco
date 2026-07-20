@@ -4,8 +4,9 @@ read_when:
   - "Determining who may decide, execute, review, or escalate a Softwareco concern."
   - "Handling a high-impact change, cross-repo concern, incident, exception, or ownership conflict."
 type: "policy"
-status: "proposed_inactive"
-as_of: "2026-07-12"
+status: "active_bounded"
+as_of: "2026-07-20"
+decision_id: 68
 mito_layers:
   - "Design & Configuration"
   - "Implementation"
@@ -14,11 +15,11 @@ mito_layers:
 
 # Softwareco governance
 
-> **Status as of 2026-07-12: proposed and inactive.** No accepted Softwareco-scoped AK decision currently appoints the Softwareco Org Owner or activates this company-level policy. The role model and requirements below specify the intended governance contract; they do not grant authority. Existing lawful owner-local and higher-level human authority remains in force.
+> **Status as of 2026-07-20: active within Decision 68's bounded domain.** Decision 68 appoints `human-operator` as Softwareco Org Owner and delegates `softwareco-cto-agent` under [[softwareco/docs/org/cto-agent-charter.md|the CTO Agent charter]]. Authority outside that accepted domain remains owner-local or human-reserved; this document does not enlarge the decision.
 
 ## Governance intent
 
-The proposed Softwareco model uses **distributed ownership with explicit human accountability**. If activated, it should make decisions safer and clearer without creating a new council, PMO, shadow database, or approval queue.
+The Softwareco model uses **distributed ownership with explicit human accountability**. Within Decision 68's bounded activation, it makes decisions safer and clearer without creating a new council, PMO, shadow database, or approval queue.
 
 ```text
 human-owned domain
@@ -33,9 +34,9 @@ Sociocracy 3.0 supplies governance semantics such as drivers, domains, agreement
 
 ## Scope and change authority
 
-If activated through an accepted Softwareco-scoped decision, this policy applies to Softwareco company-level product, platform, service, engineering, contribution, fork, and infrastructure decisions.
+This policy applies only within domains activated through accepted Softwareco-scoped decisions. Decision 68 currently activates technical strategy, L1 template work, and the issue-tracker canary preparation domain; it does not silently activate every portfolio decision.
 
-- **Policy owner:** Softwareco Org Owner, a role that must be assigned through an accepted governance or AK decision surface.
+- **Policy owner:** `human-operator` in the Softwareco Org Owner role recorded by Decision 68.
 - **Change path:** architecture-significant or authority-changing revisions follow the Tier-1 decision lifecycle.
 - **Operational details:** remain with Product, Service, Platform, and Project owners inside their delegated domains.
 
@@ -43,14 +44,13 @@ If activated through an accepted Softwareco-scoped decision, this policy applies
 
 The Softwareco Org Owner role becomes active only when an accepted Softwareco-scoped AK decision records the appointee, delegated domain, reserved decisions, review date, revocation path, and evidence reference. Appointment changes company accountability and therefore must not be inferred from authorship, tool access, or this document.
 
-Until that decision exists:
+Decision 68 satisfies the first bounded activation record: appointee `human-operator`; Softwareco domain; human-reserved decisions; 30-day/canary review; immediate revocation; reviewed RFC/ADR evidence; and linked execution task. Its CTO delegation is defined in `docs/org/cto-agent-charter.md`.
 
-- no new company-level portfolio start/stop, cross-domain exception, or owner-appointment authority is created by these docs;
-- existing Product, Service, Platform, and Project Maintainers retain only their current owner-local authority;
-- architecture-significant company action remains blocked or must be explicitly authorized by the currently lawful higher-level human owner;
-- agents may prepare evidence and proposals but may not fill the vacancy by implication.
+Outside that decision:
 
-The first activation packet should use the canonical decision lifecycle and then create/link the initial Softwareco AK strategic frame. This breaks the circular dependency between “the Org Owner appoints owners” and “an owner is needed to activate the company.”
+- no additional portfolio start/stop, cross-domain exception, or owner-appointment authority is created by these docs;
+- Product, Service, Platform, and Project Maintainers retain owner-local authority;
+- agents may prepare evidence and proposals but may not enlarge the activated domain by implication.
 
 ## Domains
 
@@ -113,7 +113,7 @@ The appointing human authority may delegate technical stewardship to a named **S
 
 ## Proposed decision rights
 
-These allocations become operative only through the activation and delegation records described above. **A = accountable human decider; R = responsible executor; C = consulted.**
+These allocations are operative only where an accepted activation/delegation record covers the domain. Decision 68 activates the bounded CTO/template/canary-preparation domain; other rows remain proposed until separately activated. **A = accountable human decider; R = responsible executor; C = consulted.**
 
 | Decision | A | R | C | Authoritative record |
 |---|---|---|---|---|

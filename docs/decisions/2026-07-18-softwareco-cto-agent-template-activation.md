@@ -6,6 +6,20 @@ type: "adr"
 status: "accepted"
 date: "2026-07-18"
 decision_id: 68
+system4d:
+  container:
+    boundary: "Bounded Softwareco Org Owner/CTO activation, L1 source templates, and one later issue-tracker canary; no broader L2/L0 propagation."
+  compass:
+    driver: "Make technical delegation and agent/project operating contracts explicit before the operator canary."
+  engine:
+    invariants:
+      - "Human residual authority remains explicit."
+      - "AK and source-owner state remain canonical."
+      - "Non-canary production propagation stays frozen."
+  fog:
+    risks:
+      - "Template text is mistaken for delegation authority."
+      - "Canary success is overstated as product-factory proof."
 ---
 
 # ADR — Activate Softwareco CTO Agent and L1 template contract

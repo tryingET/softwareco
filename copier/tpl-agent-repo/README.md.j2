@@ -1,75 +1,74 @@
-# tpl-agent-repo
+# {{ repo_slug }}
 
-L2 template for AI agent repositories.
+Agent product/capability repository generated from its owning company's L1 template.
 
-## Purpose
+## Authority boundary
 
-Generate individual agent repositories with:
-- Persona documentation (`docs/person/`)
-- Activity prompts (`prompts/activities/`)
-- Learnings capture (`docs/learnings/`)
-- Decision records (`docs/decisions/`)
-- CI baseline (`scripts/ci/`)
+This repository owns its agent persona, prompts, code, tests, and release artifacts. It does not appoint the agent to an organizational role or grant company delegation. Organizational delegation must be accepted in AK/governance state and is interpreted through `AGENTS.md`.
 
-## Usage
+## Generated surfaces
 
-From an L1 templates repository:
+- `docs/person/` — persona and behavior contract;
+- `prompts/activities/` — owner-local activity prompts;
+- `docs/decisions/` and `docs/learnings/` — narrative decisions and learning;
+- `governance/work-items.json` — checked-in AK projection;
+- `governance/task-scopes/` — optional frozen AK task-scope exports;
+- `policy/do-not-touch.md` — safety guardrails;
+- `scripts/ci/` — deterministic validation.
+
+## Agent Kernel work-items flow
+
+AK is live authority; `governance/work-items.json` is a deterministic projection.
 
 ```bash
-./scripts/new-repo-from-copier.sh tpl-agent-repo /path/to/agent-<slug> \
-  -d repo_slug=agent-<slug> \
-  -d agent_owner_handle=@<owner> \
-  --defaults --overwrite
+ak work-items import --repo . --path governance/work-items.json
+ak work-items export --repo . --path governance/work-items.json
+ak work-items check --repo . --path governance/work-items.json
 ```
 
-## Structure
+For explicit task scope:
 
+```bash
+mkdir -p governance/task-scopes
+ak task scope export <TASK-ID> > governance/task-scopes/AK-<TASK-ID>.snapshot.json
+./scripts/check-task-scope-snapshots.sh
 ```
-agent-<slug>/
-├── AGENTS.md              # Agent-specific instructions
-├── docs/
-│   ├── _core/             # Vendored governance (immutable)
-│   ├── person/            # Persona definition
-│   │   ├── identity.md
-│   │   ├── main_task.md
-│   │   ├── behavior_rules.md
-│   │   ├── dream_goal.md
-│   │   └── reason.md
-│   ├── decisions/         # ADR-style decision records
-│   ├── learnings/         # Captured learnings (TIP candidates)
-│   └── system4d/          # System 4D context
-├── diary/                 # Repo-local session capture (KES raw input)
-├── prompts/
-│   └── activities/        # Domain activity prompts
-├── policy/
-│   └── do-not-touch.md    # Safety guardrails
-└── scripts/ci/            # CI scripts
+
+`AK_CMD="${AK_CMD:-ak}"` may select an explicit compatible executable. Missing required AK access fails closed; do not substitute a hand-authored state store.
+
+## Reusable procedures
+
+Reusable cognitive and operating procedures are discovered through Prompt Vault query/retrieve surfaces. Check the template's dispatch posture before execution. Keep runtime decisions and evidence in AK rather than copying reusable procedure bodies into this repository.
+
+## Engineering contract
+
+If this agent ships language-specific software, adopt the matching engineering-core lane through `policy/engineering-lane.json` and record local deltas in `docs/engineering.local.md`. Otherwise use engineering-core catalog/list commands for guidance without pretending a local lane contract exists.
+
+## Validation
+
+```bash
+./scripts/ci/smoke.sh
+./scripts/ci/full.sh
 ```
+
+Full CI validates the AK projection when the repo is registered, checks task-scope snapshots, and runs ROCS validation when ontology artifacts exist.
 
 ## Customization
 
-- `repo_slug`: Agent identifier (e.g., `agent-triage`)
-- `agent_owner_handle`: CODEOWNERS entry for agent paths
-- `core_owner_handle`: CODEOWNERS entry for core paths
-- `enable_vouch_gate`: Enable trust gating
-- `enable_community_pack`: Enable community collaboration
-- `enable_release_pack`: Enable release automation
+- `repo_slug`: agent product identifier;
+- `agent_owner_handle`: CODEOWNERS entry for agent-owned paths;
+- `core_owner_handle`: CODEOWNERS entry for core paths;
+- `enable_vouch_gate`, `enable_community_pack`, `enable_release_pack`: optional profile metadata.
 
 ## ROCS command flow
-
-Use deterministic wrapper commands before ad-hoc scripts:
 
 ```bash
 ./scripts/rocs.sh --doctor
 ./scripts/rocs.sh --which
 ```
 
-If this repo includes ontology artifacts, run validation through the same wrapper.
+If ontology artifacts exist, validate through the same wrapper.
 
-## Knowledge Evolution
+## Knowledge evolution
 
-Agents capture raw sessions in `diary/` and crystallize durable patterns in `docs/learnings/`. Learnings that generalize should be proposed as TIPs:
-- Domain learnings → L1 domain TIPs
-- Meta learnings → L0 meta TIPs
-
-See parent L1 `tips/` directory for TIP templates and process.
+Capture raw sessions in `diary/`, crystallize owner-local patterns in `docs/learnings/`, route reusable procedures to Prompt Vault, and route semantic changes to their ontology owner.

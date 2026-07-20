@@ -17,6 +17,7 @@ need_cmd git
 need_cmd grep
 need_cmd mktemp
 need_cmd sort
+need_cmd python3
 
 fail() {
   echo "error: $*" >&2
@@ -311,6 +312,16 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package
     assert_file "copier/$tpl/contracts/layer-contract.yml"
   fi
   assert_file "copier/$tpl/scripts/ci/full.sh"
+  if [ "$tpl" = "tpl-agent-repo" ]; then
+    assert_file "copier/$tpl/governance/README.md"
+    assert_file "copier/$tpl/governance/work-items.cue"
+    assert_file "copier/$tpl/governance/work-items.json.j2"
+    assert_dir "copier/$tpl/governance/task-scopes"
+    assert_file "copier/$tpl/scripts/check-task-scope-snapshots.sh"
+    assert_exec "copier/$tpl/scripts/check-task-scope-snapshots.sh"
+    assert_file "copier/$tpl/scripts/lib/check-task-scope-snapshots.py"
+    assert_not_dir "copier/$tpl/prompts/cognitive-tools"
+  fi
   assert_file "copier/$tpl/diary/README.md"
   assert_contains "copier/$tpl/diary/README.md" "YYYY-MM-DD--type-scope-summary.md" "L2 template $tpl diary README should enforce descriptive filename convention"
   assert_not_dir "copier/$tpl/docs/diary"
@@ -324,6 +335,27 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package
     assert_not_dir "copier/$tpl/gitlab"
   fi
 done
+for tpl in tpl-agent-repo tpl-project-repo; do
+  agents="copier/$tpl/AGENTS.md.j2"
+  assert_contains "$agents" "does not appoint organizational roles or grant company delegation" "$tpl must not infer organizational appointment"
+  assert_contains "$agents" "missing, expired, or ambiguous, stop and escalate" "$tpl must fail closed on delegation ambiguity"
+  assert_contains "$agents" "scoped owner-native task and finite-WIP" "$tpl must require finite-WIP task admission"
+  assert_contains "$agents" "Passing validation is not an outcome" "$tpl must separate validation from outcomes"
+  assert_contains "$agents" "External effects and terminal" "$tpl must reserve effects and terminal decisions"
+  assert_contains "$agents" "never a shadow backlog" "$tpl must keep steward packets non-authoritative"
+done
+assert_not_contains "copier/tpl-agent-repo/AGENTS.md.j2" "work via proposals + merge requests" "agent template must not contradict main-first policy"
+assert_contains "copier/tpl-agent-repo/AGENTS.md.j2" "Prompt Vault query/retrieve surfaces" "agent template must route reusable procedures through Prompt Vault"
+assert_contains "copier/tpl-agent-repo/AGENTS.md.j2" "engineering-core" "agent template must provide generic engineering-core guidance"
+assert_contains "copier/tpl-agent-repo/README.md.j2" "ak work-items import" "agent README must document AK import"
+assert_contains "copier/tpl-agent-repo/README.md.j2" "ak work-items export" "agent README must document AK export"
+assert_contains "copier/tpl-agent-repo/README.md.j2" "ak work-items check" "agent README must document AK drift check"
+assert_contains "copier/tpl-agent-repo/README.md.j2" "Prompt Vault query/retrieve surfaces" "agent README must route reusable procedures through Prompt Vault"
+assert_contains "copier/tpl-agent-repo/README.md.j2" "engineering-core" "agent README must provide generic engineering guidance"
+assert_not_contains "copier/tpl-agent-repo/README.md.j2" "Softwareco's L1 template" "generic agent template must not leak Softwareco identity"
+assert_contains "copier/tpl-agent-repo/scripts/ci/full.sh" 'AK_CMD="${AK_CMD:-ak}"' "agent full CI must use plain configurable AK"
+assert_contains "copier/tpl-agent-repo/scripts/ci/full.sh" "work-items check" "agent full CI must check projection drift"
+
 if [ -f "next_session_prompt.md" ]; then
   assert_command_succeeds "softwareco docs-list wrapper should parse repo next-session prompt" ./scripts/docs-list.sh --from-prompt next_session_prompt.md --paths-only --wikilink
 fi
@@ -620,6 +652,24 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
     assert_file "$l2_dir/scripts/lib/repo-surface.sh"
   fi
   assert_file "$l2_dir/scripts/ci/full.sh"
+  if [ "$tpl" = "tpl-agent-repo" ]; then
+    assert_file "$l2_dir/governance/README.md"
+    assert_file "$l2_dir/governance/work-items.cue"
+    assert_file "$l2_dir/governance/work-items.json"
+    assert_dir "$l2_dir/governance/task-scopes"
+    assert_file "$l2_dir/scripts/check-task-scope-snapshots.sh"
+    assert_exec "$l2_dir/scripts/check-task-scope-snapshots.sh"
+    assert_file "$l2_dir/scripts/lib/check-task-scope-snapshots.py"
+    assert_exec "$l2_dir/scripts/lib/check-task-scope-snapshots.py"
+    assert_contains "$l2_dir/README.md" "ak work-items import" "generated agent README must document AK import"
+    assert_contains "$l2_dir/README.md" "ak work-items export" "generated agent README must document AK export"
+    assert_contains "$l2_dir/README.md" "ak work-items check" "generated agent README must document AK drift check"
+    assert_contains "$l2_dir/README.md" "Prompt Vault query/retrieve surfaces" "generated agent README must route through Prompt Vault"
+    assert_contains "$l2_dir/README.md" "engineering-core" "generated agent README must provide engineering guidance"
+    assert_not_contains "$l2_dir/README.md" "Softwareco's L1 template" "generated agent README must remain company-neutral"
+    assert_not_contains "$l2_dir/AGENTS.md" "work via proposals + merge requests" "generated agent instructions must not retain stale MR-only intent"
+    assert_not_dir "$l2_dir/prompts/cognitive-tools"
+  fi
   assert_file "$l2_dir/diary/README.md"
   assert_contains "$l2_dir/diary/README.md" "YYYY-MM-DD--type-scope-summary.md" "generated $tpl diary README should enforce descriptive filename convention"
   assert_not_dir "$l2_dir/docs/diary"
@@ -628,6 +678,14 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
   assert_contains "$l2_dir/AGENTS.md" "scripts/rocs.sh" "generated $tpl AGENTS should reference scripts/rocs.sh"
   assert_contains "$l2_dir/AGENTS.md" "diary/" "generated $tpl AGENTS should reference repo-local diary"
   assert_contains "$l2_dir/README.md" "ROCS command flow" "generated $tpl README should include ROCS command flow section"
+  if [ "$tpl" = "tpl-agent-repo" ] || [ "$tpl" = "tpl-project-repo" ]; then
+    assert_contains "$l2_dir/AGENTS.md" "does not appoint organizational roles or grant company delegation" "generated $tpl must not infer appointment"
+    assert_contains "$l2_dir/AGENTS.md" "missing, expired, or ambiguous, stop and escalate" "generated $tpl must fail closed on delegation ambiguity"
+    assert_contains "$l2_dir/AGENTS.md" "scoped owner-native task and finite-WIP" "generated $tpl must require finite-WIP admission"
+    assert_contains "$l2_dir/AGENTS.md" "Passing validation is not an outcome" "generated $tpl must separate validation from outcome"
+    assert_contains "$l2_dir/AGENTS.md" "External effects and terminal" "generated $tpl must reserve effects"
+    assert_contains "$l2_dir/AGENTS.md" "never a shadow backlog" "generated $tpl must keep packets non-authoritative"
+  fi
   if [ "$tpl" = "tpl-project-repo" ]; then
     assert_not_file "$l2_dir/.gitlab-ci.yml"
     assert_not_dir "$l2_dir/gitlab"
@@ -642,6 +700,33 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
     git add . >/dev/null
     git commit -m "initial L2 render" >/dev/null
     ./scripts/ci/smoke.sh >/dev/null
+    if [ "$tpl" = "tpl-agent-repo" ]; then
+      fake_ak="$tmp_root/fake-ak-pass"
+      cat > "$fake_ak" <<'EOF'
+#!/bin/sh
+if [ "$1" = "work-items" ] && [ "$2" = "check" ]; then
+  [ "$3" = "--repo" ] && [ "$4" = "." ] && [ "$5" = "--path" ] && [ "$6" = "./governance/work-items.json" ] || exit 9
+fi
+exit 0
+EOF
+      chmod +x "$fake_ak"
+      AK_CMD="$fake_ak" ./scripts/ci/full.sh >/dev/null
+
+      fake_ak="$tmp_root/fake-ak-drift"
+      cat > "$fake_ak" <<'EOF'
+#!/bin/sh
+if [ "$1" = "work-items" ] && [ "$2" = "check" ]; then
+  echo "projection drift" >&2
+  exit 1
+fi
+exit 0
+EOF
+      chmod +x "$fake_ak"
+      if AK_CMD="$fake_ak" ./scripts/ci/full.sh >/dev/null 2>&1; then
+        echo "error: generated agent full CI accepted projection drift" >&2
+        exit 1
+      fi
+    fi
   )
 
   ./scripts/new-repo-from-copier.sh "$tpl" "$l2_dir" \
@@ -657,6 +742,15 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
     fi
   )
 done
+
+# Test tpl-package separately (different parameters, no git required)
+adversarial_agent_dir="$tmp_root/tpl-agent-repo-adversarial-json"
+./scripts/new-repo-from-copier.sh tpl-agent-repo "$adversarial_agent_dir" \
+  -d 'repo_slug=agent-"quoted\\slug' \
+  -d 'agent_owner_handle=@owner"\\name' \
+  --defaults --overwrite >/dev/null
+python3 -m json.tool "$adversarial_agent_dir/governance/work-items.json" >/dev/null || \
+  fail "generated agent work-items JSON must escape unrestricted Copier string inputs"
 
 # Test tpl-package separately (different parameters, no git required)
 tpl="tpl-package"

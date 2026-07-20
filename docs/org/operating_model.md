@@ -57,9 +57,9 @@ Lane maps route work; owner repos prove current capability. Start with:
 
 ## Accountability model
 
-The company uses role-based accountability. The **Softwareco Org Owner** is the accountable human role for portfolio posture, appointments, company boundaries, cross-domain tradeoffs, and company-level exceptions. The role must be assigned through accepted governance/AK state; this document does not invent an appointee.
+The company uses role-based accountability. Decision 68 appoints `human-operator` as the **Softwareco Org Owner** for its bounded activation domain and delegates `softwareco-cto-agent` through [[softwareco/docs/org/cto-agent-charter.md|the CTO Agent charter]]. The human retains residual accountability and every reserved decision named by that decision.
 
-Product, Service, Platform, Domain, and Project owners retain authority inside explicit delegations. Agents execute and advise within scope but do not hold residual accountability.
+Product, Service, Platform, Domain, and Project owners retain authority inside explicit delegations. Agents execute and advise within scope but do not hold residual accountability or enlarge the activated domain.
 
 Full decision rights: [[softwareco/docs/org/governance.md|Softwareco Governance]].
 
@@ -90,11 +90,11 @@ Rules:
 - A passing build is not a release; a release is not an outcome.
 - Company WIP is finite. Starting a commitment names what is deferred, displaced, or stopped.
 
-Emerging factory contract: [[softwareco/docs/project/2026-07-12-software-factory-operating-system-rfc.md|Softwareco Factory Flow Protocol RFC]]. Its review artifacts bind exact historical revisions. Consult the RFC status and latest controlling synthesis rather than copying a volatile working-tree hash here. Until a tracked revision receives `ready_for_adr`, it remains proposed and non-authorizing.
+Factory contract: Decision 62 accepted [[softwareco/docs/project/2026-07-12-software-factory-operating-system-rfc.md|the Softwareco Factory Flow Protocol]] for pilot 001. Decision 68 accepts bounded CTO Agent/L1 template activation before an issue-tracker canary while freezing every other L2/L0 propagation pending a separate template-owner decision. Consult the accepted decisions and latest controlling syntheses rather than inferring authority from this summary.
 
 ## Proposed operating cadence
 
-No company-level evidence currently proves that this cadence is running consistently. Once governance is activated, cadence outputs belong in owner-native runtime/evidence surfaces rather than in this table.
+Decision 68 activates a bounded CTO cadence for the template and issue-tracker canary domain. It does not prove company-wide recurring operation. Cadence outputs belong in AK/source-owner evidence and the freshness-bounded CTO packet, not in this table.
 
 | Cadence | Question |
 |---|---|
@@ -192,7 +192,7 @@ Softwareco contains many component repositories and shared engineering-policy su
 - the Softwareco Org Owner role was defined but not yet assigned in accepted runtime/governance state;
 - product and service maturity varied substantially across owner repos.
 
-These are honest transition facts, not reasons to weaken the ambition above. Live status should be read from AK, FCOS, and owner repositories rather than copied forward here.
+Those bullets describe the dated 2026-07-12 baseline. Decision 68 subsequently activated `human-operator` and the bounded CTO Agent charter for template/canary work; it did not activate the whole portfolio or prove company-wide cadence. Live status must still be read from AK, FCOS, and owner repositories rather than copied forward here.
 
 Dated evidence:
 
