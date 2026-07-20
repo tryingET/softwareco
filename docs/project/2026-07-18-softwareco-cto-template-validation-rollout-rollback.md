@@ -24,7 +24,7 @@ decision_id: 68
 
 - Stage A: governance and L1 template source only.
 - Stage B: fresh-render validation only; no production consumer generation.
-- Stage C: one issue-tracker review-branch canary under its own AK task.
+- Stage C: one issue-tracker main-first canary under its own AK task; branch/PR only on explicit operator request.
 - Stage D: human terminal decision and learning.
 - Stage E: optional broader propagation only through a separate accepted template-owner decision.
 

@@ -38,4 +38,4 @@ decision_id: 68
 
 ## Phase 5 — canary handoff
 
-After L1 acceptance, create a separate `infra/issue-tracker` source-owner task and review branch. Do not mutate the canary from this task.
+After L1 acceptance, create a separate `infra/issue-tracker` source-owner task under the repository's main-first workflow. Do not mutate the canary from this task, and use a branch or PR only if the operator explicitly requests a review gate.

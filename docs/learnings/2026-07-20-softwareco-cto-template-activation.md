@@ -19,7 +19,7 @@ The reversal remained authority-correct because the accepted contract separated 
 3. one reversible existing-L2 canary;
 4. broader L2/L0 propagation.
 
-Only the first two are complete. The issue-tracker canary requires a separate source-owner task and review branch. Every other production L2 generation/update remains frozen until a separate accepted template-owner decision, regardless of the canary's terminal outcome.
+The first two are complete, and the issue-tracker canary has now landed through a separate source-owner task on `main`. Its independent cold start truthfully classified canonical issue/cursor drift as blocked, so terminal outcome and broader propagation remain pending. Every other production L2 generation/update stays frozen until a separate accepted template-owner decision, regardless of the canary's terminal outcome.
 
 The agent template also exposed a useful distinction: an agent repository owns an agent product/capability, while an organizational CTO appointment lives in accepted governance/AK state. Mixing those concerns turns repository text into accidental authority.
 

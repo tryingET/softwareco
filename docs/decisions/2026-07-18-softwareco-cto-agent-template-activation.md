@@ -50,7 +50,7 @@ No production generation of new L2 repositories and no non-canary existing-L2 up
 1. Track implementation and validation/rollback plans.
 2. Land governance and L1 template changes with deterministic tests.
 3. Validate fresh renders.
-4. Open the issue-tracker canary as a separate source-owner task and review branch.
+4. Open the issue-tracker canary as a separate source-owner task on the repository's main-first workflow; use a branch or PR only if the operator explicitly requests a review gate.
 5. Record conformance, effectiveness, learning, and a human terminal decision.
 
 ## Rollback

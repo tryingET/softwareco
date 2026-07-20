@@ -44,7 +44,7 @@ It does not yet state how an agent discovers a company delegation, admits finite
 
 - canonical AK issue state and a generated `STATE.json` projection;
 - explicit external-effect risk around upstream issue submission;
-- an MR-only repo-local exception;
+- repo-local docs that, at evidence-capture time, claimed an MR-only exception; closeout later proved that claim stale and restored Softwareco's main-first policy (`518ab43`, correction evidence `#4971`);
 - deterministic validation and sequence workflows;
 - two existing pending tasks and a preserved non-promoted WIP branch.
 

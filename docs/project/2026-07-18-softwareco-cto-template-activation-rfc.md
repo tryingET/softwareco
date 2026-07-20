@@ -120,7 +120,7 @@ An agent repository is an agent product/capability source owner, not an organiza
 
 Authorize one existing-L2 migration canary at baseline `infra/issue-tracker` main commit `7f04a290ac9c9f14d3de3034755753ea5323cf6f`.
 
-The canary may change only paths named in its AK task, expected to include repo-local `AGENTS.md`, `README.md`, projection/export validation scripts, and tests needed to exercise the shared contract. It must use a review branch/MR workflow, preserve an exact baseline diff, and provide a one-command restoration or revert path.
+The canary may change only paths named in its AK task, expected to include repo-local `AGENTS.md`, `README.md`, projection/export validation scripts, and tests needed to exercise the shared contract. It follows Softwareco's main-first workflow, must preserve an exact baseline diff, and must provide a one-command restoration or revert path; a branch or PR is used only when the operator explicitly requests a review gate.
 
 Fixed cold-start scenarios must classify:
 
@@ -150,7 +150,7 @@ Also run strict docs validation, template CI, rendered full-CI with deterministi
 
 - supersede/revoke the AK delegation record rather than rewriting history;
 - revert isolated L1 template/governance commits;
-- restore issue-tracker to its recorded baseline through its source-owner branch/MR revert;
+- restore issue-tracker to its recorded baseline by reverting the isolated main-first canary commits;
 - verify template CI, issue-tracker validation, AK projections, and absence of external effects;
 - leave L0 and all non-canary L2 repos unchanged.
 
