@@ -225,3 +225,21 @@ Ephemeral receipts:
 - observed UTC: `2026-07-25T12:16:03.681691691Z`;
 - RPC stdout JSONL SHA-256: `3342d0afab02a33daf868692a8c9c193e9402074627efeff14bbf414034bed4b`;
 - RPC stderr SHA-256: `01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b` (newline-only file).
+
+## First completed outcome-wave dogfood
+
+Corrected sensing produced the proposal at `docs/project/2026-07-25-softwareco-portfolio-cto-dogfood-thesis.md`. Three owner-repo candidates were compared; DesignMD Foundry stage-aware loop impact planning was selected only after direct Product/Project acceptance receipts `8838` and `8839`.
+
+The controller created proposed wave `IW-SF3-DMF-LOOP-IMPACT`, admitted owner task `3425` through evidence `5167`, and preserved owner-native execution. DesignMD Foundry then:
+
+- proved the old recipe misclassified a real staged runtime edit as `normal`;
+- changed `Justfile` to include `git diff --cached --name-only`;
+- proved committed staged runtime/design changes route to `wide` / `just loop-impact-wide`;
+- proved staged ordinary docs remain `normal` / `just loop-impact-run`;
+- passed fast validation, full wide validation, final landing validation, work-item projection, 57 task-scope snapshots, and ROCS;
+- landed implementation commit `3c65773` and projection closeout `33ff05b`;
+- completed owner task `3425` with evidence `5169`, `5172`, and `5174`.
+
+Direct owner terminal receipts `8851` and `8852` accepted the outcome and implementation. Release receipt `8854` and evidence `5175` freed the completed task from portfolio WIP. Portfolio outcome evidence `5176` records the verified wrapper outcome, and the wave is `done` with zero external effects.
+
+This satisfies Decision 74's proof target of one evidence-backed portfolio thesis and one completed outcome wave. It does not by itself prove recurring portfolio operation beyond the first canary.
