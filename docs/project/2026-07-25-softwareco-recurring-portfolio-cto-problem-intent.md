@@ -5,6 +5,7 @@ read_when:
 type: "problem"
 status: "decision_pending"
 date: "2026-07-25"
+decision_id: 77
 predecessor_decision_id: 74
 governance_task_id: 4205
 ---
