@@ -48,11 +48,28 @@ Inspection found:
 
 Inspection revisions:
 
-- Softwareco: `e66ccec993f19cd7546cb53ef52ef1916a26ef10`;
-- `owned/pi-extensions`: `891a8fd51e6ec004bce35f3c11d6a8d673ceec2e`;
+- Softwareco historical baseline: `e66ccec993f19cd7546cb53ef52ef1916a26ef10`;
+- Softwareco's recorded `owned/pi-extensions` gitlink baseline: `891a8fd51e6ec004bce35f3c11d6a8d673ceec2e`;
+- immutable Pi Modes release dependency: package `@tryinget/pi-modes` `0.3.0`, tag `pi-modes-v0.3.0`, owner commit `173b508b0bea27550f061e252e1d86a0638d2d71`;
+- release proof surfaces at that commit: `packages/pi-modes/README.md`, `schemas/mode.schema.json`, `schemas/preset.schema.json`, `scripts/mode-lint.mjs`, `tests/state-v3-and-presets.test.ts`, and `tests/observability-and-commands.test.ts`;
 - `holdingco/fcos-control-board`: `b5efb2502608c6973ffabd3667f245bc1bbf342f`;
-- Pi Modes contract: `owned/pi-extensions/packages/pi-modes/README.md` at the revision above;
-- FCOS authority contract: `holdingco/fcos-control-board/docs/project/authority-boundary.md` at the revision above.
+- FCOS authority contract: `holdingco/fcos-control-board/docs/project/authority-boundary.md` at that revision.
+
+The active Pi package setting currently points at a mutable local `pi-extensions/packages/pi-modes` checkout. That checkout cannot prove immutable runtime identity. Decision 74 therefore pins the exact `0.3.0` release above.
+
+On 2026-07-25, an isolated `git archive` of exact commit `173b508b0bea27550f061e252e1d86a0638d2d71` was extracted under `/tmp`, followed by `npm ci --ignore-scripts`, `npm run check`, and `npm run release:check:quick`. Results:
+
+- package version: `0.3.0`;
+- quality, structure, file-budget, type/lint checks: pass;
+- tests: 73 pass, 0 fail;
+- release quick gate: pass;
+- npm registry readback: `0.3.0`;
+- packed shasum: `4b494139fefd8b94c47fedea111c6eb9f389b466`;
+- packed integrity: `sha512-jFblJLAsc9b3dvHes5+ULo8dP9STS8QHNPTpeKk36cqysHX5jYwUmDpnfSnY17dTYNn5y56O6vcYuTDpP68noA==`;
+- Pi smoke: intentionally skipped by the quick gate because no accepted Softwareco integration artifacts exist yet;
+- `npm ci` reported one moderate and one high development-tree audit finding; the package declares no runtime dependencies, and the owner release gate still passed. This is recorded rather than silently treated as runtime exploit proof.
+
+Exact-release installation, Softwareco mode/preset lint, and fresh live command proof remain post-ADR activation gates. The mutable checkout is feasibility evidence only.
 
 ## Operator correction and selection
 

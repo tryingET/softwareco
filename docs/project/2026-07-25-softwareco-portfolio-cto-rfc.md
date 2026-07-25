@@ -22,6 +22,15 @@ The mandate begins only after an accepted AK decision and activation of `SF3`. I
 - immediate revocation by `human-operator`;
 - a superseding accepted decision.
 
+`SF3 state_detail` is the authority-owned delegation readback:
+
+- active: `delegated_active_decision_74;effective_at_utc=<RFC3339>;expires_at_utc=<RFC3339>`;
+- revoked: `delegation_revoked_decision_74;revoked_at_utc=<RFC3339>;revoked_by=human-operator;governance_receipt_id=<id>`;
+- superseded: `delegation_superseded_decision_74;superseding_decision_id=<id>;superseded_at_utc=<RFC3339>`;
+- mandate terminal: `delegation_terminal_decision_74;terminal_action=<continue|stop|redirect|complete>;decided_at_utc=<RFC3339>;decision_evidence_id=<id>`.
+
+Only the exact active form authorizes CTO control, and only before its expiry. Revocation, supersession, and terminal transitions require a claimed, scoped Softwareco task plus attributable human evidence; `ak direction update` then replaces the active detail atomically. Expiry is effective by time even before a cleanup update. On any disagreement among Decision 74, `SF3`, controller state, or projections, advisory-only behavior wins.
+
 ## Problem and evidence
 
 See:
@@ -63,6 +72,19 @@ Decision 68's delegation expired. No CTO-specific mode, preset, entrypoint, gene
 - source of live authority: the accepted AK decision plus active `SF3` state; `docs/org/cto-agent-charter.md` is the bounded human-readable projection and cannot enlarge that authority.
 - consultation duty: affected Product, Platform, Service, Domain, and Project owners retain owner-local acceptance and must be consulted before their work is admitted, displaced, paused, or mutated.
 
+### Finite governance decision-right delta
+
+For Decision 74's mandate only, the following rule temporarily specializes the current governance table:
+
+| Concern | Accountable acceptance | Delegated CTO decision | Source-owner boundary |
+|---|---|---|---|
+| Portfolio ranking and technical sequence among accepted commitments | Softwareco Org Owner retains residual accountability; affected Product/Domain Owners accept the outcome and capacity envelope | CTO ranks investments and selects their technical ordering | No task or product lifecycle mutation follows from ranking alone |
+| Portfolio-wave admission, pause, redirect, displacement, completion | Affected Product/Domain Owners accept outcome, capacity, displacement, and terminal evidence; `human-operator` acts when a required role is vacant or ambiguous | CTO chooses and operates the portfolio wrapper inside those accepted envelopes | Wrapper lifecycle never mutates an owner task |
+| Exact repository task | Project Maintainer/source owner accepts scope; Service/Platform Owner also accepts when operations or a shared contract are affected | CTO may request, claim, and execute only as the task contract permits | AK/source-owner task lifecycle remains controlling |
+| Cross-repo coordination | Affected Product/Domain Owners accept the cross-owner outcome; FCOS owner accepts any board mutation | CTO requests and stewards coordination | FCOS remains non-claimable and cannot approve owner work |
+
+This delta does not transfer Product/Domain outcome accountability to the CTO. It delegates the technical sequencing choice **after** the relevant owners have accepted their outcome, capacity, and displacement envelopes. Silence is never acceptance.
+
 ### May decide
 
 This decision explicitly changes Softwareco's decision-right allocation for the finite mandate. Inside already accepted product and architecture postures, the CTO may:
@@ -76,6 +98,23 @@ This decision explicitly changes Softwareco's decision-right allocation for the 
 - determine that the **portfolio wave** outcome contract is satisfied only after every affected source owner has recorded its own acceptance and evidence.
 
 This authority does not let the CTO create, claim, pause, displace, close, or mutate an owner-repo task without that repository's governing AK/task contract and owner acceptance. It also does not include starting or ending a product commitment, permanently retiring a maintained capability, changing an accountable owner, overriding a Product/Domain Owner's accepted posture, or accepting an architecture-significant decision.
+
+### Acceptance records and objections
+
+Role acceptance is recorded as an AK governance receipt, not free-form prose. The controller uses `ak governance record` with:
+
+- `concern=softwareco-portfolio-wave:<wave_key>:<role>:acceptance`;
+- `source_authority=<named accountable role/owner>`;
+- `mito_layer=Design & Configuration`;
+- `s3_domain_ref=<accepted domain or repo>`;
+- `agreement_ref=decision:74`;
+- `to_state=accepted`, `consent_mode=explicit`, `status=applied`;
+- `task_id=<Softwareco coordinator task>`, `repo_scope=<affected scope>`, `actor=<named accountable actor>`;
+- details schema `softwareco.portfolio-role-acceptance.v1` containing `role`, `wave_key`, `outcome_envelope`, `capacity_envelope`, `displacement_refs`, `owner_task_ref` where applicable, and `accepted_at_utc`.
+
+Required receipts are Product/Domain outcome-priority-capacity acceptance, Project Maintainer/source-owner exact task acceptance, Service/Platform acceptance when duties change, and attributable `human-operator` fallback when a required role is vacant or disputed. Their receipt ids are referenced by the coordinator admission evidence; lifecycle state remains owner-native. Silence, an FCOS item, task creation alone, or model-written prose is not acceptance.
+
+An affected owner may object before admission or request a stop afterward through a governance receipt with `to_state=objected`. Unresolved objections stop admission or further CTO control and route to `human-operator`; they never authorize the CTO to override the owner.
 
 ### May execute
 
@@ -137,26 +176,56 @@ No opaque numeric score is required. Every ranking claim must cite inspectable e
 
 ### Finite WIP and first-mandate enforcement
 
-During the mandate:
+#### Canonical membership
 
-- no more than two portfolio-level implementation waves may be admitted as active;
-- no more than six owner-repo execution tasks may be admitted as claimed or active under those waves;
-- each portfolio wave has one Softwareco coordinator task linked to `SF3`; that task records the accepted owner-task and FCOS references without copying their lifecycle state;
-- each owner mutation requires its own exact source-owner task scope and owner acceptance;
-- a wave is a grouping and outcome contract, never executable authority;
-- unrelated existing owner work is not counted and cannot be displaced unless its owner explicitly admits it;
-- opening work at the limit requires completing, owner-accepted release, or explicit displacement of already admitted work;
-- only one CTO controller session may admit work during this first mandate.
+- An admitted wave is an `SF3` child `work_wave` with `state=active` and `state_detail=portfolio_admitted_decision_74`.
+- Each admitted wave has exactly one Softwareco coordinator task linked to that wave through `ak direction link-task`.
+- Each owner task is admitted by an append-only AK evidence event on the coordinator task with `check_type=portfolio_task_admission`, `result=pass`, and details schema `softwareco.portfolio-task-admission.v1`.
+- The details contain `event=admit|release`, `wave_key`, `owner_repo_scope`, `owner_task_id`, `role_acceptance_governance_receipt_ids`, `release_governance_receipt_id` when releasing, observed owner status, controller task id, controller claimant, controller lease expiry, and observed UTC time.
+- The latest evidence id for each distinct `(owner_repo_scope, owner_task_id)` is controlling. One owner task may belong to only one admitted wave; duplicate refs count once and cross-wave sharing is prohibited.
 
-AK does not currently expose an atomic cross-repository portfolio-admission primitive. Therefore the canary uses a single-controller, human-observable admission protocol: before admission, the CTO reads `SF3` child waves, their Softwareco coordinator tasks, the referenced owner tasks, and any FCOS coordination refs; it writes the coordinator task reference only after every affected owner has accepted its own task. If that readback is incomplete, stale, or near the limit, admission stops for accountable-human review. This is a known first-mandate limitation, not a claim of deterministic global locking.
+#### Counting and release
+
+- At most two admitted waves may be active.
+- At most six distinct admitted owner tasks may be outstanding.
+- An admitted owner task counts while its owner-native status is `pending`, `claimed`, `running`, or `blocked`.
+- `done` or `failed` does not free capacity until the affected owner records an applied `softwareco-portfolio-task:<repo>:<id>:release` governance receipt with explicit consent and the controller records a `release` event referencing it.
+- A nonterminal owner task may leave the portfolio only when its accountable owner records the same release receipt with `to_state=returned_to_owner`, explicitly accepting that the task continues or is disposed under owner law. Displacement or portfolio pause alone never frees capacity.
+- Release uses the same revalidate → owner receipt → fresh read → append event → post-read/recount protocol as admission; ambiguous or stale release fails closed.
+- Softwareco controller/coordinator tasks and FCOS-owner coordination tasks are excluded from the six owner-task limit but must be reported as coordination overhead.
+- Unrelated owner work is never counted or displaced unless its accountable owner explicitly admits it.
+- The second concurrent portfolio wave requires an explicit `human-operator` checkpoint during the first canary, even though two is the authorized ceiling.
+
+#### Single controller and admission transaction
+
+AK does not expose an atomic cross-repository portfolio-admission primitive. The first mandate therefore uses one Softwareco controller task linked to `SF3` and forbidden from source mutation. Before claim, `human-operator` explicitly confirms a controller designation and the session records an AK governance receipt with `concern=softwareco-portfolio-cto-controller-designation`, `source_authority=human-operator`, `agreement_ref=decision:74`, `to_state=delegated`, `consent_mode=explicit`, `task_id=<controller task>`, `actor=human-operator`, and details schema `softwareco.portfolio-controller-designation.v1` containing the unique claimant id, `lease_seconds` (maximum 14,400), designation time, and designation expiry.
+
+The designated session atomically claims that task with the exact claimant and lease. A second claim fails. Every pre-operation read requires receipt/task/claimant equality and an unexpired designation and task lease. Handover requires admission stop, an attributable `human-operator` governance receipt with `to_state=handover_approved`, exact unclaim of the controller task, a new designation receipt, and a fresh atomic claim. After a crash or expiry, only `human-operator` may attest staleness and authorize exact unclaim/reclaim. A stale session, expired lease, ambiguous claimant, or conflicting readback is advisory only.
+
+Every wave/controller/coordinator mutation requires its own claimed, scoped Softwareco AK task. Every admission is serialized as:
+
+1. revalidate Decision 74, `SF3`, exact UTC expiry, controller claim/lease, and existing membership;
+2. obtain every role-specific owner acceptance;
+3. fresh-read the wave, coordinator, owner task, evidence, and FCOS refs;
+4. write one admission event;
+5. post-write read back and recount;
+6. stop and escalate on ambiguity, drift, duplicate membership, or limit breach.
+
+This is an atomic-claim plus serialized procedural invariant, not a global lock. If controller exclusivity cannot be demonstrated, every admission requires immediate `human-operator` approval or the canary narrows to read-only portfolio analysis.
 
 ### FCOS boundary
 
 Use native FCOS Layer 5 only when a wave materially coordinates multiple source-owner repositories. FCOS current items are coordination-only and non-claimable; AK or the source-owner runtime remains authoritative for executable work and evidence.
 
-Softwareco delegation does not authorize FCOS mutation. The CTO must hand off a proposed coordination item to `holdingco/fcos-control-board`. Real `fcos new` or `fcos close` requires an exact FCOS-owner AK task and the owner command's `--task <id> --json` contract. The resulting FCOS item must carry typed references to the Softwareco coordinator task and affected owner tasks/decisions; it must not copy their lifecycle state. If the FCOS owner does not accept the handoff, the portfolio wave remains single-owner or blocked rather than inventing a duplicate board.
+Softwareco delegation does not authorize FCOS mutation. The CTO must hand off a proposed coordination item to `holdingco/fcos-control-board`. Real `fcos new` or `fcos close` requires an exact FCOS-owner AK task and the owner command's `--task <id> --json` contract. The resulting FCOS item must carry typed references to the Softwareco coordinator task and affected owner tasks/decisions; it must not copy their lifecycle state. FCOS close-evidence validation is not Product/Domain/Project acceptance. If the FCOS owner does not accept the handoff, the wave is blocked unless the affected owners genuinely redesign and reaccept it as single-owner; relabeling alone is prohibited.
 
 ## Pi workbench design
+
+### Immutable Pi Modes dependency
+
+Decision 74 pins exactly `@tryinget/pi-modes` release `0.3.0`, tag `pi-modes-v0.3.0`, owner commit `173b508b0bea27550f061e252e1d86a0638d2d71`. Changing this dependency requires a reviewed Decision 74 revision or superseding decision. The immutable release contains schema-v2 modes, named presets, `/mode use`, JSON status/preview, ancestor mode/preset discovery, linter, and release checks. A mutable local checkout is feasibility evidence only and cannot satisfy the activation gate.
+
+Validation must extract or install the exact release, run its `mode:lint` and package release gate, then perform a fresh Pi load and live command proof. Softwareco must not fork or locally reimplement Pi Modes to bypass this dependency.
 
 ### Mode
 
@@ -194,18 +263,22 @@ Track `.pi/prompts/cto.md` through Pi's trusted project prompt-template discover
 /cto <objective>
 ```
 
-The prompt must require this preflight before representing the session as an active CTO delegate:
+The template must declare `argument-hint: "<objective>"`, interpolate `$ARGUMENTS`, stop as advisory when the objective is absent, and echo the normalized objective plus a compact preflight table.
 
-1. confirm the cwd belongs to the Softwareco root or an explicitly routed owned repository;
-2. inspect the controlling AK decision and require `outcome=accepted`;
-3. inspect `SF3` and require `state=active` plus the accepted-delegation state detail;
-4. verify current UTC time precedes the charter expiry;
-5. inspect admitted portfolio waves and owner-task WIP;
-6. identify the exact objective, jurisdiction, owner surfaces, and reserved decisions;
-7. confirm no concurrent CTO controller is admitting work;
-8. remain advisory and emit the failed condition when any check fails.
+Normative invocation begins from the trusted Softwareco root. Pi Modes may inherit the ancestor mode/preset into owned descendants, but Pi prompt-template ancestor discovery is not assumed; descendant `/cto` support may be claimed only after live proof.
 
-This is a behavioral preflight, not a security boundary. The legal fail-closed property comes from the fact that a mode or prompt never grants authority and all mutation still requires exact AK/source-owner execution scope.
+Before representing the session as an active CTO delegate, and again before every wave, controller, coordinator, owner-task, admission-evidence, or FCOS mutation, the prompt requires:
+
+1. require Decision 74 `outcome=accepted` and read its acceptance timestamp;
+2. require `SF3 state=active` and an exact state detail containing `delegated_active_decision_74`, `effective_at_utc`, and `expires_at_utc`;
+3. require current UTC before expiry and no revocation, supersession, or mandate terminal decision;
+4. fail closed on any mismatch with the charter/governance projections, which remain consistency views only;
+5. require a currently claimed, unexpired Softwareco controller task and identify the unique claimant;
+6. inspect admitted waves, coordinator tasks, latest admission/release evidence, owner-native task states, role acceptances, and FCOS refs;
+7. identify the exact objective, jurisdiction, owner surfaces, and reserved decisions;
+8. remain advisory and emit every failed or ambiguous condition.
+
+The accepted AK decision and `SF3` state own activation/expiry readback; the charter does not. This remains a behavioral preflight, not a security boundary. Mutation authority still requires exact AK/source-owner/FCOS task contracts.
 
 ### Operator interaction
 
@@ -228,7 +301,7 @@ Rollback is:
 /mode off
 ```
 
-Revocation or expiry in AK remains controlling even if the mode stays selected.
+Revocation or expiry in AK remains controlling even if the mode stays selected. It stops CTO admission and control, records owner handoffs, and returns every outstanding owner task to its owner; it never auto-closes, pauses, redirects, releases, or fails those tasks.
 
 ## State and evidence split
 
@@ -271,14 +344,14 @@ Selected: accepted AK delegation, active direction, tracked Pi overlay/preset, e
 
 Before activation:
 
-- lint mode and preset with the owner `pi-modes` linter;
+- extract or install exact Pi Modes `0.3.0` / `173b508b0bea27550f061e252e1d86a0638d2d71`, run its `mode:lint` and release gate, and record the package/version/commit evidence;
 - validate selective `.pi` tracking and ignored local state boundaries;
 - verify mode strategy is `append` and preset uses native base;
 - verify `/cto` contains every preflight and stop condition;
 - verify the post-decision charter, governance, and operating-model projections name the accepted decision ID, exact UTC expiry, finite decision-right change, consultation duties, revocation path, WIP/admission limitation, and human-reserved powers without enlarging AK authority;
 - run Softwareco strict docs validation and `git diff --check`;
 - inspect `/mode-preview --json`, `/mode use softwareco-cto`, `/mode-status --json`, and `/cto` discovery/invocation in a trusted Softwareco-root session;
-- from an owned-repo cwd, verify that ancestor mode/preset/prompt discovery is either observed and trusted or require operators to invoke from the Softwareco root; do not claim descendant invocation without proof;
+- treat trusted Softwareco-root invocation as normative; separately verify ancestor mode/preset discovery from an owned-repo cwd, but do not claim descendant `/cto` discovery without proof;
 - independently review authority, WIP, owner boundaries, and operator usability.
 
 The mode must not be described as live merely because JSON lint passes. Live invocation requires an observed Pi command after reload/fresh startup.
@@ -290,12 +363,13 @@ The mode must not be described as live merely because JSON lint passes. Live inv
 3. If the outcome is `ready_for_adr`, record the human's accepted AK decision and its ADR projection.
 4. Record post-ADR implementation and validation/rollout/rollback artifacts.
 5. Update `docs/org/cto-agent-charter.md`, `docs/org/governance.md`, and `docs/org/operating_model.md` as post-decision projections with the accepted decision ID, exact UTC expiry, finite decision-right change, consultation obligations, revocation path, WIP/admission limitation, and human-reserved powers. Until that lands, the current Decision 68 projection remains expired and no new delegation is active.
-6. Land the tracked mode, preset, prompt, operator guidance, and deterministic checks.
-7. Activate the accepted delegation and `SF3` state detail only after steps 3–6 validate.
-8. Run one read-only CTO portfolio-thesis canary.
-9. Admit at most two waves and six owner tasks through owner acceptance; request FCOS owner coordination only for genuine cross-repo work.
-10. Execute one selected outcome wave through source-owner tasks.
-11. Record outcome evidence and obtain the human mandate terminal decision.
+6. Validate and install the immutable Pi Modes owner release, then land the tracked mode, preset, prompt, operator guidance, and deterministic checks.
+7. Create the scoped Softwareco controller task, have `human-operator` designate the first controller, and record the exact task/claim protocol.
+8. Activate the accepted delegation only after steps 3–7 validate by setting `SF3 state_detail` to `delegated_active_decision_74;effective_at_utc=<RFC3339>;expires_at_utc=<RFC3339>`, where effective time is the AK acceptance time and expiry is exactly 30 days later.
+9. Run one read-only CTO portfolio-thesis canary.
+10. Admit the first wave and no more than six owner tasks through role-specific acceptance; require an explicit `human-operator` checkpoint before a second concurrent wave; request FCOS owner coordination only for genuine cross-repo work.
+11. Execute one selected outcome wave through source-owner tasks.
+12. Record outcome evidence and obtain the human mandate terminal decision.
 
 ## Rollback and revocation
 
@@ -322,4 +396,4 @@ Accept Option E with:
 
 ## Open questions
 
-The RFC is ready for formal review, not presumptively ADR-ready. The selected first portfolio investment remains intentionally unknown until an accepted CTO performs the evidence-backed portfolio thesis; choosing it inside accepted postures is the capability being delegated and tested. Review must still adjudicate whether the single-controller admission limitation is sufficient for the 30-day canary or requires a narrower mandate.
+The revised RFC is ready for re-review, not presumptively ADR-ready. No architecture-shaping question is intentionally deferred. The first portfolio investment remains unknown by design because evidence-backed selection inside accepted owner envelopes is the delegated capability being tested. Descendant `/cto` discovery is a non-blocking post-ADR usability question; trusted Softwareco-root invocation is the accepted baseline.
