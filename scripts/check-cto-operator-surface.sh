@@ -167,13 +167,24 @@ if $require_terminal; then
   decided_at="$(jq -r '.details.decided_at_utc' <<<"$terminal")"
   terminal_detail="delegation_terminal_decision_74;terminal_action=complete;decided_at_utc=$decided_at;governance_receipt_id=8870"
   jq -e --arg detail "$terminal_detail" '
-    .payload.node.state == "done" and .payload.node.state_detail == $detail and
+    .payload.node.state == "active" and .payload.node.state_detail == $detail and
     ([.payload.children[] | select(
       .key == "IW-SF3-DMF-LOOP-IMPACT" and
       .state == "done" and
       (.state_detail | contains("outcome_evidence_id=5176"))
-    )] | length == 1)
+    )] | length == 1) and
+    ([.payload.task_links[] | select(
+      (.link.task_id == 4156 or .link.task_id == 4184 or .link.task_id == 4191) and
+      .link.link_role == "completed_by"
+    )] | length == 3) and
+    ([.payload.task_links[] | select(
+      (.link.task_id == 4156 or .link.task_id == 4184 or .link.task_id == 4191) and
+      .link.link_role != "completed_by"
+    )] | length == 0)
   ' <<<"$sf3" >/dev/null || fail "SF3 terminal reconciliation mismatch"
+  direction_check="$(ak direction check --repo "$root" --json)"
+  jq -e '.ok == true and (.issues | length == 0)' <<<"$direction_check" >/dev/null \
+    || fail "direction topology is invalid"
   jq -e '
     .payload.task.status == "done" and
     .payload.task.claimed_by == null and

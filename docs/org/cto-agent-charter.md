@@ -24,7 +24,7 @@ Fresh AK readback records:
 
 - completed wave `IW-SF3-DMF-LOOP-IMPACT` with outcome evidence `5176`;
 - corrective D2E closeout evidence `5177`;
-- `SF3 state=done` with exact terminal detail and receipt `8870`;
+- `SF3 state=active` as the sole strategic root, but with exact **terminal** detail and receipt `8870` rather than the only authority-granting delegated-active detail;
 - controller task `4182` completed and handed back with no external effects.
 
 The delegation is no longer active. `/mode use softwareco-cto` and `/cto` grant no residual authority; any invocation is advisory unless a renewed or superseding accepted decision establishes new authority. The tracked workbench remains as a validated, inactive interface artifact.
@@ -33,7 +33,7 @@ The delegation is no longer active. `/mode use softwareco-cto` and `/cto` grant 
 
 - residual accountable Softwareco Org Owner: `human-operator`;
 - delegated functional role: `softwareco-cto-agent`;
-- authority: accepted AK Decision 74 plus exact active `SF3` state;
+- historical authority: accepted AK Decision 74 plus the former exact delegated-active `SF3` detail; current terminal `SF3` detail grants none;
 - jurisdiction: registered repositories under `softwareco/owned`;
 - accepted: `2026-07-25T08:11:27.729630885Z` through governance receipt `8818`;
 - hard expiry: `2026-08-24T08:11:27.729630885Z`;

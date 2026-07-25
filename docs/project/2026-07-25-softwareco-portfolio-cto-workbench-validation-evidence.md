@@ -259,10 +259,20 @@ After corrective task `4184` completed with evidence `5177`, `human-operator` di
 - owner task: `3425`;
 - external effects: `0`.
 
-The receipt ended delegated authority immediately. Fresh pre-read then observed the exact active `SF3`, completed child wave, and claimed controller task. A single scoped direction update reconciled `SF3` to `state=done` with exact detail:
+The receipt ended delegated authority immediately. Fresh pre-read then observed the exact delegated-active `SF3`, completed child wave, and claimed controller task. The initial reconciliation set `SF3 state=done` with exact terminal detail:
 
 ```text
 delegation_terminal_decision_74;terminal_action=complete;decided_at_utc=2026-07-25T13:19:10.466752718Z;governance_receipt_id=8870
 ```
 
-Controller task `4182` was completed with `mandate_complete_handed_back`, proof target satisfied, and zero external effects. The charter, governance, and operating-model projections now say `terminal_complete`. `./scripts/check-cto-operator-surface.sh --require-terminal` validates receipt, direction, child-wave outcome, controller closeout, and projections. Conversely, `--require-active` must fail because the applied terminal receipt and terminal `SF3` make further CTO operation advisory-only.
+Controller task `4182` was completed with `mandate_complete_handed_back`, proof target satisfied, and zero external effects. Post-close `ak direction check` then correctly rejected `state=done`: Softwareco direction requires exactly one active strategic root. It also found three historical tasks still labeled as singular `execution_task` coverage.
+
+Corrective task `4199` reconciled the direction model without restoring delegation:
+
+- `SF3 state=active` preserves the required strategic-root topology;
+- the exact terminal detail above remains unchanged, so it grants no CTO authority;
+- completed tasks `4156`, `4184`, and `4191` moved from `execution_task` to `completed_by`;
+- the corrective carrier alone remained `execution_task` during correction;
+- `ak direction check` then passed with zero issues.
+
+The `state=done` field in evidence `5193` is therefore superseded by the canonical correction performed under claimed task `4199` and fresh AK direction readback; its receipt, controller, outcome, and handback facts remain valid. The charter, governance, and operating-model projections say `terminal_complete`. `./scripts/check-cto-operator-surface.sh --require-terminal` validates receipt, terminal direction detail, child-wave outcome, controller closeout, and projections. Conversely, `--require-active` must fail because only the former delegated-active detail authorized CTO operation; the terminal detail and receipt `8870` make further operation advisory-only.
