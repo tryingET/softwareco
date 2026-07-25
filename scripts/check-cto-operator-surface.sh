@@ -37,8 +37,13 @@ jq -e '
   .schemaVersion == 2 and
   .key == "softwareco-cto" and
   .promptStrategy == "append" and
-  (.systemPrompt | contains("grants no delegation")) and
-  (.systemPrompt | contains("controller task 4182")) and
+  (.systemPrompt | contains("grants no delegation, tools, mutation rights, continuation, publication, release, FCOS writes, or owner consent")) and
+  (.systemPrompt | contains("zero-state sensing")) and
+  (.systemPrompt | contains("complete portfolio-membership readback")) and
+  (.systemPrompt | contains("Decision acceptance and controller designation remain mandatory")) and
+  (.systemPrompt | contains("proved emptiness never supplies selection, admission, or execution consent")) and
+  (.systemPrompt | contains("proposal-only")) and
+  (.systemPrompt | contains("full controller, owner-origin, portfolio membership, finite-WIP, objection, and exact task-scope gate")) and
   (.systemPrompt | contains("two admitted waves")) and
   (.systemPrompt | contains("six outstanding")) and
   (.systemPrompt | contains("FCOS"))
@@ -57,6 +62,19 @@ for required in \
   'Decision 74' \
   'Controller task `4182`' \
   'advisory only' \
+  'Zero-state sensing gate' \
+  'complete, unambiguous portfolio-state readback' \
+  'proved empty result passes the sensing membership gate' \
+  'emptiness never supplies selection, admission, or execution consent' \
+  'proposal-only thesis' \
+  'do not create/claim/update/close tasks' \
+  'Selection and mutation gate' \
+  'direct, owner-originated, applied Product/Domain acceptance governance receipts' \
+  'Before **admission** or **execution**, additionally verify' \
+  'direct, owner-originated, applied Project/source-owner governance receipts' \
+  'accepting every exact owner-task scope' \
+  'mandatory owner-native evidence refs' \
+  'acting session has an exact claimed task' \
   'owner-originated' \
   'second-wave-checkpoint' \
   'FCOS writes require' \

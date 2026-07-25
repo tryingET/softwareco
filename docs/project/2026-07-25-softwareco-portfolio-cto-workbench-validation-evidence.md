@@ -196,3 +196,32 @@ Ephemeral receipts:
 - RPC stderr SHA-256: `01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b` (newline-only file).
 
 The deliberately `--no-tools` process emitted one unrelated snapshot-edit startup error because no built-in read owner was available. The owner readbacks were injected through the Pi RPC bash command before prompt expansion; the error did not affect Pi Modes or the canary result.
+
+## Corrective zero-state D2E dogfood
+
+The first active canary exposed a gate-partition defect: `/cto` treated absent wave/admission state as a reason to suppress read-only sensing. Corrective AK task `4184` split the workbench into authority, sensing, selection, admission, and execution lanes.
+
+The corrected contract requires:
+
+- active Decision 74 authority plus complete portfolio-membership readback for sensing;
+- proved empty membership as a valid zero result, never as consent;
+- proposal-only language until direct owner-originated Product/Domain receipts accept outcome, capacity, and displacement envelopes;
+- direct owner-originated Project/source-owner receipts, WIP, objections, controller, and exact task scope before admission or execution.
+
+Independent reviewer dispatch `dispatch-1784981365591` returned `READY` after the checker asserted these exact negative and mutation clauses.
+
+A fresh trusted-root Pi RPC dogfood process then loaded the changed worktree, activated the preset, and received complete owner-native readbacks for Decision 74, receipt `8818`, exact `SF3`, termination/supersession absence, designation `8826`, controller task/evidence, wave/task receipts, FCOS owner status, and active projections. `/cto` classified the objective as `sensing`, passed the active-delegate authority baseline, and reported:
+
+```text
+Decision 74 currently has a proved-empty admitted portfolio: no waves,
+coordinator tasks, owner tasks, admission events, lifecycle receipts,
+or FCOS references.
+```
+
+It performed no ranking, selection, recommendation, admission, or mutation. This verifies the corrected zero-state bootstrap behavior without weakening later gates.
+
+Ephemeral receipts:
+
+- observed UTC: `2026-07-25T12:16:03.681691691Z`;
+- RPC stdout JSONL SHA-256: `3342d0afab02a33daf868692a8c9c193e9402074627efeff14bbf414034bed4b`;
+- RPC stderr SHA-256: `01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b` (newline-only file).
