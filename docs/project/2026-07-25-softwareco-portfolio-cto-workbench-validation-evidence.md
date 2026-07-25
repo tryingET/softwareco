@@ -1,12 +1,13 @@
 ---
-summary: "Observed package, checker, cold-start Pi/RPC, advisory, trust, and rollback evidence for the preactivation Decision 74 CTO workbench."
+summary: "Observed package, cold-start Pi/RPC, fail-closed, rollback, designation, controller, and activation evidence for the Decision 74 CTO workbench."
 read_when:
-  - "Reviewing whether the Decision 74 CTO workbench is ready for human controller designation and SF3 activation."
+  - "Reviewing Decision 74 CTO workbench activation, controller authority, or remaining canary gates."
   - "Reproducing the tracked mode, preset, /cto entrypoint, or rollback proof."
 type: "evidence"
-status: "preactivation_validated"
+status: "active_validated"
 date: "2026-07-25"
 decision_id: 74
+activated_at: "2026-07-25T11:51:54.478621578Z"
 execution_task_id: 4156
 controller_task_id: 4182
 ---
@@ -15,9 +16,9 @@ controller_task_id: 4182
 
 ## Scope and claim
 
-This evidence establishes that the tracked Softwareco workbench is discoverable, composable, fail-closed before delegation, and reversible in a fresh Pi process. It does **not** establish an active CTO delegation, controller designation, controller claim, `SF3` activation, portfolio thesis, admitted wave, or completed outcome.
+The original sections establish that the tracked Softwareco workbench was discoverable, composable, fail-closed before delegation, and reversible in a fresh Pi process. The activation addendum establishes direct controller designation, atomic claim, exact `SF3` activation, active projections, and deterministic active readback. It does **not** establish a portfolio thesis, admitted wave, owner acceptance, source-owner execution, or completed outcome.
 
-All live behavioral runs used ephemeral `--no-session` Pi RPC processes from `/home/tryinget/ai-society/softwareco`. No owner repository, AK authority state, FCOS state, external system, or source file was mutated. Mode selection changed only ephemeral session prompt state.
+The preactivation behavioral runs used ephemeral `--no-session` Pi RPC processes from `/home/tryinget/ai-society/softwareco`. Those runs did not mutate owner repositories, AK authority, FCOS, external systems, or source files; mode selection changed only ephemeral session prompt state. The later AK designation, claim, and `SF3` mutations are separately identified below.
 
 ## Runtime and package identity
 
@@ -140,16 +141,28 @@ A fresh process from the Softwareco root with `--no-approve` discovered 204 comm
 
 Reproduction host command is `pi --mode rpc --no-session --no-approve --offline --no-skills --no-tools`, followed by `{"id":"commands","type":"get_commands"}`.
 
-## Remaining activation gate
-
 ## Independent cold-start review correction
 
 Independent reviewer dispatch `dispatch-1784968306119` initially returned `not ready` because the first checker version could accept a broad active `SF3` prefix without proving designation, claim, leases, termination absence, or active projections, and because its linter path could fetch `tsx`. The checker was revised to close both issues before commit. The review also requested reproducible RPC inputs; the exact host commands and payloads are recorded above. This correction is evidence of review response, not proof that delegation is active.
 
-The workbench is ready for the separately required human step, but the CTO delegation remains inactive. Activation still requires, in order:
+## Activation receipt and readback
 
-1. a direct `human-operator` controller-designation governance receipt naming the exact claimant, evidence ref, and expiry;
-2. atomic claim/readback of controller task `4182` with lease no longer than 14,400 seconds;
-3. pre/post-read and exact `SF3` activation detail reconciliation;
-4. `./scripts/check-cto-operator-surface.sh --require-active`;
-5. a fresh active preflight canary before any portfolio admission.
+Observed activation sequence:
+
+1. `human-operator` directly recorded governance receipt `8826` with concern `softwareco-portfolio-cto:decision74:controller-designation`, evidence `5150`, claimant `pi-session-softwareco-cto-20260725-01`, designation time `2026-07-25T11:49:56.737685916Z`, and expiry `2026-07-25T15:49:56.737685916Z`.
+2. The designated claimant atomically claimed controller task `4182` at `2026-07-25T11:50:43.056411765Z` with lease expiry `2026-07-25T15:48:58.056411765Z`, inside the designation lease. The task still forbids all source mutation.
+3. A fresh pre-read observed Decision 74 accepted/unblocked, no applied revocation/terminal/supersession receipt, pending exact `SF3` detail, and matching unexpired designation/controller claim.
+4. One `ak direction update` set exact detail:
+
+   ```text
+   delegated_active_decision_74;accepted_at_utc=2026-07-25T08:11:27.729630885Z;activated_at_utc=2026-07-25T11:51:54.478621578Z;expires_at_utc=2026-08-24T08:11:27.729630885Z
+   ```
+
+5. Post-read matched the exact detail. Charter, governance, and operating-model projections were reconciled to `active_bounded` with the same activation timestamp.
+6. `./scripts/check-cto-operator-surface.sh --require-active` reported:
+
+   ```text
+   cto-operator-surface: PASS (active; claimant=pi-session-softwareco-cto-20260725-01)
+   ```
+
+This proves the deterministic activation readback at the observed time. Authority remains revocable and lease/time sensitive; every `/cto` operation must fresh-read it. A fresh active `/cto` preflight canary is still required before any portfolio admission. The portfolio thesis and completed outcome wave remain successor execution, not results of workbench activation.

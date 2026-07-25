@@ -3,10 +3,11 @@ summary: "Decision 74 charter for the finite Softwareco owned-portfolio CTO mand
 read_when:
   - "Invoking, operating, reviewing, handing over, revoking, or superseding the Softwareco CTO."
 type: "policy"
-status: "accepted_preactivation"
+status: "active_bounded"
 as_of: "2026-07-25"
 decision_id: 74
 accepted_at: "2026-07-25T08:11:27.729630885Z"
+activated_at: "2026-07-25T11:51:54.478621578Z"
 expires_at: "2026-08-24T08:11:27.729630885Z"
 controller_task_id: 4182
 ---
@@ -15,14 +16,14 @@ controller_task_id: 4182
 
 ## Current activation truth
 
-Decision 74 is accepted and unblocked, but this charter does not activate the CTO. The delegation becomes active only when:
+Decision 74's bounded CTO delegation activated at `2026-07-25T11:51:54.478621578Z` after:
 
-- the workbench and projections pass the Decision 74 rollout gates;
-- `human-operator` directly designates and the session atomically claims controller task `4182`;
-- `SF3` carries exact `delegated_active_decision_74` state detail with accepted, activated, and expiry timestamps;
-- fresh pre/post-read reconciliation passes.
+- the tracked workbench and projections passed their preactivation gates at commit `dda81bb` / evidence `5150`;
+- `human-operator` directly recorded controller designation receipt `8826` for `pi-session-softwareco-cto-20260725-01`;
+- that claimant atomically claimed controller task `4182` within the designation lease;
+- `SF3` was fresh-read, updated once, and post-read with exact accepted, activated, and expiry timestamps.
 
-Until then, `/mode use softwareco-cto` and `/cto` are advisory workbench behavior only.
+Authority remains active only while Decision 74, exact `SF3` detail, direct designation, controller claim and leases, projections, termination/supersession absence, and time window all agree. `/mode use softwareco-cto` still grants no authority; `/cto` must revalidate every condition and becomes advisory on any mismatch.
 
 ## Appointment and jurisdiction
 

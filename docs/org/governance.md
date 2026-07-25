@@ -4,9 +4,10 @@ read_when:
   - "Determining who may decide, execute, review, or escalate a Softwareco concern."
   - "Handling a high-impact change, cross-repo concern, incident, exception, or ownership conflict."
 type: "policy"
-status: "accepted_preactivation"
+status: "active_bounded"
 as_of: "2026-07-25"
 decision_id: 74
+activated_at: "2026-07-25T11:51:54.478621578Z"
 mito_layers:
   - "Design & Configuration"
   - "Implementation"
@@ -15,7 +16,7 @@ mito_layers:
 
 # Softwareco governance
 
-> **Status as of 2026-07-25: Decision 74 accepted, CTO delegation not yet activated.** Decision 74 preserves `human-operator` as residual Softwareco Org Owner and accepts a finite `softwareco-cto-agent` portfolio mandate under [[softwareco/docs/org/cto-agent-charter.md|the CTO charter]]. The role remains advisory until the charter's controller, workbench, validation, and exact `SF3` activation gates pass. This document cannot activate or enlarge the decision.
+> **Status as of 2026-07-25: Decision 74 CTO delegation active and bounded.** Decision 74 preserves `human-operator` as residual Softwareco Org Owner and delegates a finite `softwareco-cto-agent` portfolio mandate under [[softwareco/docs/org/cto-agent-charter.md|the CTO charter]]. Activation occurred at `2026-07-25T11:51:54.478621578Z` through direct designation receipt `8826`, controller task `4182`, and exact `SF3` readback. This projection cannot activate, extend, or enlarge that authority.
 
 ## Governance intent
 
@@ -34,7 +35,7 @@ Sociocracy 3.0 supplies governance semantics such as drivers, domains, agreement
 
 ## Scope and change authority
 
-This policy applies only within domains activated through accepted Softwareco-scoped decisions. Decision 68's template/canary delegation is expired history. Decision 74 accepts technical portfolio sequencing over registered `softwareco/owned` repositories, but the CTO remains preactivation until exact `SF3` and controller gates pass.
+This policy applies only within domains activated through accepted Softwareco-scoped decisions. Decision 68's template/canary delegation is expired history. Decision 74 currently delegates technical portfolio sequencing over registered `softwareco/owned` repositories only while its exact `SF3`, controller, owner-origin, time, and termination gates continue to pass.
 
 - **Policy owner:** `human-operator` in the Softwareco Org Owner role recorded by Decision 74.
 - **Change path:** architecture-significant or authority-changing revisions follow the Tier-1 decision lifecycle.
