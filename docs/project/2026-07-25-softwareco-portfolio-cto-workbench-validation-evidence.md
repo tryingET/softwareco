@@ -165,4 +165,34 @@ Observed activation sequence:
    cto-operator-surface: PASS (active; claimant=pi-session-softwareco-cto-20260725-01)
    ```
 
-This proves the deterministic activation readback at the observed time. Authority remains revocable and lease/time sensitive; every `/cto` operation must fresh-read it. A fresh active `/cto` preflight canary is still required before any portfolio admission. The portfolio thesis and completed outcome wave remain successor execution, not results of workbench activation.
+This proves the deterministic activation readback at the observed time. Authority remains revocable and lease/time sensitive; every `/cto` operation must fresh-read it. The portfolio thesis and completed outcome wave remain successor execution, not results of workbench activation.
+
+## Active behavioral canary
+
+A fresh trusted-root, `--no-session` Pi RPC process activated the `softwareco-cto` preset. Immediately before `/cto`, an RPC bash readback ran the active checker and collected Decision 74, acceptance receipt `8818`, exact `SF3`, designation `8826`, controller task `4182`, termination concerns, SF3 membership, controller evidence, UTC, and active projection fields.
+
+The canary invoked:
+
+```text
+/cto Report the current Decision 74 admitted-wave and owner-task inventory read-only; perform no admission, ranking, mutation, or recommendation.
+```
+
+Observed facts:
+
+- deterministic active gate: pass;
+- observed UTC: `2026-07-25T11:55:19.319783171Z`;
+- `SF3` children: zero;
+- controller task evidence: zero;
+- applied revocation, terminal, and supersession receipts: zero;
+- Pi prompt response: `advisory only` because it treated later-decision content inspection, full projection agreement, owner-native wave/admission inventory, WIP count, and Product/Domain posture as incomplete from the bounded payload;
+- `/mode off` completed afterward;
+- no admission, ranking, owner task, FCOS, source, AK, or external mutation occurred during the behavioral canary.
+
+This is a successful **fail-closed activation canary**, not a positive portfolio-operation proof. It demonstrates that an active deterministic authority readback does not cause `/cto` to invent missing owner evidence or silently admit work. Any successor portfolio-thesis or first-wave leaf must supply the missing owner-native evidence and pass a fresh preflight.
+
+Ephemeral receipts:
+
+- RPC stdout JSONL SHA-256: `be3de02589d346bbc3cb5404c584e98ac9f1e57e05b060fa76de0f5d5480d578`;
+- RPC stderr SHA-256: `01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b` (newline-only file).
+
+The deliberately `--no-tools` process emitted one unrelated snapshot-edit startup error because no built-in read owner was available. The owner readbacks were injected through the Pi RPC bash command before prompt expansion; the error did not affect Pi Modes or the canary result.
