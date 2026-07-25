@@ -5,6 +5,9 @@ read_when:
   - "Deciding where a concern belongs and which canonical architecture documents to read."
   - "Reviewing how Softwareco turns direction into products, services, evidence, and learning."
 type: "reference"
+status: "accepted_preactivation"
+as_of: "2026-07-25"
+decision_id: 74
 mito_layers:
   - "Strategic"
   - "Design & Configuration"
@@ -57,7 +60,7 @@ Lane maps route work; owner repos prove current capability. Start with:
 
 ## Accountability model
 
-The company uses role-based accountability. Decision 68 appoints `human-operator` as the **Softwareco Org Owner** for its bounded activation domain and delegates `softwareco-cto-agent` through [[softwareco/docs/org/cto-agent-charter.md|the CTO Agent charter]]. The human retains residual accountability and every reserved decision named by that decision.
+The company uses role-based accountability. Decision 74 preserves `human-operator` as residual **Softwareco Org Owner** and accepts a finite `softwareco-cto-agent` technical portfolio mandate over `softwareco/owned` through [[softwareco/docs/org/cto-agent-charter.md|the CTO charter]]. The delegation remains preactivation until the controller, workbench, validation, and exact `SF3` gates pass. The human retains residual accountability and every reserved decision.
 
 Product, Service, Platform, Domain, and Project owners retain authority inside explicit delegations. Agents execute and advise within scope but do not hold residual accountability or enlarge the activated domain.
 
@@ -90,11 +93,11 @@ Rules:
 - A passing build is not a release; a release is not an outcome.
 - Company WIP is finite. Starting a commitment names what is deferred, displaced, or stopped.
 
-Factory contract: Decision 62 accepted [[softwareco/docs/project/2026-07-12-software-factory-operating-system-rfc.md|the Softwareco Factory Flow Protocol]] for pilot 001. Decision 68 accepts bounded CTO Agent/L1 template activation before an issue-tracker canary while freezing every other L2/L0 propagation pending a separate template-owner decision. Consult the accepted decisions and latest controlling syntheses rather than inferring authority from this summary.
+Factory contract: Decision 62 accepted [[softwareco/docs/project/2026-07-12-software-factory-operating-system-rfc.md|the Softwareco Factory Flow Protocol]] for pilot 001. Decision 68's template/canary delegation is terminal and expired; its L2/L0 propagation freeze remains. Decision 74 now governs the accepted preactivation owned-portfolio CTO workbench and 30-day mandate. It does not lift the template freeze or turn `infra/issue-tracker` into a company backlog. Consult AK and the accepted decisions rather than inferring authority from this summary.
 
 ## Proposed operating cadence
 
-Decision 68 activates a bounded CTO cadence for the template and issue-tracker canary domain. It does not prove company-wide recurring operation. Cadence outputs belong in AK/source-owner evidence and the freshness-bounded CTO packet, not in this table.
+Decision 74 accepts a bounded owned-portfolio CTO cadence whose proof target is one portfolio thesis and one completed outcome wave. It is not yet active or proved as recurring company operation. Cadence outputs belong in AK/source-owner evidence and the freshness-bounded CTO packet, not in this table.
 
 | Cadence | Question |
 |---|---|
@@ -192,7 +195,7 @@ Softwareco contains many component repositories and shared engineering-policy su
 - the Softwareco Org Owner role was defined but not yet assigned in accepted runtime/governance state;
 - product and service maturity varied substantially across owner repos.
 
-Those bullets describe the dated 2026-07-12 baseline. Decision 68 subsequently activated `human-operator` and the bounded CTO Agent charter for template/canary work; it did not activate the whole portfolio or prove company-wide cadence. Live status must still be read from AK, FCOS, and owner repositories rather than copied forward here.
+Those bullets describe the dated 2026-07-12 baseline. Decision 68 later activated and completed bounded template/canary work; its CTO delegation is expired. Decision 74 was accepted on 2026-07-25 for a finite `softwareco/owned` portfolio CTO, but it remains preactivation until controller task `4182`, exact Pi workbench proof, projections, and `SF3` activation reconcile. Live status must still be read from AK, FCOS, and owner repositories rather than copied forward here.
 
 Dated evidence:
 

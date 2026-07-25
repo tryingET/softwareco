@@ -3,7 +3,7 @@ summary: "Evidence establishing the gap between Decision 68's expired bounded CT
 read_when:
   - "Reviewing the evidence for the Softwareco portfolio CTO proposal."
 type: "evidence"
-status: "decision_pending"
+status: "accepted_preactivation_evidence"
 date: "2026-07-25"
 ---
 
@@ -69,7 +69,7 @@ On 2026-07-25, an isolated `git archive` of exact commit `173b508b0bea27550f061e
 - Pi smoke: intentionally skipped by the quick gate because no accepted Softwareco integration artifacts exist yet;
 - `npm ci` reported one moderate and one high development-tree audit finding; the package declares no runtime dependencies, and the owner release gate still passed. This is recorded rather than silently treated as runtime exploit proof.
 
-Exact-release installation, Softwareco mode/preset lint, and fresh live command proof remain post-ADR activation gates. The mutable checkout is feasibility evidence only.
+The source-tree release checks above were pre-ADR feasibility evidence. Post-ADR installation, Softwareco mode/preset lint, trusted-root live command proof, fail-closed `/cto` behavior, and rollback are recorded in `docs/project/2026-07-25-softwareco-portfolio-cto-workbench-validation-evidence.md`. Human controller designation, task claim, and exact `SF3` activation remain unsatisfied gates.
 
 ## Operator correction and selection
 

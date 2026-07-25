@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "key": "softwareco-cto",
+  "label": "Softwareco CTO Workbench",
+  "description": "Native Pi host plus the governed Softwareco CTO overlay.",
+  "selection": {
+    "baseKey": null,
+    "overlayKeys": [
+      "softwareco-cto"
+    ]
+  }
+}

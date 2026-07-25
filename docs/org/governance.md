@@ -4,9 +4,9 @@ read_when:
   - "Determining who may decide, execute, review, or escalate a Softwareco concern."
   - "Handling a high-impact change, cross-repo concern, incident, exception, or ownership conflict."
 type: "policy"
-status: "active_bounded"
-as_of: "2026-07-20"
-decision_id: 68
+status: "accepted_preactivation"
+as_of: "2026-07-25"
+decision_id: 74
 mito_layers:
   - "Design & Configuration"
   - "Implementation"
@@ -15,11 +15,11 @@ mito_layers:
 
 # Softwareco governance
 
-> **Status as of 2026-07-20: active within Decision 68's bounded domain.** Decision 68 appoints `human-operator` as Softwareco Org Owner and delegates `softwareco-cto-agent` under [[softwareco/docs/org/cto-agent-charter.md|the CTO Agent charter]]. Authority outside that accepted domain remains owner-local or human-reserved; this document does not enlarge the decision.
+> **Status as of 2026-07-25: Decision 74 accepted, CTO delegation not yet activated.** Decision 74 preserves `human-operator` as residual Softwareco Org Owner and accepts a finite `softwareco-cto-agent` portfolio mandate under [[softwareco/docs/org/cto-agent-charter.md|the CTO charter]]. The role remains advisory until the charter's controller, workbench, validation, and exact `SF3` activation gates pass. This document cannot activate or enlarge the decision.
 
 ## Governance intent
 
-The Softwareco model uses **distributed ownership with explicit human accountability**. Within Decision 68's bounded activation, it makes decisions safer and clearer without creating a new council, PMO, shadow database, or approval queue.
+The Softwareco model uses **distributed ownership with explicit human accountability**. Decision 74 adds a finite technical portfolio-sequencing office over `softwareco/owned` without creating a new council, PMO, shadow database, approval queue, or centralized owner-task lifecycle.
 
 ```text
 human-owned domain
@@ -34,9 +34,9 @@ Sociocracy 3.0 supplies governance semantics such as drivers, domains, agreement
 
 ## Scope and change authority
 
-This policy applies only within domains activated through accepted Softwareco-scoped decisions. Decision 68 currently activates technical strategy, L1 template work, and the issue-tracker canary preparation domain; it does not silently activate every portfolio decision.
+This policy applies only within domains activated through accepted Softwareco-scoped decisions. Decision 68's template/canary delegation is expired history. Decision 74 accepts technical portfolio sequencing over registered `softwareco/owned` repositories, but the CTO remains preactivation until exact `SF3` and controller gates pass.
 
-- **Policy owner:** `human-operator` in the Softwareco Org Owner role recorded by Decision 68.
+- **Policy owner:** `human-operator` in the Softwareco Org Owner role recorded by Decision 74.
 - **Change path:** architecture-significant or authority-changing revisions follow the Tier-1 decision lifecycle.
 - **Operational details:** remain with Product, Service, Platform, and Project owners inside their delegated domains.
 
@@ -44,9 +44,9 @@ This policy applies only within domains activated through accepted Softwareco-sc
 
 The Softwareco Org Owner role becomes active only when an accepted Softwareco-scoped AK decision records the appointee, delegated domain, reserved decisions, review date, revocation path, and evidence reference. Appointment changes company accountability and therefore must not be inferred from authorship, tool access, or this document.
 
-Decision 68 satisfies the first bounded activation record: appointee `human-operator`; Softwareco domain; human-reserved decisions; 30-day/canary review; immediate revocation; reviewed RFC/ADR evidence; and linked execution task. Its CTO delegation is defined in `docs/org/cto-agent-charter.md`.
+Decision 68 supplied the first bounded activation and is now terminal/expired. Decision 74 records the current accepted mandate: appointee `human-operator`; `softwareco/owned` jurisdiction; finite delegated technical sequencing; owner-origin acceptance; two-wave/six-owner-task WIP; hard expiry `2026-08-24T08:11:27.729630885Z`; immediate revocation; reviewed RFC/ADR evidence; and controller task `4182`. Activation status and invocation live in `docs/org/cto-agent-charter.md`.
 
-Outside that decision:
+Outside Decision 74:
 
 - no additional portfolio start/stop, cross-domain exception, or owner-appointment authority is created by these docs;
 - Product, Service, Platform, and Project Maintainers retain owner-local authority;
@@ -109,11 +109,11 @@ Defaults:
 
 ### CTO Agent boundary
 
-The appointing human authority may delegate technical stewardship to a named **Softwareco CTO Agent**. That role may maintain technical coherence, prepare portfolio options, coordinate bounded execution, enforce accepted gates, stop unsafe automated work, and recommend `continue`, `stop`, `redirect`, or `complete`. The role may not appoint itself, accept an architecture-significant decision, authorize irreversible retirement, waive human-reserved safety/ethics constraints, or become the residual accountable owner. Human authorization and revocation remain explicit in the delegation record.
+The appointing human authority may delegate technical stewardship to a named **Softwareco CTO Agent**. Under Decision 74, the role may rank and order technical investments only inside Product/Domain outcome and capacity envelopes directly accepted by their owners. Project, Service, Platform, and FCOS owners retain their own acceptance and lifecycle. The CTO may not author another owner's consent, appoint itself, accept an architecture-significant decision, authorize product lifecycle or external/public/release effects, waive human-reserved constraints, or become residual accountable owner. Human authorization, controller designation, second-wave checkpoint, terminal decision, and revocation remain explicit.
 
 ## Proposed decision rights
 
-These allocations are operative only where an accepted activation/delegation record covers the domain. Decision 68 activates the bounded CTO/template/canary-preparation domain; other rows remain proposed until separately activated. **A = accountable human decider; R = responsible executor; C = consulted.**
+These allocations are operative only where an accepted activation/delegation record covers the domain. Decision 74 temporarily specializes portfolio technical sequencing after owner acceptance; it does not transfer Product/Domain outcomes or source-owner lifecycle. Until exact `SF3` activation, the specialization is accepted but not operable. **A = accountable human decider; R = responsible executor; C = consulted.**
 
 | Decision | A | R | C | Authoritative record |
 |---|---|---|---|---|
@@ -130,6 +130,17 @@ These allocations are operative only where an accepted activation/delegation rec
 | Ontology/semantic change | ROCS/ontology owner | semantic contributors | consumers | ROCS owner workflow |
 | Reusable procedure change | Prompt Vault owner | author/reviewer | consumers | Prompt Vault governance |
 | Empirical behavior conclusion | DSPx/Oracle owner | analysts/agents | affected owners | empirical artifact; advisory to decisions |
+
+### Decision 74 finite specialization
+
+| Concern | Accountable acceptance | CTO authority | Hard boundary |
+|---|---|---|---|
+| Portfolio ranking/technical order | Product/Domain owners accept outcome and capacity; Org Owner retains residual accountability | select technical ordering | ranking alone mutates no task or product lifecycle |
+| Portfolio wrapper | affected Product/Domain owners accept admission, displacement, and terminal evidence | sequence/pause/redirect/complete wrapper | wrapper never mutates owner tasks |
+| Repository execution | Project Maintainer; Service/Platform owner when affected | request/execute exact accepted task | owner task lifecycle remains owner-native |
+| Cross-repo coordination | affected Product/Domain owners plus FCOS owner for board mutation | request/steward handoff | FCOS is non-claimable and cannot approve owner work |
+
+Owners directly originate governance receipts with owner-native evidence. Fallback applies only to genuine vacancy or identity ambiguity; substantive objections block until a separate human-reserved decision resolves them. A direct human checkpoint is required before a second concurrent wave.
 
 ## Impact tiers
 
