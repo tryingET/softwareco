@@ -4,10 +4,12 @@ read_when:
   - "Determining who may decide, execute, review, or escalate a Softwareco concern."
   - "Handling a high-impact change, cross-repo concern, incident, exception, or ownership conflict."
 type: "policy"
-status: "active_bounded"
+status: "terminal_complete"
 as_of: "2026-07-25"
 decision_id: 74
 activated_at: "2026-07-25T11:51:54.478621578Z"
+terminal_at: "2026-07-25T13:19:10.466752718Z"
+terminal_receipt_id: 8870
 mito_layers:
   - "Design & Configuration"
   - "Implementation"
@@ -16,7 +18,7 @@ mito_layers:
 
 # Softwareco governance
 
-> **Status as of 2026-07-25: Decision 74 CTO delegation active and bounded.** Decision 74 preserves `human-operator` as residual Softwareco Org Owner and delegates a finite `softwareco-cto-agent` portfolio mandate under [[softwareco/docs/org/cto-agent-charter.md|the CTO charter]]. Activation occurred at `2026-07-25T11:51:54.478621578Z` through direct designation receipt `8826`, controller task `4182`, and exact `SF3` readback. This projection cannot activate, extend, or enlarge that authority.
+> **Status as of 2026-07-25: Decision 74 CTO delegation terminal and complete.** The finite mandate activated at `2026-07-25T11:51:54.478621578Z`, proved one owner-accepted outcome wave, and ended through direct human terminal receipt `8870` at `2026-07-25T13:19:10.466752718Z`. `SF3` and controller task `4182` are reconciled to completion. `human-operator` remains residual Softwareco Org Owner; no CTO continuation authority survives this terminal event.
 
 ## Governance intent
 
@@ -35,7 +37,7 @@ Sociocracy 3.0 supplies governance semantics such as drivers, domains, agreement
 
 ## Scope and change authority
 
-This policy applies only within domains activated through accepted Softwareco-scoped decisions. Decision 68's template/canary delegation is expired history. Decision 74 currently delegates technical portfolio sequencing over registered `softwareco/owned` repositories only while its exact `SF3`, controller, owner-origin, time, and termination gates continue to pass.
+This policy applies only within domains activated through accepted Softwareco-scoped decisions. Decision 68's template/canary delegation is expired history. Decision 74's technical portfolio-sequencing delegation is also terminal history after receipt `8870`; it supplies evidence and policy precedent but no current execution authority.
 
 - **Policy owner:** `human-operator` in the Softwareco Org Owner role recorded by Decision 74.
 - **Change path:** architecture-significant or authority-changing revisions follow the Tier-1 decision lifecycle.
@@ -45,9 +47,9 @@ This policy applies only within domains activated through accepted Softwareco-sc
 
 The Softwareco Org Owner role becomes active only when an accepted Softwareco-scoped AK decision records the appointee, delegated domain, reserved decisions, review date, revocation path, and evidence reference. Appointment changes company accountability and therefore must not be inferred from authorship, tool access, or this document.
 
-Decision 68 supplied the first bounded activation and is now terminal/expired. Decision 74 records the current accepted mandate: appointee `human-operator`; `softwareco/owned` jurisdiction; finite delegated technical sequencing; owner-origin acceptance; two-wave/six-owner-task WIP; hard expiry `2026-08-24T08:11:27.729630885Z`; immediate revocation; reviewed RFC/ADR evidence; and controller task `4182`. Activation status and invocation live in `docs/org/cto-agent-charter.md`.
+Decision 68 supplied the first bounded activation and is terminal/expired. Decision 74 then exercised a finite mandate with `softwareco/owned` jurisdiction, owner-origin acceptance, two-wave/six-owner-task WIP, and controller task `4182`. Human terminal receipt `8870` completed that mandate after its proof target; activation and handback evidence live in `docs/org/cto-agent-charter.md`.
 
-Outside Decision 74:
+After Decision 74:
 
 - no additional portfolio start/stop, cross-domain exception, or owner-appointment authority is created by these docs;
 - Product, Service, Platform, and Project Maintainers retain owner-local authority;
@@ -110,11 +112,11 @@ Defaults:
 
 ### CTO Agent boundary
 
-The appointing human authority may delegate technical stewardship to a named **Softwareco CTO Agent**. Under Decision 74, the role may rank and order technical investments only inside Product/Domain outcome and capacity envelopes directly accepted by their owners. Project, Service, Platform, and FCOS owners retain their own acceptance and lifecycle. The CTO may not author another owner's consent, appoint itself, accept an architecture-significant decision, authorize product lifecycle or external/public/release effects, waive human-reserved constraints, or become residual accountable owner. Human authorization, controller designation, second-wave checkpoint, terminal decision, and revocation remain explicit.
+The appointing human authority may delegate technical stewardship to a named **Softwareco CTO Agent**. During Decision 74, the role could rank and order technical investments only inside Product/Domain outcome and capacity envelopes directly accepted by their owners. Project, Service, Platform, and FCOS owners retained their own acceptance and lifecycle. The CTO could not author another owner's consent, appoint itself, accept an architecture-significant decision, authorize product lifecycle or external/public/release effects, waive human-reserved constraints, or become residual accountable owner. Receipt `8870` ended that delegation; renewed operation requires new accepted authority rather than inference from this policy.
 
 ## Proposed decision rights
 
-These allocations are operative only where an accepted activation/delegation record covers the domain. Decision 74 temporarily specializes portfolio technical sequencing after owner acceptance; it does not transfer Product/Domain outcomes or source-owner lifecycle. Until exact `SF3` activation, the specialization is accepted but not operable. **A = accountable human decider; R = responsible executor; C = consulted.**
+These allocations are operative only where an accepted activation/delegation record covers the domain. Decision 74 temporarily specialized portfolio technical sequencing after owner acceptance without transferring Product/Domain outcomes or source-owner lifecycle. That specialization ended through receipt `8870`; the table is retained as the proven finite contract, not current delegation. **A = accountable human decider; R = responsible executor; C = consulted.**
 
 | Decision | A | R | C | Authoritative record |
 |---|---|---|---|---|

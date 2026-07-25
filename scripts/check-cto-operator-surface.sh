@@ -3,13 +3,19 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 package_dir="${PI_MODES_PACKAGE_DIR:-$HOME/.pi/agent/npm/node_modules/@tryinget/pi-modes}"
-require_active=false
-[[ "${1:-}" == "--require-active" ]] && require_active=true
-
 fail() {
   printf 'cto-operator-surface: FAIL: %s\n' "$*" >&2
   exit 1
 }
+
+require_active=false
+require_terminal=false
+case "${1:-}" in
+  "") ;;
+  --require-active) require_active=true ;;
+  --require-terminal) require_terminal=true ;;
+  *) fail "usage: $0 [--require-active|--require-terminal]" ;;
+esac
 
 [[ -f "$package_dir/package.json" ]] || fail "immutable Pi Modes package not found at $package_dir"
 [[ "$(node -p "require(process.argv[1]).version" "$package_dir/package.json")" == "0.3.0" ]] \
@@ -125,8 +131,7 @@ ak decision get 74 --machine | jq -e '
 ' >/dev/null || fail "Decision 74 is not accepted and unblocked"
 
 sf3="$(ak direction show --repo "$root" SF3 --machine)"
-jq -e '.ok == true and .payload.node.state == "active"' <<<"$sf3" >/dev/null \
-  || fail "SF3 is not active"
+jq -e '.ok == true' <<<"$sf3" >/dev/null || fail "SF3 readback failed"
 detail="$(jq -r '.payload.node.state_detail' <<<"$sf3")"
 controller="$(ak task show 4182 --machine)"
 jq -e '
@@ -137,7 +142,64 @@ jq -e '
   (.payload.task.scope.forbidden_paths == ["**"])
 ' <<<"$controller" >/dev/null || fail "controller task 4182 contract mismatch"
 
+if $require_terminal; then
+  terminal="$(ak governance show 8870 --json)"
+  jq -e '
+    .id == 8870 and
+    .concern == "softwareco-portfolio-cto:decision74:terminal" and
+    .source_authority == "human-operator" and
+    .actor == "human-operator" and
+    .agreement_ref == "decision:74" and
+    .from_state == "delegated_active" and
+    .to_state == "complete" and
+    .status == "applied" and
+    .task_id == 4182 and
+    .evidence_ref == "evidence:5177" and
+    .details.schema == "softwareco.portfolio-cto-terminal.v1" and
+    .details.terminal_action == "complete" and
+    .details.proof_target.portfolio_thesis == true and
+    .details.proof_target.completed_outcome_wave == true and
+    .details.completed_wave == "IW-SF3-DMF-LOOP-IMPACT" and
+    .details.outcome_evidence_ref == "evidence:5176" and
+    .details.corrective_d2e_evidence_ref == "evidence:5177" and
+    .details.external_effects == 0
+  ' <<<"$terminal" >/dev/null || fail "terminal receipt 8870 mismatch"
+  decided_at="$(jq -r '.details.decided_at_utc' <<<"$terminal")"
+  terminal_detail="delegation_terminal_decision_74;terminal_action=complete;decided_at_utc=$decided_at;governance_receipt_id=8870"
+  jq -e --arg detail "$terminal_detail" '
+    .payload.node.state == "done" and .payload.node.state_detail == $detail and
+    ([.payload.children[] | select(
+      .key == "IW-SF3-DMF-LOOP-IMPACT" and
+      .state == "done" and
+      (.state_detail | contains("outcome_evidence_id=5176"))
+    )] | length == 1)
+  ' <<<"$sf3" >/dev/null || fail "SF3 terminal reconciliation mismatch"
+  jq -e '
+    .payload.task.status == "done" and
+    .payload.task.claimed_by == null and
+    .payload.task.result.schema == "softwareco.portfolio-controller-terminal-closeout.v1" and
+    .payload.task.result.outcome == "mandate_complete_handed_back" and
+    .payload.task.result.terminal_receipt_id == 8870 and
+    .payload.task.result.corrective_d2e_evidence_id == 5177 and
+    .payload.task.result.portfolio_outcome_evidence_id == 5176 and
+    .payload.task.result.proof_target_satisfied == true and
+    .payload.task.result.external_effects == 0
+  ' <<<"$controller" >/dev/null || fail "controller terminal closeout mismatch"
+  for doc in "${org_docs[@]}"; do
+    grep -Fqx 'status: "terminal_complete"' "$root/$doc" \
+      || fail "$doc is not an exact terminal projection"
+  done
+  grep -Fqx 'terminal_receipt_id: 8870' "$root/docs/org/cto-agent-charter.md" \
+    || fail "charter terminal receipt mismatch"
+  grep -Fqx "terminal_at: \"$decided_at\"" "$root/docs/org/cto-agent-charter.md" \
+    || fail "charter terminal timestamp mismatch"
+  printf 'cto-operator-surface: PASS (terminal complete; receipt=8870; outcome_evidence=5176)\n'
+  exit 0
+fi
+
 if ! $require_active; then
+  jq -e '.payload.node.state == "active"' <<<"$sf3" >/dev/null \
+    || fail "preactivation SF3 must be active"
   [[ "$detail" == "decision_membrane_pending_no_cto_delegation" ]] \
     || fail "preactivation check requires exact pending SF3 detail"
   jq -e '.payload.task.status == "pending" and .payload.task.claimed_by == null' \
@@ -151,6 +213,8 @@ if ! $require_active; then
 fi
 
 # Active mode is a strict authority readback, not a broad state-prefix check.
+jq -e '.payload.node.state == "active"' <<<"$sf3" >/dev/null \
+  || fail "SF3 is not active"
 prefix="delegated_active_decision_74;accepted_at_utc=$accepted_at;activated_at_utc="
 suffix=";expires_at_utc=$expires_at"
 [[ "$detail" == "$prefix"*"$suffix" ]] || fail "SF3 delegation detail is not active/exact"

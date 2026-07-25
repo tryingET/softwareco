@@ -4,10 +4,12 @@ read_when:
   - "Reviewing Decision 74 CTO workbench activation, controller authority, or remaining canary gates."
   - "Reproducing the tracked mode, preset, /cto entrypoint, or rollback proof."
 type: "evidence"
-status: "active_validated"
+status: "terminal_verified"
 date: "2026-07-25"
 decision_id: 74
 activated_at: "2026-07-25T11:51:54.478621578Z"
+terminal_at: "2026-07-25T13:19:10.466752718Z"
+terminal_receipt_id: 8870
 execution_task_id: 4156
 controller_task_id: 4182
 ---
@@ -243,3 +245,24 @@ The controller created proposed wave `IW-SF3-DMF-LOOP-IMPACT`, admitted owner ta
 Direct owner terminal receipts `8851` and `8852` accepted the outcome and implementation. Release receipt `8854` and evidence `5175` freed the completed task from portfolio WIP. Portfolio outcome evidence `5176` records the verified wrapper outcome, and the wave is `done` with zero external effects.
 
 This satisfies Decision 74's proof target of one evidence-backed portfolio thesis and one completed outcome wave. It does not by itself prove recurring portfolio operation beyond the first canary.
+
+## Terminal decision and handback
+
+After corrective task `4184` completed with evidence `5177`, `human-operator` directly recorded applied governance receipt `8870`:
+
+- concern: `softwareco-portfolio-cto:decision74:terminal`;
+- transition: `delegated_active -> complete`;
+- decision time: `2026-07-25T13:19:10.466752718Z`;
+- completed wave: `IW-SF3-DMF-LOOP-IMPACT`;
+- outcome evidence: `5176`;
+- corrective D2E evidence: `5177`;
+- owner task: `3425`;
+- external effects: `0`.
+
+The receipt ended delegated authority immediately. Fresh pre-read then observed the exact active `SF3`, completed child wave, and claimed controller task. A single scoped direction update reconciled `SF3` to `state=done` with exact detail:
+
+```text
+delegation_terminal_decision_74;terminal_action=complete;decided_at_utc=2026-07-25T13:19:10.466752718Z;governance_receipt_id=8870
+```
+
+Controller task `4182` was completed with `mandate_complete_handed_back`, proof target satisfied, and zero external effects. The charter, governance, and operating-model projections now say `terminal_complete`. `./scripts/check-cto-operator-surface.sh --require-terminal` validates receipt, direction, child-wave outcome, controller closeout, and projections. Conversely, `--require-active` must fail because the applied terminal receipt and terminal `SF3` make further CTO operation advisory-only.

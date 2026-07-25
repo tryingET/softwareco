@@ -3,27 +3,31 @@ summary: "Decision 74 charter for the finite Softwareco owned-portfolio CTO mand
 read_when:
   - "Invoking, operating, reviewing, handing over, revoking, or superseding the Softwareco CTO."
 type: "policy"
-status: "active_bounded"
+status: "terminal_complete"
 as_of: "2026-07-25"
 decision_id: 74
 accepted_at: "2026-07-25T08:11:27.729630885Z"
 activated_at: "2026-07-25T11:51:54.478621578Z"
 expires_at: "2026-08-24T08:11:27.729630885Z"
+terminal_at: "2026-07-25T13:19:10.466752718Z"
+terminal_receipt_id: 8870
 controller_task_id: 4182
 ---
 
 # Softwareco CTO charter
 
-## Current activation truth
+## Current terminal truth
 
-Decision 74's bounded CTO delegation activated at `2026-07-25T11:51:54.478621578Z` after:
+Decision 74's bounded CTO delegation activated at `2026-07-25T11:51:54.478621578Z`, satisfied its proof target, and ended through the direct human terminal receipt `8870` at `2026-07-25T13:19:10.466752718Z` with action `complete`.
 
-- the tracked workbench and projections passed their preactivation gates at commit `dda81bb` / evidence `5150`;
-- `human-operator` directly recorded controller designation receipt `8826` for `pi-session-softwareco-cto-20260725-01`;
-- that claimant atomically claimed controller task `4182` within the designation lease;
-- `SF3` was fresh-read, updated once, and post-read with exact accepted, activated, and expiry timestamps.
+Fresh AK readback records:
 
-Authority remains active only while Decision 74, exact `SF3` detail, direct designation, controller claim and leases, projections, termination/supersession absence, and time window all agree. `/mode use softwareco-cto` still grants no authority; `/cto` must revalidate every condition and becomes advisory on any mismatch.
+- completed wave `IW-SF3-DMF-LOOP-IMPACT` with outcome evidence `5176`;
+- corrective D2E closeout evidence `5177`;
+- `SF3 state=done` with exact terminal detail and receipt `8870`;
+- controller task `4182` completed and handed back with no external effects.
+
+The delegation is no longer active. `/mode use softwareco-cto` and `/cto` grant no residual authority; any invocation is advisory unless a renewed or superseding accepted decision establishes new authority. The tracked workbench remains as a validated, inactive interface artifact.
 
 ## Appointment and jurisdiction
 
@@ -36,7 +40,7 @@ Authority remains active only while Decision 74, exact `SF3` detail, direct desi
 - earlier termination: direct human terminal decision, direct revocation, or an explicitly superseding accepted decision;
 - proof obligation: one evidence-backed owned-portfolio thesis and one completed outcome wave.
 
-This file is a projection of AK authority, not an independent appointment surface.
+This file is a terminal projection of AK authority, not an independent appointment or continuation surface.
 
 ## Delegated technical sequencing
 
@@ -121,4 +125,4 @@ The packet is a projection, never a backlog.
 
 ## Revocation and handback
 
-A direct `human-operator` revocation receipt ends authority immediately. `SF3` is reconciled afterward without claiming compare-and-swap. Stop admissions, record handoffs, and return every owner task's lifecycle decision to its owner. `/mode off` clarifies behavior but is not revocation.
+The direct `human-operator` terminal receipt `8870` ended authority immediately. `SF3` and controller task `4182` were subsequently reconciled to terminal completion without claiming compare-and-swap. The admitted wave and owner task were already complete and released, so no owner lifecycle remained to transfer. `/mode off` may clarify behavior but is not the terminal authority event.
