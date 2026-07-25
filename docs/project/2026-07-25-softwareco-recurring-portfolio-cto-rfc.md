@@ -8,8 +8,8 @@ date: "2026-07-25"
 decision_id: 77
 predecessor_decision_id: 74
 governance_task_id: 4205
-revision: 3
-supersedes_reviewed_commit: "c2e0487108186444ca57ddd4f6ad04246ffec090"
+revision: 4
+supersedes_reviewed_commit: "814ffa58beed385ba2e4fbe9fa76a404240b09a2"
 review_mode: "strict-adversarial-multi-lane"
 review_closure_mode: "multi_lane_requires_synthesis"
 ---
@@ -150,7 +150,7 @@ parent: SF3
 state before implementation readiness: pending
 state while the framework is nonterminal: active
 state after framework terminal/revoked/superseded: done
-state_detail: decision77_recurring_framework;phase=<phase>;objective_task_id=<id>;thesis_head_evidence_id=<none|id>
+state_detail: decision77_recurring_framework;phase=<phase>;objective_task_id=<id>;thesis_task_ids=<none|sorted-csv>;thesis_head_evidence_id=<none|id>
 ```
 
 `work_wave` is the legal AK-native authoring kind; `implementation_wave` may appear only as a derived vocabulary label. Decision 77 links to this exact node with `governs`; execution tasks link using legal roles. This node is rollout, lineage, and the structured thesis-head projection—not authority. The controller updates its thesis-head field only after evidence recording, with fresh pre-read, one update, post-read, and manual reconciliation on disagreement; no compare-and-swap is claimed. It never replaces or rewrites `SF3`'s Decision 74 terminal detail. Missing, duplicate, wrong-parent, wrong-decision, or conflicting projection fails closed. Objective completion leaves this node active and changes only `objective_task_id`/phase; framework/epoch authority still derives only from Decision 77 receipts and controller state. Only framework terminal/revoked/superseded reconciliation marks it done.
@@ -349,15 +349,40 @@ Required details:
 }
 ```
 
-Discovery starts from exact `thesis_head_evidence_id` in `IW-SF3-CTO77-RECURRING` state detail, then follows `prior_thesis_evidence_id` through structured `ak evidence show <id> --json` reads. Every record must match Softwareco repo scope, exact schema, Decision 77, the epoch/controller task that recorded it, and the projected head. Traversal stops only at revision 1 and is capped at 100 records. Revision 1 has no predecessor. Each later revision references exactly one existing predecessor and equals predecessor revision + 1. Missing head, wrong projection, gaps, duplicate revisions, forks exposed by conflicting successor refs in the traversed records, cycles, expired head, over-100 traversal, invalid fact refs, or missing census basis fails closed. Recommendations are proposal-only and never create owner commitments.
+Every task permitted to bear valid thesis evidence must first be linked to `IW-SF3-CTO77-RECURRING` as `existing_anchor` and added to the projection's sorted unique `thesis_task_ids` field. The controller performs that projection update before recording evidence. At most 100 thesis-bearing tasks are valid.
+
+Discovery uses `ak direction show IW-SF3-CTO77-RECURRING --machine`, validates every projected thesis task has the exact link/repo/scope contract, then calls `ak evidence task <task_id> --machine` for each. It collects every evidence record matching exact check type/schema/Decision 77; records on unprojected tasks are non-authorizing and never valid thesis state. The collected set, capped at 100 thesis records, must form exactly one complete non-forking chain from revision 1 to one head, and that head must equal projected `thesis_head_evidence_id`. This enumeration detects a crash after evidence recording but before head update as an unprojected head/orphan and fails closed.
+
+Revision 1 has no predecessor. Each later revision references one collected predecessor and equals predecessor revision + 1. Missing or wrong projected task/head, gaps, duplicate revisions, multiple successors, forks, cycles, multiple heads, expired head, invalid fact refs, over-limit sets, or missing census basis fails closed. Recommendations are proposal-only and never create owner commitments.
 
 ## Canonical wave and WIP model
 
 Successor wave keys use `IW-SF3-CTO77-<SLUG>` and are direct children of `SF3`, linked to Decision 77. Every admitted wave requires:
 
-- direction state `active`, detail `portfolio_admitted_decision_77;admission_evidence_id=<id>;epoch_id=<id>`;
+- direction state/detail equals one exact legal projection form below;
 - AK evidence `check_type=portfolio_wave_admission_v2`, schema `softwareco.portfolio-wave-admission.v2`;
 - exact decision, epoch, wave, owner task IDs, owner acceptance receipts, controller task, pre-count, and post-count.
+
+Exact direction projection forms use sorted unique CSV ID lists:
+
+```text
+# state=active
+portfolio_admitted_decision_77;epoch_id=<id>;admission_evidence_id=<id>;owner_task_ids=<csv>;release_evidence_ids=none;outstanding_owner_task_ids=<csv>
+
+# state=active
+portfolio_partial_release_decision_77;epoch_id=<id>;admission_evidence_id=<id>;owner_task_ids=<csv>;release_evidence_ids=<csv>;outstanding_owner_task_ids=<csv>
+
+# state=active and admission blocked
+portfolio_reconciliation_required_decision_77;admission_evidence_id=<id>;release_evidence_ids=<none|csv>;outstanding_owner_task_ids=<csv>;reason_evidence_id=<id>
+
+# state=done, no completed outcome
+portfolio_returned_decision_77;admission_evidence_id=<id>;release_evidence_ids=<csv>;outcome_evidence_id=none
+
+# state=done, completed outcome
+portfolio_completed_decision_77;admission_evidence_id=<id>;release_evidence_ids=<csv>;outcome_evidence_id=<id>
+```
+
+Every projected release ID maps through its evidence payload to exactly one admitted owner task. `outstanding_owner_task_ids` equals admitted task IDs minus valid released/returned task IDs. Wrong order, duplicates, missing mappings, illegal state/detail combinations, or disagreement with controller evidence enters `portfolio_reconciliation_required_decision_77` and blocks admission.
 
 Each owner-task membership has a linear event chain in Decision-77 admission/release evidence using exact predecessor event ID. Valid transitions:
 
@@ -395,6 +420,7 @@ After the additional independent wave and Run C, the exact successor objective t
 - known limitations;
 - `framework_terminal_receipt_created=false`;
 - `framework_revocation_receipt_created=false`;
+- `framework_supersession_receipt_created=false`;
 - `external_effects`.
 
 The objective task may then close. No framework terminal receipt is created or inferred. `IW-SF3-CTO77-RECURRING` remains `active` as the non-authorizing framework/head projection and records objective-complete phase plus the post-outcome thesis head; only framework terminal/revoked/superseded reconciliation marks it `done`.
@@ -411,7 +437,7 @@ The owner checker retains `--require-terminal` for the Decision 74 negative cont
 | `--require-77-epoch-inactive` | no active epoch due absence, handback, or expiry; advisory |
 | `--require-77-framework-terminal` | terminal/revoked/superseded precedence; advisory |
 | `--require-77-thesis-current` | exactly one valid nonexpired thesis head |
-| `--require-77-objective-complete` | exact recurrence proof passes while no framework terminal/revocation exists |
+| `--require-77-objective-complete` | exact recurrence proof passes while no framework terminal/revocation/valid supersession exists |
 
 Every mode binds exact Decision 77, exact concerns/schemas, and deterministic bounded queries. Unknown mode or ambiguity exits nonzero.
 
