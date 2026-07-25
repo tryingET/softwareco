@@ -8,8 +8,8 @@ date: "2026-07-25"
 decision_id: 77
 predecessor_decision_id: 74
 governance_task_id: 4205
-revision: 2
-supersedes_reviewed_commit: "7f024832046f98c4c67beb95304f7a49aed7e27c"
+revision: 3
+supersedes_reviewed_commit: "c2e0487108186444ca57ddd4f6ad04246ffec090"
 review_mode: "strict-adversarial-multi-lane"
 review_closure_mode: "multi_lane_requires_synthesis"
 ---
@@ -145,15 +145,15 @@ After acceptance, implementation creates exactly one AK-native child of `SF3`:
 
 ```text
 key: IW-SF3-CTO77-RECURRING
-kind: implementation_wave
+kind: work_wave
 parent: SF3
-state before activation: pending
-state during current-objective proof: active
-state after objective proof: done
-state_detail: decision77_recurring_framework;<phase>;objective_task_id=<id>
+state before implementation readiness: pending
+state while the framework is nonterminal: active
+state after framework terminal/revoked/superseded: done
+state_detail: decision77_recurring_framework;phase=<phase>;objective_task_id=<id>;thesis_head_evidence_id=<none|id>
 ```
 
-Decision 77 links to this exact node with `governs`; execution tasks link using legal roles. This node is rollout/objective lineage, not authority. It never replaces or rewrites `SF3`'s Decision 74 terminal detail. Missing, duplicate, wrong-parent, wrong-decision, or conflicting projection fails closed. After the objective closes, framework/epoch authority still derives only from Decision 77 receipts and controller state, not from node `state=done`.
+`work_wave` is the legal AK-native authoring kind; `implementation_wave` may appear only as a derived vocabulary label. Decision 77 links to this exact node with `governs`; execution tasks link using legal roles. This node is rollout, lineage, and the structured thesis-head projection—not authority. The controller updates its thesis-head field only after evidence recording, with fresh pre-read, one update, post-read, and manual reconciliation on disagreement; no compare-and-swap is claimed. It never replaces or rewrites `SF3`'s Decision 74 terminal detail. Missing, duplicate, wrong-parent, wrong-decision, or conflicting projection fails closed. Objective completion leaves this node active and changes only `objective_task_id`/phase; framework/epoch authority still derives only from Decision 77 receipts and controller state. Only framework terminal/revoked/superseded reconciliation marks it done.
 
 ## Fixed current-epoch chain
 
@@ -234,13 +234,15 @@ softwareco-portfolio-cto:decision77:terminal
 softwareco-portfolio-cto:decision77:supersession
 ```
 
-Every applied event requires human source/actor, decision agreement, exact repo scope, explicit consent, mandatory evidence, event time, decision ID, reason, current epoch/head ref, and prior event ref where applicable.
+Every applied event requires human source/actor, decision agreement, exact repo scope, explicit consent, mandatory evidence, event time, Decision 77, reason, current epoch/head ref, and prior event ref where applicable.
 
-- Revocation: `framework_valid|epoch:<id> -> revoked`, schema `softwareco.portfolio-cto-framework-revocation.v1`.
-- Terminal: `framework_valid|epoch:<id> -> terminal`, schema `softwareco.portfolio-cto-framework-terminal.v1`, action `complete|stop|redirect` only.
-- Supersession: names an exact accepted AK decision that explicitly supersedes Decision 77, schema `softwareco.portfolio-cto-framework-supersession.v1`.
+- Revocation: any nonterminal posture (`framework_valid|framework_paused|review_expired|inactive|epoch:<id>|reconciliation_pending`) -> `revoked`, schema `softwareco.portfolio-cto-framework-revocation.v1`.
+- Terminal: any nonterminal posture -> `terminal`, schema `softwareco.portfolio-cto-framework-terminal.v1`, action `complete|stop|redirect` only.
+- Supersession: any nonterminal posture -> `superseded`, schema `softwareco.portfolio-cto-framework-supersession.v1`.
 
-Any applied revocation or terminal event ends every epoch immediately before projection reconciliation. An explicitly superseding accepted decision independently ends authority; the receipt records provenance but is not an extra condition. Conflicts or multiple unchained event heads fail closed. There is no terminal `continue`; ordinary recurrence uses a new epoch.
+The fixed supersession receipt is the mandatory machine-readable Decision-77 supersession relation. Its details name `superseding_decision_id`, and the checker must fresh-read that exact AK decision as accepted/unblocked and verify its RFC/ADR explicitly says it supersedes Decision 77. A later decision cannot lawfully claim Decision-77 supersession without this receipt. The receipt is therefore an operative runtime projection backed by the accepted successor decision, not optional provenance.
+
+Any applied revocation, terminal, or valid supersession event ends every epoch immediately before direction/projection reconciliation. Conflicts, malformed events, or multiple unchained heads fail closed. There is no terminal `continue`; ordinary recurrence uses a new epoch.
 
 # Human-reserved stop conditions
 
@@ -266,22 +268,28 @@ Every receipt is applied, explicit, owner-originated, bound to Decision 77 and e
 ```text
 softwareco-portfolio-wave:<wave_key>:<role>:<owner_id>:<scope_id>:envelope-acceptance
 softwareco-portfolio-wave:<wave_key>:<role>:<owner_id>:<scope_id>:objection
+softwareco-portfolio-wave:<wave_key>:<role>:<owner_id>:<scope_id>:objection-resolution
 softwareco-portfolio-wave:<wave_key>:<role>:<owner_id>:<scope_id>:task-scope-acceptance
 softwareco-portfolio-wave:<wave_key>:<role>:<owner_id>:<scope_id>:terminal-acceptance
 softwareco-portfolio-wave:<wave_key>:<role>:<owner_id>:<scope_id>:release
 ```
 
-Schemas remain explicit:
+Every payload includes `schema`, `decision_id=77`, `wave_key`, `role`, `owner_id`, `scope_id`, `epoch_id`, `prior_receipt_id`, `owner_evidence_refs`, and `observed_at_utc`. Exact transitions and additional required fields are:
 
-- envelope: `softwareco.portfolio-owner-envelope-acceptance.v2`;
-- objection: `softwareco.portfolio-owner-objection.v2`;
-- task scope: `softwareco.portfolio-owner-task-scope-acceptance.v2`;
-- terminal: `softwareco.portfolio-terminal-acceptance.v2`;
-- release/return: `softwareco.portfolio-owner-release.v2`.
+| Concern suffix / schema | Transition | Additional required fields |
+|---|---|---|
+| `envelope-acceptance` / `softwareco.portfolio-owner-envelope-acceptance.v2` | `proposed -> envelope_accepted` | `outcome_envelope`, `capacity_envelope`, `displacement`, `success_criteria`, `stop_criteria` |
+| `task-scope-acceptance` / `softwareco.portfolio-owner-task-scope-acceptance.v2` | `proposed -> task_scope_accepted` | exact `owner_repo`, `owner_task_ids`, task titles, allowed/required/forbidden scope, validation contract |
+| `objection` / `softwareco.portfolio-owner-objection.v2` | `clear -> objected` | `objection_kind`, `risk`, `affected_scope`, `requested_resolution`, referenced acceptance receipt IDs |
+| `objection-resolution` / `softwareco.portfolio-owner-objection-resolution.v2` | `objected -> resolved|withdrawn` | `objection_receipt_id`, `resolution`, `resolution_evidence_refs`, and accepted human-reserved decision ref when the accountable owner did not resolve it |
+| `terminal-acceptance` / `softwareco.portfolio-terminal-acceptance.v2` | `admitted -> terminal_accepted` | `owner_task_ids`, implementation/outcome/operational evidence refs, residual risk |
+| `release` / `softwareco.portfolio-owner-release.v2` | `admitted -> released_terminal|returned_to_owner` | `owner_task_ids`, terminal or continuing-lifecycle disposition, release evidence refs |
+
+Receipt envelope source/actor must equal the accountable owner identity recorded for the exact role/scope. Objection resolution/withdrawal must come from that same owner; only a separately accepted human-reserved decision cited in the payload may resolve a substantive owner conflict. Predecessor IDs form a non-forking chain per exact concern; duplicates, multiple heads, incompatible transitions, or missing fields fail closed.
 
 Product/Domain owners accept outcome, capacity, displacement, success, and stop criteria before selection. Project/source owners accept every exact owner-task scope before admission. Service/Platform owners accept applicable operational/shared-contract consequences. Every applicable owner accepts terminal evidence.
 
-A substantive applied objection immediately blocks selection/admission/further CTO control for that scope, including after admission. Vacancy fallback applies only to genuine role vacancy or identity ambiguity and requires separate human evidence; it never overrides a substantive objection. Resolution requires the same accountable owner or a separate human-reserved decision.
+A substantive applied objection immediately blocks selection/admission/further CTO control for that scope, including after admission. Control resumes only after one valid resolution/withdrawal transition. Vacancy fallback applies only to genuine role vacancy or identity ambiguity and requires separate human evidence; it never overrides a substantive objection.
 
 ## Owner release law
 
@@ -341,7 +349,7 @@ Required details:
 }
 ```
 
-Discovery uses `ak evidence search` for exact check type and repo, limit `100`, then filters exact schema/Decision 77. Revision 1 has no predecessor. Each later revision must reference exactly one existing valid predecessor and equal predecessor revision + 1. Exactly one unreferenced head is required. Gaps, duplicate revisions, forks, cycles, multiple heads, expired head, more than 100 records, invalid fact refs, or missing census basis fails closed. Recommendations are proposal-only and never create owner commitments.
+Discovery starts from exact `thesis_head_evidence_id` in `IW-SF3-CTO77-RECURRING` state detail, then follows `prior_thesis_evidence_id` through structured `ak evidence show <id> --json` reads. Every record must match Softwareco repo scope, exact schema, Decision 77, the epoch/controller task that recorded it, and the projected head. Traversal stops only at revision 1 and is capped at 100 records. Revision 1 has no predecessor. Each later revision references exactly one existing predecessor and equals predecessor revision + 1. Missing head, wrong projection, gaps, duplicate revisions, forks exposed by conflicting successor refs in the traversed records, cycles, expired head, over-100 traversal, invalid fact refs, or missing census basis fails closed. Recommendations are proposal-only and never create owner commitments.
 
 ## Canonical wave and WIP model
 
@@ -361,7 +369,14 @@ admitted -> returned_to_owner
 
 No duplicate admission or release is legal. A multi-task wave remains outstanding until every admitted task has a valid owner release receipt and matching controller release evidence. Wave completion is separate and additionally requires all terminal acceptances and outcome evidence.
 
-WIP reconstruction enumerates all Decision-77 admission/release evidence (limit `500`), validates chains, and cross-checks direction nodes, owner receipts, and owner task states. Decision 74 events are historical and excluded by decision ID. Any missing projection/event, duplicate/fork, partial release, owner disagreement, or post-read mismatch counts the affected wave/task as outstanding and blocks new admission. Limits remain two admitted waves and six outstanding owner tasks. A second concurrent wave requires a direct human exact-wave checkpoint.
+WIP reconstruction uses only shipped structured AK reads:
+
+1. `ak direction show SF3 --machine` enumerates every `IW-SF3-CTO77-*` child and its projected admission/release/outcome evidence IDs.
+2. The bounded epoch-index chain enumerates every Decision-77 controller task ID (maximum 100 epochs).
+3. `ak evidence task <controller_task_id> --machine` enumerates that epoch's admission/release evidence; more than 500 total Decision-77 membership events fails closed.
+4. Exact `ak evidence show <id> --json`, `ak governance show <id> --json`, and `ak task show <id> --machine` validate projected event, owner receipt, and task refs.
+
+Decision 74 events are excluded by decision ID. Admission becomes effective only when valid controller evidence and matching direction projection both exist. Any orphan evidence, missing projection/event, duplicate/fork, partial release, owner disagreement, or post-read mismatch counts the affected wave/task as outstanding and blocks new admission until explicit reconciliation. Limits remain two admitted waves and six outstanding owner tasks. A second concurrent wave requires a direct human exact-wave checkpoint.
 
 # Objective proof and checker
 
@@ -382,7 +397,7 @@ After the additional independent wave and Run C, the exact successor objective t
 - `framework_revocation_receipt_created=false`;
 - `external_effects`.
 
-The objective task may then close. No framework terminal receipt is created or inferred. The Decision-77 rollout direction projection may become `done` without affecting framework/epoch authority.
+The objective task may then close. No framework terminal receipt is created or inferred. `IW-SF3-CTO77-RECURRING` remains `active` as the non-authorizing framework/head projection and records objective-complete phase plus the post-outcome thesis head; only framework terminal/revoked/superseded reconciliation marks it `done`.
 
 ## Normative checker matrix
 
