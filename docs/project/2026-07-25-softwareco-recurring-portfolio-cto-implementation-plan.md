@@ -3,7 +3,7 @@ summary: "Post-acceptance implementation plan for Decision 77's recurring CTO fr
 read_when:
   - "Implementing Decision 77 after accountable-human acceptance."
 type: "plan"
-status: "blocked_pending_decision_acceptance"
+status: "active_framework_implementation"
 date: "2026-07-25"
 decision_id: 77
 governance_task_id: 4205

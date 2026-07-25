@@ -3,7 +3,7 @@ summary: "Validation, rollout, revocation, and rollback contract for Decision 77
 read_when:
   - "Validating or rolling out Decision 77 after acceptance, or stopping an epoch/framework."
 type: "plan"
-status: "blocked_pending_decision_acceptance"
+status: "active_framework_implementation"
 date: "2026-07-25"
 decision_id: 77
 governance_task_id: 4205

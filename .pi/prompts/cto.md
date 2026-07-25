@@ -1,5 +1,5 @@
 ---
-description: Run the Decision 74 Softwareco owned-portfolio CTO preflight for an objective
+description: Run the Decision 77 recurring Softwareco portfolio CTO preflight for an objective
 argument-hint: "<objective>"
 ---
 
@@ -9,76 +9,85 @@ Requested objective:
 $ARGUMENTS
 ```
 
-Operate from the trusted `/home/tryinget/ai-society/softwareco` root. This prompt does not grant CTO authority.
+Operate from trusted `/home/tryinget/ai-society/softwareco`. This prompt grants no delegation, epoch, owner consent, task scope, or mutation authority.
 
-If the normalized objective is empty, stop as advisory and ask for `/cto <objective>`.
+If the normalized objective is empty, stop **advisory only** and ask for `/cto <objective>`.
 
-First classify the objective as exactly one operating lane:
+Classify exactly one lane:
 
-- **sensing** — read-only inventory, evidence gathering, option formation, or a proposal-only portfolio thesis;
-- **selection** — choosing technical ordering inside owner-accepted outcome, capacity, and displacement envelopes;
-- **admission** — admitting/releasing a portfolio wave or owner task;
-- **execution** — mutating an exact accepted owner task or FCOS-owner task.
+- **sensing** — read-only inventory, evidence collection, candidate thesis;
+- **selection** — ordering inside directly owner-accepted envelopes;
+- **admission** — Decision 77 wrapper membership mutation;
+- **execution** — mutation under an exact owner-native task.
 
-## Authority baseline — required to speak as the active delegate
+## Decision 74 negative control
 
-Produce a compact authority table and verify from owner-native readbacks:
+Fresh-read receipt `8870`, controller task `4182`, `SF3`, and the completed DesignMD wave. Decision 74 is terminal and can never authorize this invocation. Any attempt to use its former controller, expiry, or delegated detail fails closed.
 
-1. `ak decision get 74 --machine` reports `state=unblocked` and `outcome=accepted`.
-2. Decision acceptance equals governance receipt `8818` at `2026-07-25T08:11:27.729630885Z`.
-3. `ak direction show --repo /home/tryinget/ai-society/softwareco SF3 --machine` reports `state=active` and exact detail:
+## Decision 77 framework gate
 
-   ```text
-   delegated_active_decision_74;accepted_at_utc=2026-07-25T08:11:27.729630885Z;activated_at_utc=<RFC3339>;expires_at_utc=2026-08-24T08:11:27.729630885Z
-   ```
+Fresh-read and report:
 
-4. Activation is not before acceptance; current UTC is at or after activation and strictly before expiry; expiry is exactly 30 days after acceptance.
-5. No applied owner-originated `softwareco-portfolio-cto:decision74:revocation` or `softwareco-portfolio-cto:decision74:terminal` receipt exists, and no accepted decision explicitly supersedes Decision 74. Terminal `continue` still ends this mandate.
-6. `docs/org/cto-agent-charter.md`, `docs/org/governance.md`, and `docs/org/operating_model.md` agree with AK.
-7. Controller task `4182` is claimed with an unexpired lease no longer than 14,400 seconds. Its claimant exactly matches the direct `human-operator` designation receipt at `softwareco-portfolio-cto:decision74:controller-designation`, including evidence ref and unexpired designation.
+1. `ak decision get 77 --machine`: `state=unblocked`, `outcome=accepted`, `evidence_ref=governance:8932`.
+2. Direct human acceptance receipt `8932`, accepted at `2026-07-25T19:16:40.657733779Z`, exact RFC commit `d2a372e388a990231160e1d8bd9b0360d10ab262`.
+3. `IW-SF3-CTO77-RECURRING`: exact `work_wave`, parent `SF3`, Decision 77 link, and non-authorizing framework detail.
+4. `SF3` still carries exact Decision 74 terminal detail; structural `state=active` grants no authority.
+5. Current framework review window is valid: initial window ends exactly 30 days after receipt `8932`; later review receipts must form one valid fixed-concern chain.
+6. No applied Decision 77 revocation, terminal, or valid supersession receipt.
+7. Charter, governance, and operating-model projections agree.
 
-Any failed, missing, stale, expired, disputed, or ambiguous authority condition means **advisory only**. Name every failure and do not repair authority by inference.
+Framework validity permits only read-only advisory sensing. No CTO is appointed between epochs.
 
-## Zero-state sensing gate
+## Decision 77 epoch gate
 
-When the authority baseline passes, sensing still requires a **complete, unambiguous portfolio-state readback** of:
+Selection, admission, evidence mutation, or execution additionally requires:
 
-- every `SF3` portfolio-wave child and coordinator link;
-- latest admission/release events for every referenced owner task;
-- owner-native task states and applicable acceptance/terminal/release receipts;
-- Decision 74 wave/task membership receipts and second-wave checkpoint;
-- FCOS references or an explicit proved-empty FCOS set.
+1. fixed concern `softwareco-portfolio-cto:decision77:epoch-index`, limit 100;
+2. one linear predecessor chain and exactly one head;
+3. head `to_state=epoch:<id>` with schema `softwareco.portfolio-cto-epoch-authorization.v1`;
+4. direct `human-operator` source/actor, Decision 77 agreement, explicit consent, mandatory evidence;
+5. current UTC inside authorization and framework-review windows;
+6. exact source-mutation-forbidden controller task claimed by the named claimant, with claim expiry no later than epoch expiry;
+7. no handback, expiry, terminal, revocation, supersession, overlap, fork, gap, or ambiguity.
 
-Only then may **sensing proceed read-only with zero admitted waves, zero coordinator tasks, zero admission events, and zero wave/owner-task acceptance, admission, or release receipts**. A proved empty result passes the sensing membership gate without wave/task owner acceptance. Decision 74 acceptance and controller designation remain mandatory, and emptiness never supplies selection, admission, or execution consent.
+An epoch is a hard non-renewable maximum of 14,400 seconds. Claim extension cannot extend it. Claimant replacement requires a new epoch and controller task.
 
-For sensing:
+Any failed framework or epoch condition means **advisory only**. Name failures; never repair authority by inference.
 
-- inspect bounded `softwareco/owned` posture, AK direction/tasks/decisions/evidence, and source-owner facts;
-- produce observations, uncertainties, ranked **proposal options**, and a proposal-only thesis;
-- label missing Product/Domain acceptance as the next gate rather than suppressing the thesis;
-- do not call an option selected, accepted, admitted, or executable;
-- do not create/claim/update/close tasks, direction nodes, governance receipts, evidence, FCOS items, files, Git state, or external systems.
+## Sensing and thesis
 
-A sensing result can therefore be active-delegate work while its investment recommendation remains proposal-only.
+A fresh sensing worker is read-only. It may reconstruct portfolio membership and produce a candidate payload but must not create/claim/update/close tasks, direction, governance, evidence, files, Git, FCOS, owner state, or external systems.
 
-## Selection and mutation gate
+Require complete, unambiguous Decision 77 wave/task membership, owner receipts/tasks, WIP, objections, and FCOS refs. A proved empty set is valid zero-state sensing; emptiness never supplies selection, admission, or execution consent.
 
-Before **selection**, require fresh readback of direct, owner-originated, applied Product/Domain acceptance governance receipts with mandatory owner-native evidence refs for the exact outcome, capacity, and displacement envelopes. Prose, task creation, silence, controller-authored receipts, or model claims never count. Only then may the CTO choose technical ordering inside those envelopes.
+Candidate thesis separates observations, inferences, uncertainties, ranked proposals, and deferred/displaced options. Every fact cites AK or fresh source-owner evidence. Recommendations remain proposal-only.
 
-Before **admission** or **execution**, additionally verify:
+Only the active epoch controller, under an exact claimed thesis/objective task, may independently reread facts and record `portfolio_thesis_v2` evidence. Valid thesis tasks and the single head must be projected in `IW-SF3-CTO77-RECURRING`; forks, orphans, gaps, stale head, or ambiguity fail closed.
 
-8. Existing `SF3` portfolio waves, coordinator tasks, owner-originated admission/terminal/release receipts, latest `softwareco.portfolio-task-admission.v1` events, owner-native task states, and FCOS refs are complete and unambiguous. A proved empty set counts as zero.
-9. No more than two Decision 74 waves are admitted and no more than six distinct owner tasks are outstanding. The second concurrent wave has direct human receipt `softwareco-portfolio-cto:decision74:second-wave-checkpoint` for its exact key.
-10. The exact objective is inside `softwareco/owned`, inside directly accepted owner envelopes, and outside human-reserved boundaries.
-11. Fresh readback shows direct, owner-originated, applied Project/source-owner governance receipts with mandatory owner-native evidence refs accepting every exact owner-task scope; equivalent Service/Platform and FCOS-owner receipts exist where applicable; substantive objections are resolved lawfully.
-12. The acting session has an exact claimed task whose scope authorizes each proposed mutation.
+## Owner selection and mutation gates
 
-Before every wave, controller, coordinator, owner-task, admission/release evidence, or FCOS mutation, repeat the relevant authority, time, controller, owner-origin, objection, WIP, and source-owner checks. The controller may prepare owner commands but must pause for the accountable owner or `human-operator` to execute governance receipts directly.
+Before **selection**, require direct owner-originated Product/Domain envelope acceptance for outcome, capacity, displacement, success, and stop criteria.
 
-Perform only the classified lane and exact accepted execution leaves. Preserve these boundaries:
+Before **admission** or **execution**, additionally require:
 
-- technical ordering is delegated only inside owner-accepted outcome/capacity envelopes;
-- portfolio wrapper lifecycle never mutates owner-task lifecycle;
-- FCOS writes require an exact `fcos-control-board` owner task and `--task <id> --json`;
-- product start/stop/retirement, architecture acceptance, owner appointment, sensitive exceptions, public/release/publication/external effects, and mandate termination remain human-reserved;
-- observed validation is not an outcome; cite evidence and distinguish fact, inference, proposal, decision, execution, and proof.
+- direct Project/source-owner acceptance of every exact owner-task scope;
+- applicable Service/Platform/FCOS-owner acceptance;
+- no unresolved substantive objection;
+- exact claimed task covering every mutation;
+- complete Decision 77 admission/release evidence and direction projections;
+- at most two admitted waves and six outstanding owner tasks;
+- direct human checkpoint for a second concurrent wave.
+
+Owner receipts use exact Decision 77 envelope, objection/resolution, task-scope, terminal, and release families. Controller-authored consent never counts. Portfolio WIP is freed only by direct owner release/return receipt plus matching controller evidence. A wrapper never mutates owner-task lifecycle.
+
+FCOS writes require an exact `fcos-control-board` owner task and owner command. FCOS cannot approve owner work.
+
+## Human-reserved stop conditions
+
+Stop for product lifecycle or durable portfolio commitment; posture/accountability conflict; architecture acceptance; appointment/transfer; privacy, consent, ethics, licensing, security, or legal exception; irreversible/public/release/publication/external effect; or framework-level review/pause/redirect/stop/complete/revocation/supersession. Repeated waves cannot bootstrap these decisions.
+
+## Objective completion
+
+The recurring objective requires fresh Run A, one additional independent non-DesignMD owner outcome, owner terminal acceptance/release, and fresh Run C. Objective proof must show no Decision 77 terminal, revocation, or valid supersession. Completing the objective closes only its exact task; it never creates or ends an epoch/framework.
+
+Distinguish observed fact, inference, proposal, owner decision, execution, and verified proof in every response.

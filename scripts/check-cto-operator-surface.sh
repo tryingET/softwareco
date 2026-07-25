@@ -3,342 +3,223 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 package_dir="${PI_MODES_PACKAGE_DIR:-$HOME/.pi/agent/npm/node_modules/@tryinget/pi-modes}"
-fail() {
-  printf 'cto-operator-surface: FAIL: %s\n' "$*" >&2
-  exit 1
-}
+mode_arg="${1:-}"
 
-require_active=false
-require_terminal=false
-case "${1:-}" in
-  "") ;;
-  --require-active) require_active=true ;;
-  --require-terminal) require_terminal=true ;;
-  *) fail "usage: $0 [--require-active|--require-terminal]" ;;
+fail() { printf 'cto-operator-surface: FAIL: %s\n' "$*" >&2; exit 1; }
+to_ns() { date -u -d "$1" +%s%N 2>/dev/null; }
+
+case "$mode_arg" in
+  --require-terminal|--require-active|--require-77-preactivation|--require-77-framework|--require-77-epoch-active|--require-77-epoch-inactive|--require-77-framework-terminal|--require-77-thesis-current|--require-77-objective-complete) ;;
+  "") fail 'explicit check mode required' ;;
+  *) fail "unknown mode: $mode_arg" ;;
 esac
 
-[[ -f "$package_dir/package.json" ]] || fail "immutable Pi Modes package not found at $package_dir"
-[[ "$(node -p "require(process.argv[1]).version" "$package_dir/package.json")" == "0.3.0" ]] \
-  || fail "Pi Modes package must be exactly 0.3.0"
+[[ -f "$package_dir/package.json" ]] || fail "immutable Pi Modes package missing"
+[[ "$(node -p "require(process.argv[1]).version" "$package_dir/package.json")" == "0.3.0" ]] || fail "Pi Modes must be 0.3.0"
 
 mode="$root/.pi/modes/softwareco-cto.json"
 preset="$root/.pi/mode-presets/softwareco-cto.json"
 prompt="$root/.pi/prompts/cto.md"
-for path in "$mode" "$preset" "$prompt"; do
-  [[ -f "$path" ]] || fail "missing ${path#$root/}"
-done
+for path in "$mode" "$preset" "$prompt"; do [[ -f "$path" ]] || fail "missing ${path#$root/}"; done
 
-# Pi Modes 0.3.0 ships its TypeScript source in node_modules. Node 26 refuses
-# native type stripping there. Copy the exact installed release to an ephemeral
-# non-node_modules path and run its owner linter with Node; never fetch a runner.
-lint_dir="$(mktemp -d)"
-trap 'rm -rf "$lint_dir"' EXIT
+lint_dir="$(mktemp -d)"; trap 'rm -rf "$lint_dir"' EXIT
 cp -a "$package_dir"/. "$lint_dir"/
-(
-  cd "$lint_dir"
-  node ./scripts/mode-lint.mjs "$mode" "$preset"
-) || fail "Pi Modes owner linter rejected Softwareco artifacts"
+(cd "$lint_dir" && node ./scripts/mode-lint.mjs "$mode" "$preset") || fail "Pi Modes owner lint failed"
 
 jq -e '
-  .schemaVersion == 2 and
-  .key == "softwareco-cto" and
-  .promptStrategy == "append" and
-  (.systemPrompt | contains("grants no delegation, tools, mutation rights, continuation, publication, release, FCOS writes, or owner consent")) and
-  (.systemPrompt | contains("zero-state sensing")) and
-  (.systemPrompt | contains("complete portfolio-membership readback")) and
-  (.systemPrompt | contains("Decision acceptance and controller designation remain mandatory")) and
-  (.systemPrompt | contains("proved emptiness never supplies selection, admission, or execution consent")) and
-  (.systemPrompt | contains("proposal-only")) and
-  (.systemPrompt | contains("full controller, owner-origin, portfolio membership, finite-WIP, objection, and exact task-scope gate")) and
-  (.systemPrompt | contains("two admitted waves")) and
-  (.systemPrompt | contains("six outstanding")) and
-  (.systemPrompt | contains("FCOS"))
+ .schemaVersion==2 and .key=="softwareco-cto" and .promptStrategy=="append" and
+ (.systemPrompt|contains("Decision 74 is terminal")) and
+ (.systemPrompt|contains("Decision 77 establishes a dormant framework")) and
+ (.systemPrompt|contains("no CTO is appointed between epochs")) and
+ (.systemPrompt|contains("zero-state sensing")) and
+ (.systemPrompt|contains("Proved emptiness never supplies selection, admission, or execution consent")) and
+ (.systemPrompt|contains("two admitted waves")) and
+ (.systemPrompt|contains("six outstanding")) and
+ (.systemPrompt|contains("A portfolio wrapper never mutates an owner task"))
 ' "$mode" >/dev/null || fail "mode contract mismatch"
 
-jq -e '
-  .schemaVersion == 1 and
-  .key == "softwareco-cto" and
-  .selection.baseKey == null and
-  .selection.overlayKeys == ["softwareco-cto"]
-' "$preset" >/dev/null || fail "preset contract mismatch"
-
-grep -Fq 'argument-hint: "<objective>"' "$prompt" || fail "missing /cto argument hint"
-grep -Fq '$ARGUMENTS' "$prompt" || fail "missing /cto argument interpolation"
-for required in \
-  'Decision 74' \
-  'Controller task `4182`' \
-  'advisory only' \
-  'Zero-state sensing gate' \
-  'complete, unambiguous portfolio-state readback' \
-  'proved empty result passes the sensing membership gate' \
-  'emptiness never supplies selection, admission, or execution consent' \
-  'proposal-only thesis' \
-  'do not create/claim/update/close tasks' \
-  'Selection and mutation gate' \
-  'direct, owner-originated, applied Product/Domain acceptance governance receipts' \
-  'Before **admission** or **execution**, additionally verify' \
-  'direct, owner-originated, applied Project/source-owner governance receipts' \
-  'accepting every exact owner-task scope' \
-  'mandatory owner-native evidence refs' \
-  'acting session has an exact claimed task' \
-  'owner-originated' \
-  'second-wave-checkpoint' \
-  'FCOS writes require' \
-  'Terminal `continue` still ends'; do
-  grep -Fq "$required" "$prompt" || fail "prompt missing: $required"
+for phrase in \
+ 'Decision 74 negative control' \
+ 'Decision 77 framework gate' \
+ 'Decision 77 epoch gate' \
+ 'No CTO is appointed between epochs' \
+ 'A fresh sensing worker is read-only' \
+ 'emptiness never supplies selection, admission, or execution consent' \
+ 'portfolio_thesis_v2' \
+ 'Owner selection and mutation gates' \
+ 'A wrapper never mutates owner-task lifecycle' \
+ 'Objective completion'; do
+  grep -Fq "$phrase" "$prompt" || fail "prompt missing: $phrase"
 done
 
-# The local builder and every unspecified .pi artifact remain ignored.
-git -C "$root" check-ignore -q .pi/modes/softwareco-builder.json \
-  || fail "local softwareco-builder must remain ignored"
-for path in .pi/modes/softwareco-cto.json .pi/mode-presets/softwareco-cto.json .pi/prompts/cto.md; do
-  if git -C "$root" check-ignore -q "$path"; then
-    fail "$path is still ignored"
-  fi
-done
-
-tracked_pi="$(git -C "$root" ls-files '.pi/**' | sort)"
-if [[ -n "$tracked_pi" ]]; then
-  expected=$'.pi/mode-presets/softwareco-cto.json\n.pi/modes/softwareco-cto.json\n.pi/prompts/cto.md'
-  [[ "$tracked_pi" == "$expected" ]] || fail "unexpected tracked .pi artifacts: $tracked_pi"
-fi
-
-org_docs=(docs/org/cto-agent-charter.md docs/org/governance.md docs/org/operating_model.md)
-for doc in "${org_docs[@]}"; do
-  grep -Fq 'Decision 74' "$root/$doc" || fail "$doc does not project Decision 74"
-done
-
-accepted_at="2026-07-25T08:11:27.729630885Z"
-expires_at="2026-08-24T08:11:27.729630885Z"
-to_ns() { date -u -d "$1" +%s%N 2>/dev/null; }
-acceptance="$(ak governance show 8818 --json)"
-jq -e '
-  .id == 8818 and
-  .concern == "architecture-decision" and
-  .actor == "human-operator" and
-  .status == "applied" and
-  .details.decision_id == 74 and
-  .details.outcome == "accepted"
-' <<<"$acceptance" >/dev/null || fail "Decision 74 acceptance receipt 8818 mismatch"
-receipt_accepted_at="$(jq -r '.created_at' <<<"$acceptance")"
-[[ "$(to_ns "$receipt_accepted_at")" == "$(to_ns "$accepted_at")" ]] \
-  || fail "Decision 74 acceptance timestamp mismatch"
-
-ak decision get 74 --machine | jq -e '
-  .ok == true and
-  .payload.decision.state == "unblocked" and
-  .payload.decision.outcome == "accepted"
-' >/dev/null || fail "Decision 74 is not accepted and unblocked"
-
+# Decision 74 immutable negative control.
+receipt74="$(ak governance show 8870 --json)"
+jq -e '.status=="applied" and .source_authority=="human-operator" and .actor=="human-operator" and .agreement_ref=="decision:74" and .to_state=="complete" and .details.completed_wave=="IW-SF3-DMF-LOOP-IMPACT" and .details.outcome_evidence_ref=="evidence:5176"' <<<"$receipt74" >/dev/null || fail "Decision 74 terminal receipt mismatch"
 sf3="$(ak direction show --repo "$root" SF3 --machine)"
-jq -e '.ok == true' <<<"$sf3" >/dev/null || fail "SF3 readback failed"
-detail="$(jq -r '.payload.node.state_detail' <<<"$sf3")"
-controller="$(ak task show 4182 --machine)"
+terminal74='delegation_terminal_decision_74;terminal_action=complete;decided_at_utc=2026-07-25T13:19:10.466752718Z;governance_receipt_id=8870'
+jq -e --arg d "$terminal74" '
+ .payload.node.state=="active" and .payload.node.state_detail==$d and
+ ([.payload.children[]|select(.key=="IW-SF3-DMF-LOOP-IMPACT" and .state=="done" and (.state_detail|contains("outcome_evidence_id=5176")))]|length==1) and
+ ([.payload.task_links[]|select((.link.task_id==4156 or .link.task_id==4184 or .link.task_id==4191 or .link.task_id==4199) and .link.link_role=="completed_by")]|length==4) and
+ ([.payload.task_links[]|select(.link.task_id==4182 and .link.link_role=="existing_anchor")]|length==1)
+' <<<"$sf3" >/dev/null || fail "Decision 74 direction terminal mismatch"
+controller74="$(ak task show 4182 --machine)"
+jq -e '.payload.task.status=="done" and .payload.task.result.terminal_receipt_id==8870' <<<"$controller74" >/dev/null || fail "Decision 74 controller mismatch"
+
+if [[ "$mode_arg" == --require-terminal ]]; then
+  ak direction check --repo "$root" --json | jq -e '.ok==true and (.issues|length==0)' >/dev/null || fail "direction topology invalid"
+  printf 'cto-operator-surface: PASS (Decision 74 terminal; receipt=8870; outcome_evidence=5176)\n'
+  exit 0
+fi
+if [[ "$mode_arg" == --require-active ]]; then
+  fail "Decision 74 is terminal and has no active delegation"
+fi
+
+# Decision 77 accepted dormant framework.
+accept77="$(ak governance show 8932 --json)"
 jq -e '
-  .ok == true and
-  .payload.task.title == "Control Decision 74 portfolio admissions" and
-  (.payload.task.scope.allowed_paths == []) and
-  (.payload.task.scope.required_paths == []) and
-  (.payload.task.scope.forbidden_paths == ["**"])
-' <<<"$controller" >/dev/null || fail "controller task 4182 contract mismatch"
+ .status=="applied" and .source_authority=="human-operator" and .actor=="human-operator" and
+ .agreement_ref=="decision:77" and .from_state=="decision_pending" and .to_state=="accepted" and
+ .details.schema=="softwareco.architecture-decision-acceptance.v1" and .details.decision_id==77 and
+ .details.outcome=="accepted" and .details.rfc_commit=="d2a372e388a990231160e1d8bd9b0360d10ab262" and
+ .details.epoch_authorized==false
+' <<<"$accept77" >/dev/null || fail "Decision 77 acceptance receipt mismatch"
+ak decision get 77 --machine | jq -e '.payload.decision.state=="unblocked" and .payload.decision.outcome=="accepted" and .payload.decision.evidence_ref=="governance:8932"' >/dev/null || fail "Decision 77 is not accepted/unblocked"
 
-if $require_terminal; then
-  terminal="$(ak governance show 8870 --json)"
+accepted77="$(jq -r '.details.accepted_at_utc' <<<"$accept77")"
+now_ns="$(date -u +%s%N)"; accepted_ns="$(to_ns "$accepted77")" || fail "invalid Decision 77 acceptance time"
+initial_review_until_ns=$((accepted_ns + 2592000000000000))
+review_until_ns=$initial_review_until_ns
+review_head_id=null
+review_receipts="$(ak governance list --concern softwareco-portfolio-cto:decision77:framework-review --limit 100 --json)"
+applied_reviews="$(jq '[.[]|select(.status=="applied")]|sort_by(.id)' <<<"$review_receipts")"
+if jq -e 'length>0' <<<"$applied_reviews" >/dev/null; then
   jq -e '
-    .id == 8870 and
-    .concern == "softwareco-portfolio-cto:decision74:terminal" and
-    .source_authority == "human-operator" and
-    .actor == "human-operator" and
-    .agreement_ref == "decision:74" and
-    .from_state == "delegated_active" and
-    .to_state == "complete" and
-    .status == "applied" and
-    .task_id == 4182 and
-    .evidence_ref == "evidence:5177" and
-    .details.schema == "softwareco.portfolio-cto-terminal.v1" and
-    .details.terminal_action == "complete" and
-    .details.proof_target.portfolio_thesis == true and
-    .details.proof_target.completed_outcome_wave == true and
-    .details.completed_wave == "IW-SF3-DMF-LOOP-IMPACT" and
-    .details.outcome_evidence_ref == "evidence:5176" and
-    .details.corrective_d2e_evidence_ref == "evidence:5177" and
-    .details.external_effects == 0
-  ' <<<"$terminal" >/dev/null || fail "terminal receipt 8870 mismatch"
-  decided_at="$(jq -r '.details.decided_at_utc' <<<"$terminal")"
-  terminal_detail="delegation_terminal_decision_74;terminal_action=complete;decided_at_utc=$decided_at;governance_receipt_id=8870"
-  jq -e --arg detail "$terminal_detail" '
-    .payload.node.state == "active" and .payload.node.state_detail == $detail and
-    ([.payload.children[] | select(
-      .key == "IW-SF3-DMF-LOOP-IMPACT" and
-      .state == "done" and
-      (.state_detail | contains("outcome_evidence_id=5176"))
-    )] | length == 1) and
-    ([.payload.task_links[] | select(
-      (.link.task_id == 4156 or .link.task_id == 4184 or .link.task_id == 4191) and
-      .link.link_role == "completed_by"
-    )] | length == 3) and
-    ([.payload.task_links[] | select(
-      (.link.task_id == 4156 or .link.task_id == 4184 or .link.task_id == 4191) and
-      .link.link_role != "completed_by"
-    )] | length == 0)
-  ' <<<"$sf3" >/dev/null || fail "SF3 terminal reconciliation mismatch"
-  direction_check="$(ak direction check --repo "$root" --json)"
-  jq -e '.ok == true and (.issues | length == 0)' <<<"$direction_check" >/dev/null \
-    || fail "direction topology is invalid"
-  jq -e '
-    .payload.task.status == "done" and
-    .payload.task.claimed_by == null and
-    .payload.task.result.schema == "softwareco.portfolio-controller-terminal-closeout.v1" and
-    .payload.task.result.outcome == "mandate_complete_handed_back" and
-    .payload.task.result.terminal_receipt_id == 8870 and
-    .payload.task.result.corrective_d2e_evidence_id == 5177 and
-    .payload.task.result.portfolio_outcome_evidence_id == 5176 and
-    .payload.task.result.proof_target_satisfied == true and
-    .payload.task.result.external_effects == 0
-  ' <<<"$controller" >/dev/null || fail "controller terminal closeout mismatch"
-  for doc in "${org_docs[@]}"; do
-    grep -Fqx 'status: "terminal_complete"' "$root/$doc" \
-      || fail "$doc is not an exact terminal projection"
-  done
-  grep -Fqx 'terminal_receipt_id: 8870' "$root/docs/org/cto-agent-charter.md" \
-    || fail "charter terminal receipt mismatch"
-  grep -Fqx "terminal_at: \"$decided_at\"" "$root/docs/org/cto-agent-charter.md" \
-    || fail "charter terminal timestamp mismatch"
-  printf 'cto-operator-surface: PASS (terminal complete; receipt=8870; outcome_evidence=5176)\n'
+   . as $a | to_entries | all(. as $e |
+    $e.value.source_authority=="human-operator" and $e.value.actor=="human-operator" and
+    $e.value.agreement_ref=="decision:77" and $e.value.repo_scope=="/home/tryinget/ai-society/softwareco" and
+    $e.value.consent_mode=="explicit" and ($e.value.evidence_ref|type=="string" and length>0) and
+    $e.value.details.schema=="softwareco.portfolio-cto-framework-review.v1" and $e.value.details.decision_id==77 and
+    ($e.value.details.reviewed_at_utc|type=="string" and length>0) and ($e.value.details.valid_until_utc|type=="string" and length>0) and
+    ($e.value.from_state==(if $e.key==0 then "review_due" else $a[$e.key-1].to_state end)) and
+    ($e.value.to_state=="framework_valid" or $e.value.to_state=="framework_paused") and
+    ($e.value.details.prior_review_receipt_id==(if $e.key==0 then null else $a[$e.key-1].id end)) and
+    (($e.value.to_state=="framework_valid" and $e.value.details.outcome=="continue_framework") or ($e.value.to_state=="framework_paused" and $e.value.details.outcome=="pause_framework"))
+   )
+  ' <<<"$applied_reviews" >/dev/null || fail "framework review chain invalid"
+  while IFS=$'\t' read -r reviewed valid; do
+    reviewed_ns="$(to_ns "$reviewed")" || fail "invalid framework reviewed_at"
+    valid_ns="$(to_ns "$valid")" || fail "invalid framework valid_until"
+    (( valid_ns > reviewed_ns && valid_ns-reviewed_ns <= 2592000000000000 )) || fail "framework review duration exceeds 30 days"
+  done < <(jq -r '.[]|[.details.reviewed_at_utc,.details.valid_until_utc]|@tsv' <<<"$applied_reviews")
+  review_head="$(jq '.[-1]' <<<"$applied_reviews")"
+  review_head_id="$(jq -r '.id' <<<"$review_head")"
+  jq -e '.to_state=="framework_valid" and .details.outcome=="continue_framework"' <<<"$review_head" >/dev/null || fail "framework review is paused"
+  review_until="$(jq -r '.details.valid_until_utc' <<<"$review_head")"; review_until_ns="$(to_ns "$review_until")" || fail "invalid framework review expiry"
+fi
+(( now_ns >= accepted_ns && now_ns < review_until_ns )) || fail "Decision 77 framework review window is not valid"
+
+projection="$(ak direction show --repo "$root" IW-SF3-CTO77-RECURRING --machine)"
+jq -e '
+ .payload.node.kind=="work_wave" and .payload.node.parent_key=="SF3" and
+ (.payload.node.state=="pending" or .payload.node.state=="active") and
+ (.payload.node.state_detail|startswith("decision77_recurring_framework;")) and
+ ([.payload.decision_links[]|select(.link.decision_id==77 and .link.link_role=="governs")]|length==1)
+' <<<"$projection" >/dev/null || fail "Decision 77 direction projection mismatch"
+
+for concern in softwareco-portfolio-cto:decision77:revocation softwareco-portfolio-cto:decision77:terminal softwareco-portfolio-cto:decision77:supersession; do
+  ak governance list --concern "$concern" --limit 100 --json | jq -e '[.[]|select(.status=="applied")]|length==0' >/dev/null || fail "Decision 77 terminating event exists: $concern"
+done
+
+for doc in docs/org/cto-agent-charter.md docs/org/governance.md docs/org/operating_model.md; do
+  grep -Fqx 'status: "accepted_framework_no_epoch"' "$root/$doc" || fail "$doc projection mismatch"
+  grep -Fq 'Decision 77' "$root/$doc" || fail "$doc missing Decision 77"
+done
+
+epoch_receipts="$(ak governance list --concern softwareco-portfolio-cto:decision77:epoch-index --limit 100 --json)"
+applied_epochs="$(jq '[.[]|select(.status=="applied")]|sort_by(.id)' <<<"$epoch_receipts")"
+if jq -e 'length>0' <<<"$applied_epochs" >/dev/null; then
+  jq -e --argjson review_head_id "$review_head_id" '
+   . as $a | to_entries | all(. as $e |
+    $e.value.agreement_ref=="decision:77" and $e.value.repo_scope=="/home/tryinget/ai-society/softwareco" and
+    ($e.value.details.prior_epoch_receipt_id==(if $e.key==0 then null else $a[$e.key-1].id end)) and
+    ($e.value.from_state==(if $e.key==0 then "inactive" else $a[$e.key-1].to_state end)) and
+    (if ($e.value.to_state|startswith("epoch:")) then
+      $e.value.source_authority=="human-operator" and $e.value.actor=="human-operator" and
+      $e.value.consent_mode=="explicit" and ($e.value.evidence_ref|type=="string" and length>0) and
+      $e.value.details.schema=="softwareco.portfolio-cto-epoch-authorization.v1" and $e.value.details.decision_id==77 and
+      $e.value.task_id==$e.value.details.controller_task_id and ($e.value.details.claimant_id|type=="string" and length>0) and
+      $e.value.details.jurisdiction=="softwareco/owned" and ($e.value.details.evidence_refs|type=="array" and length>0) and
+      $e.value.details.framework_review_receipt_id==$review_head_id and
+      ($e.value.details.authorized_at_utc|type=="string" and length>0) and ($e.value.details.authorization_expires_at_utc|type=="string" and length>0) and
+      $e.value.details.lease_seconds>0 and $e.value.details.lease_seconds<=14400 and $e.value.to_state==("epoch:"+$e.value.details.epoch_id)
+     else
+      $e.value.to_state=="inactive" and ($e.value.evidence_ref|type=="string" and length>0) and
+      $e.value.details.schema=="softwareco.portfolio-cto-epoch-handback.v1" and $e.value.details.decision_id==77 and
+      $e.value.details.epoch_id==($e.value.from_state|sub("^epoch:";"")) and
+      $e.value.task_id==$e.value.details.controller_task_id and $e.value.details.controller_task_id==$a[$e.key-1].details.controller_task_id and
+      ($e.value.details.handed_back_at_utc|type=="string" and length>0) and
+      ($e.value.details.wip_handoff_refs|type=="array") and ($e.value.details.external_effects|type=="number") and
+      (($e.value.source_authority=="human-operator" and $e.value.actor=="human-operator") or
+       ($e.value.source_authority=="decision77-epoch-controller" and $e.value.actor==$a[$e.key-1].details.claimant_id))
+     end)
+   )
+  ' <<<"$applied_epochs" >/dev/null || fail "epoch-index chain invalid"
+  while IFS=$'\t' read -r authorized expires lease; do
+    [[ "$authorized" != "-" ]] || continue
+    authorized_ns="$(to_ns "$authorized")" || fail "invalid historical epoch authorization"
+    expires_ns="$(to_ns "$expires")" || fail "invalid historical epoch expiry"
+    (( expires_ns-authorized_ns == lease*1000000000 )) || fail "historical epoch duration mismatch"
+  done < <(jq -r '.[]|if (.to_state|startswith("epoch:")) then [.details.authorized_at_utc,.details.authorization_expires_at_utc,(.details.lease_seconds|tostring)] else ["-","-","0"] end|@tsv' <<<"$applied_epochs")
+  while IFS= read -r handed_back; do
+    [[ "$handed_back" != "-" ]] || continue
+    to_ns "$handed_back" >/dev/null || fail "invalid epoch handback timestamp"
+  done < <(jq -r '.[]|if .to_state=="inactive" then .details.handed_back_at_utc else "-" end' <<<"$applied_epochs")
+fi
+
+if [[ "$mode_arg" == --require-77-framework ]]; then
+  ak direction check --repo "$root" --json | jq -e '.ok==true and (.issues|length==0)' >/dev/null || fail "direction topology invalid"
+  printf 'cto-operator-surface: PASS (Decision 77 framework valid; receipt=8932)\n'
+  exit 0
+fi
+if [[ "$mode_arg" == --require-77-preactivation || "$mode_arg" == --require-77-epoch-inactive ]]; then
+  jq -e 'length==0 or (.[-1].to_state=="inactive")' <<<"$applied_epochs" >/dev/null || fail "an active or ambiguous Decision 77 epoch exists"
+  ak direction check --repo "$root" --json | jq -e '.ok==true and (.issues|length==0)' >/dev/null || fail "direction topology invalid"
+  printf 'cto-operator-surface: PASS (Decision 77 framework accepted; epoch inactive; receipt=8932)\n'
   exit 0
 fi
 
-if ! $require_active; then
-  jq -e '.payload.node.state == "active"' <<<"$sf3" >/dev/null \
-    || fail "preactivation SF3 must be active"
-  [[ "$detail" == "decision_membrane_pending_no_cto_delegation" ]] \
-    || fail "preactivation check requires exact pending SF3 detail"
-  jq -e '.payload.task.status == "pending" and .payload.task.claimed_by == null' \
-    <<<"$controller" >/dev/null || fail "preactivation controller task must be unclaimed"
-  for doc in "${org_docs[@]}"; do
-    grep -Fqx 'status: "accepted_preactivation"' "$root/$doc" \
-      || fail "$doc is not an exact preactivation projection"
-  done
-  printf 'cto-operator-surface: PASS (preactivation)\n'
+if [[ "$mode_arg" == --require-77-epoch-active ]]; then
+  jq -e 'length>0 and (.[-1].to_state|startswith("epoch:"))' <<<"$applied_epochs" >/dev/null || fail "no active epoch-index head"
+  epoch="$(jq '.[-1]' <<<"$applied_epochs")"
+  jq -e '
+   .source_authority=="human-operator" and .actor=="human-operator" and .agreement_ref=="decision:77" and
+   .from_state=="inactive" and (.to_state|startswith("epoch:")) and .consent_mode=="explicit" and
+   (.evidence_ref|type=="string" and length>0) and .details.schema=="softwareco.portfolio-cto-epoch-authorization.v1" and
+   .details.decision_id==77 and .details.lease_seconds>0 and .details.lease_seconds<=14400
+  ' <<<"$epoch" >/dev/null || fail "epoch authorization mismatch"
+  controller_id="$(jq -r '.details.controller_task_id' <<<"$epoch")"; claimant="$(jq -r '.details.claimant_id' <<<"$epoch")"
+  jq -e --argjson cid "$controller_id" '.task_id==$cid and .details.controller_task_id==$cid and .repo_scope=="/home/tryinget/ai-society/softwareco"' <<<"$epoch" >/dev/null || fail "epoch controller/receipt identity mismatch"
+  authorized="$(jq -r '.details.authorized_at_utc' <<<"$epoch")"; authorized_ns="$(to_ns "$authorized")" || fail "invalid epoch authorization time"
+  expires="$(jq -r '.details.authorization_expires_at_utc' <<<"$epoch")"; expires_ns="$(to_ns "$expires")" || fail "invalid epoch expiry"
+  lease="$(jq -r '.details.lease_seconds' <<<"$epoch")"
+  (( expires_ns-authorized_ns == lease*1000000000 && now_ns >= authorized_ns && now_ns < expires_ns && expires_ns <= review_until_ns )) || fail "epoch duration/expiry invalid"
+  controller="$(ak task show "$controller_id" --machine)"
+  jq -e --arg c "$claimant" '.payload.task.status=="claimed" and .payload.task.claimed_by==$c and .payload.task.scope.allowed_paths==[] and .payload.task.scope.required_paths==[] and .payload.task.scope.forbidden_paths==["**"]' <<<"$controller" >/dev/null || fail "epoch controller mismatch"
+  claimed_at="$(jq -r '.payload.task.claimed_at' <<<"$controller")"; claimed_at_ns="$(to_ns "$claimed_at")" || fail "invalid controller claim time"
+  claim_exp="$(jq -r '.payload.task.lease_expires_at' <<<"$controller")"; claim_exp_ns="$(to_ns "$claim_exp")" || fail "invalid controller expiry"
+  (( claimed_at_ns >= authorized_ns && now_ns < claim_exp_ns && claim_exp_ns <= expires_ns )) || fail "controller lease invalid"
+  printf 'cto-operator-surface: PASS (Decision 77 epoch active; claimant=%s; controller=%s)\n' "$claimant" "$controller_id"
   exit 0
 fi
 
-# Active mode is a strict authority readback, not a broad state-prefix check.
-jq -e '.payload.node.state == "active"' <<<"$sf3" >/dev/null \
-  || fail "SF3 is not active"
-prefix="delegated_active_decision_74;accepted_at_utc=$accepted_at;activated_at_utc="
-suffix=";expires_at_utc=$expires_at"
-[[ "$detail" == "$prefix"*"$suffix" ]] || fail "SF3 delegation detail is not active/exact"
-activated_at="${detail#"$prefix"}"
-activated_at="${activated_at%"$suffix"}"
-[[ "$activated_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{9}Z$ ]] \
-  || fail "SF3 activation timestamp is not exact nanosecond RFC3339 UTC"
-[[ -n "$activated_at" && "$activated_at" != *';'* ]] || fail "SF3 activation timestamp is malformed"
-
-accepted_ns="$(to_ns "$accepted_at")" || fail "accepted timestamp is invalid"
-activated_ns="$(to_ns "$activated_at")" || fail "activation timestamp is invalid"
-expires_ns="$(to_ns "$expires_at")" || fail "expiry timestamp is invalid"
-now_ns="$(date -u +%s%N)"
-(( activated_ns >= accepted_ns )) || fail "activation precedes Decision 74 acceptance"
-(( now_ns >= activated_ns && now_ns < expires_ns )) || fail "Decision 74 is not inside its active time window"
-(( expires_ns - accepted_ns == 2592000000000000 )) || fail "Decision 74 expiry is not exactly 30 days after acceptance"
-
-for doc in "${org_docs[@]}"; do
-  grep -Fqx 'status: "active_bounded"' "$root/$doc" \
-    || fail "$doc is not an exact active projection"
-done
-grep -Fqx "activated_at: \"$activated_at\"" "$root/docs/org/cto-agent-charter.md" \
-  || fail "charter activation timestamp does not match SF3"
-
-for concern in \
-  softwareco-portfolio-cto:decision74:revocation \
-  softwareco-portfolio-cto:decision74:terminal \
-  softwareco-portfolio-cto:decision74:supersession; do
-  receipts="$(ak governance list --concern "$concern" --limit 100 --json)"
-  jq -e 'map(select(.status == "applied")) | length == 0' <<<"$receipts" >/dev/null \
-    || fail "applied termination receipt exists for $concern"
-done
-
-# Inspect every later accepted decision's title and readable RFC/ADR content.
-# A missing readable primary artifact is ambiguous and therefore fails closed.
-later_decisions="$(ak decision list --limit 500 --machine)"
-supersession_re='(supersed(e|es|ed|ing)?.{0,240}(Decision[[:space:]#:._-]*)?74|(Decision[[:space:]#:._-]*74).{0,240}supersed(e|es|ed|ing)?)'
-while IFS=$'\t' read -r decision_id repo_scope title rfc_ref adr_ref; do
-  [[ -n "$decision_id" ]] || continue
-  printf '%s' "$title $rfc_ref $adr_ref" | grep -Eiq "$supersession_re" \
-    && fail "accepted decision $decision_id explicitly supersedes Decision 74"
-  readable_primary=false
-  for ref in "$rfc_ref" "$adr_ref"; do
-    [[ -n "$ref" && "$ref" != "-" ]] || continue
-    if [[ "$ref" == /* ]]; then
-      decision_path="$ref"
-    elif [[ -n "$repo_scope" && "$repo_scope" != "-" && "$ref" != *:* ]]; then
-      decision_path="$repo_scope/$ref"
-    else
-      continue
-    fi
-    [[ -f "$decision_path" ]] || continue
-    readable_primary=true
-    tr '\n' ' ' <"$decision_path" | grep -Eiq "$supersession_re" \
-      && fail "accepted decision $decision_id content explicitly supersedes Decision 74"
-  done
-  $readable_primary || fail "accepted decision $decision_id has no readable RFC/ADR for supersession inspection"
-done < <(jq -r '
-  .payload.decisions[] |
-  select(.id > 74 and .outcome == "accepted") |
-  [(.id|tostring), (.repo_scope // "-"), (.title // "-"), (.rfc_ref // "-"), (.adr_ref // "-")] |
-  @tsv
-' <<<"$later_decisions")
-
-designations="$(ak governance list \
-  --concern softwareco-portfolio-cto:decision74:controller-designation \
-  --limit 100 --json)"
-jq -e 'map(select(.status == "applied")) | length == 1' <<<"$designations" >/dev/null \
-  || fail "controller designation receipts are missing or ambiguous"
-valid_designations="$(jq '[.[] | select(
-  .status == "applied" and
-  .source_authority == "human-operator" and
-  .actor == "human-operator" and
-  .agreement_ref == "decision:74" and
-  .to_state == "delegated" and
-  .consent_mode == "explicit" and
-  .task_id == 4182 and
-  (.evidence_ref != null and .evidence_ref != "") and
-  .details.schema == "softwareco.portfolio-controller-designation.v1" and
-  (.details.claimant_id | type == "string" and length > 0) and
-  (.details.lease_seconds | type == "number" and . > 0 and . <= 14400) and
-  (.details.designated_at_utc | type == "string" and length > 0) and
-  (.details.designation_expires_at_utc | type == "string" and length > 0)
-)]' <<<"$designations")"
-jq -e 'length == 1' <<<"$valid_designations" >/dev/null \
-  || fail "exactly one valid direct human controller designation is required"
-designation="$(jq '.[0]' <<<"$valid_designations")"
-claimant="$(jq -r '.details.claimant_id' <<<"$designation")"
-designated_at="$(jq -r '.details.designated_at_utc' <<<"$designation")"
-designation_expires="$(jq -r '.details.designation_expires_at_utc' <<<"$designation")"
-designation_lease="$(jq -r '.details.lease_seconds' <<<"$designation")"
-designated_ns="$(to_ns "$designated_at")" || fail "designation timestamp is invalid"
-designation_expires_ns="$(to_ns "$designation_expires")" || fail "designation expiry is invalid"
-(( designated_ns >= accepted_ns && designated_ns <= now_ns && now_ns < designation_expires_ns )) \
-  || fail "controller designation is not currently valid"
-(( designation_expires_ns - designated_ns == designation_lease * 1000000000 )) \
-  || fail "designation expiry does not equal its declared lease"
-
-jq -e --arg claimant "$claimant" '
-  .payload.task.status == "claimed" and
-  .payload.task.claimed_by == $claimant and
-  (.payload.task.claimed_at | type == "string" and length > 0) and
-  (.payload.task.lease_expires_at | type == "string" and length > 0)
-' <<<"$controller" >/dev/null || fail "controller task claim does not match the human designation"
-claimed_at="$(jq -r '.payload.task.claimed_at' <<<"$controller")"
-claim_expires="$(jq -r '.payload.task.lease_expires_at' <<<"$controller")"
-claimed_ns="$(to_ns "$claimed_at")" || fail "controller claim timestamp is invalid"
-claim_expires_ns="$(to_ns "$claim_expires")" || fail "controller claim expiry is invalid"
-(( claimed_ns >= designated_ns && now_ns < claim_expires_ns )) \
-  || fail "controller task lease is stale or predates designation"
-(( claim_expires_ns - claimed_ns > 0 && claim_expires_ns - claimed_ns <= 14400000000000 )) \
-  || fail "controller task lease exceeds 14,400 seconds"
-(( claim_expires_ns <= designation_expires_ns )) \
-  || fail "controller task lease outlives the human designation"
-
-printf 'cto-operator-surface: PASS (active; claimant=%s)\n' "$claimant"
+if [[ "$mode_arg" == --require-77-framework-terminal ]]; then
+  fail "Decision 77 framework has no terminal/revocation/supersession receipt"
+elif [[ "$mode_arg" == --require-77-thesis-current ]]; then
+  detail="$(jq -r '.payload.node.state_detail' <<<"$projection")"
+  [[ "$detail" != *'thesis_head_evidence_id=none'* ]] || fail "Decision 77 thesis head does not exist"
+  fail "Decision 77 thesis validation requires recorded thesis evidence"
+elif [[ "$mode_arg" == --require-77-objective-complete ]]; then
+  fail "Decision 77 recurrence objective evidence does not exist"
+fi
+fail "unhandled mode: $mode_arg"

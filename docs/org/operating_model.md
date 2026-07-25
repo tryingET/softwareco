@@ -5,12 +5,13 @@ read_when:
   - "Deciding where a concern belongs and which canonical architecture documents to read."
   - "Reviewing how Softwareco turns direction into products, services, evidence, and learning."
 type: "reference"
-status: "terminal_complete"
+status: "accepted_framework_no_epoch"
 as_of: "2026-07-25"
-decision_id: 74
-activated_at: "2026-07-25T11:51:54.478621578Z"
-terminal_at: "2026-07-25T13:19:10.466752718Z"
-terminal_receipt_id: 8870
+decision_id: 77
+accepted_at: "2026-07-25T19:16:40.657733779Z"
+acceptance_receipt_id: 8932
+predecessor_decision_id: 74
+predecessor_terminal_receipt_id: 8870
 mito_layers:
   - "Strategic"
   - "Design & Configuration"
@@ -63,7 +64,7 @@ Lane maps route work; owner repos prove current capability. Start with:
 
 ## Accountability model
 
-The company uses role-based accountability. Decision 74 preserved `human-operator` as residual **Softwareco Org Owner** while a finite `softwareco-cto-agent` technical portfolio mandate operated over `softwareco/owned` through [[softwareco/docs/org/cto-agent-charter.md|the CTO charter]]. The delegation activated at `2026-07-25T11:51:54.478621578Z` and ended through direct human terminal receipt `8870` at `2026-07-25T13:19:10.466752718Z`. The human retains residual accountability and every reserved decision; no CTO authority is currently active.
+The company uses role-based accountability. Decision 77 preserves `human-operator` as residual **Softwareco Org Owner** and accepts a dormant recurring CTO framework over `softwareco/owned`. No CTO is appointed between direct-human-authorized finite epochs, and no epoch is currently active. Decision 74 remains terminal under receipt `8870`.
 
 Product, Service, Platform, Domain, and Project owners retain authority inside explicit delegations. Agents execute and advise within scope but do not hold residual accountability or enlarge the activated domain.
 
@@ -100,7 +101,7 @@ Factory contract: Decision 62 accepted [[softwareco/docs/project/2026-07-12-soft
 
 ## Proposed operating cadence
 
-Decision 74 proved one bounded owned-portfolio CTO cycle: one portfolio thesis and one completed outcome wave. Human terminal receipt `8870` then completed the finite mandate. This is verified canary evidence, not proof of recurring company operation or authority to start another cycle. Cadence outputs belong in AK/source-owner evidence and the freshness-bounded CTO packet, not in this table.
+Decision 74 proved one bounded cycle and then terminally handed back. Decision 77 now defines the accepted recurrence framework, but recurring company operation remains unproved until a fresh-session thesis, one additional independent owner outcome, and post-outcome re-entry are verified. No epoch is currently active.
 
 | Cadence | Question |
 |---|---|

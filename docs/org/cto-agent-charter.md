@@ -1,20 +1,29 @@
 ---
-summary: "Decision 74 charter for the finite Softwareco owned-portfolio CTO mandate and Pi workbench."
+summary: "Decision 77 recurring Softwareco CTO framework with finite epochs and preserved Decision 74 terminal history."
 read_when:
   - "Invoking, operating, reviewing, handing over, revoking, or superseding the Softwareco CTO."
 type: "policy"
-status: "terminal_complete"
+status: "accepted_framework_no_epoch"
 as_of: "2026-07-25"
-decision_id: 74
-accepted_at: "2026-07-25T08:11:27.729630885Z"
-activated_at: "2026-07-25T11:51:54.478621578Z"
-expires_at: "2026-08-24T08:11:27.729630885Z"
-terminal_at: "2026-07-25T13:19:10.466752718Z"
-terminal_receipt_id: 8870
-controller_task_id: 4182
+decision_id: 77
+predecessor_decision_id: 74
+accepted_at: "2026-07-25T19:16:40.657733779Z"
+acceptance_receipt_id: 8932
+initial_review_valid_until: "2026-08-24T19:16:40.657733779Z"
+predecessor_activated_at: "2026-07-25T11:51:54.478621578Z"
+predecessor_terminal_at: "2026-07-25T13:19:10.466752718Z"
+predecessor_terminal_receipt_id: 8870
+predecessor_controller_task_id: 4182
 ---
 
 # Softwareco CTO charter
+
+## Current Decision 77 framework truth
+
+Decision 77 was directly accepted through human receipt `8932` at `2026-07-25T19:16:40.657733779Z`. It establishes a dormant recurring framework, not a continuously appointed CTO. No Decision 77 epoch is currently authorized, so `/cto` is advisory-only for mutation and selection.
+
+The Decision-77 projection is `IW-SF3-CTO77-RECURRING`, a non-authorizing `work_wave` child of `SF3`. Actual delegation requires a finite direct-human epoch authorization, exact source-mutation-forbidden controller, matching claimant and leases, owner receipts, WIP gates, and exact execution tasks. Objective or wave completion never creates, renews, or terminalizes the framework.
+
 
 ## Current terminal truth
 

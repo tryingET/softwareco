@@ -4,12 +4,13 @@ read_when:
   - "Determining who may decide, execute, review, or escalate a Softwareco concern."
   - "Handling a high-impact change, cross-repo concern, incident, exception, or ownership conflict."
 type: "policy"
-status: "terminal_complete"
+status: "accepted_framework_no_epoch"
 as_of: "2026-07-25"
-decision_id: 74
-activated_at: "2026-07-25T11:51:54.478621578Z"
-terminal_at: "2026-07-25T13:19:10.466752718Z"
-terminal_receipt_id: 8870
+decision_id: 77
+accepted_at: "2026-07-25T19:16:40.657733779Z"
+acceptance_receipt_id: 8932
+predecessor_decision_id: 74
+predecessor_terminal_receipt_id: 8870
 mito_layers:
   - "Design & Configuration"
   - "Implementation"
@@ -18,7 +19,7 @@ mito_layers:
 
 # Softwareco governance
 
-> **Status as of 2026-07-25: Decision 74 CTO delegation terminal and complete.** The finite mandate activated at `2026-07-25T11:51:54.478621578Z`, proved one owner-accepted outcome wave, and ended through direct human terminal receipt `8870` at `2026-07-25T13:19:10.466752718Z`. `SF3` and controller task `4182` are reconciled to completion. `human-operator` remains residual Softwareco Org Owner; no CTO continuation authority survives this terminal event.
+> **Status as of 2026-07-25: Decision 77 framework accepted; no epoch active.** Direct human receipt `8932` accepted the dormant recurring CTO framework. No CTO is appointed between finite epochs, and the framework alone authorizes no selection, admission, evidence mutation, or owner execution. Decision 74 remains terminal through receipt `8870`.
 
 ## Governance intent
 
@@ -37,7 +38,7 @@ Sociocracy 3.0 supplies governance semantics such as drivers, domains, agreement
 
 ## Scope and change authority
 
-This policy applies only within domains activated through accepted Softwareco-scoped decisions. Decision 68's template/canary delegation is expired history. Decision 74's technical portfolio-sequencing delegation is also terminal history after receipt `8870`; it supplies evidence and policy precedent but no current execution authority.
+This policy applies only within domains activated through accepted Softwareco-scoped decisions. Decision 68 and Decision 74 delegations are terminal history. Decision 77 provides a dormant recurring framework; actual portfolio authority exists only inside a direct-human-authorized finite epoch with exact controller and owner gates.
 
 - **Policy owner:** `human-operator` in the Softwareco Org Owner role recorded by Decision 74.
 - **Change path:** architecture-significant or authority-changing revisions follow the Tier-1 decision lifecycle.

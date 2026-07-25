@@ -3,7 +3,7 @@ summary: "ADR candidate for Decision 77's dormant recurring CTO framework with f
 read_when:
   - "Operating, reviewing, activating, revoking, or superseding the recurring Softwareco CTO framework."
 type: "adr"
-status: "pending_human_acceptance"
+status: "accepted"
 date: "2026-07-25"
 decision_id: 77
 system4d:
@@ -28,7 +28,7 @@ system4d:
 
 ## Status
 
-Candidate ADR for AK Decision `77`. It becomes accepted only after direct accountable-human acceptance is recorded in AK. This document currently grants no authority.
+Accepted through direct accountable-human governance receipt `8932` at `2026-07-25T19:16:40.657733779Z`, then reconciled through the AK decision lifecycle to `unblocked`. Acceptance establishes only the dormant framework; it does not authorize an epoch.
 
 ## Decision
 
