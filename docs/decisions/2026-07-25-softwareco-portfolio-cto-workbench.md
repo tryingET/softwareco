@@ -6,6 +6,8 @@ type: "adr"
 status: "accepted"
 date: "2026-07-25"
 decision_id: 74
+accepted_at: "2026-07-25T08:11:27.729630885Z"
+expires_at: "2026-08-24T08:11:27.729630885Z"
 system4d:
   container:
     boundary: "Thirty-day technical portfolio sequencing over softwareco/owned; source-owner execution and human residual authority remain outside the delegated office."
