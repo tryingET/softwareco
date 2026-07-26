@@ -524,9 +524,56 @@ fi
 if [[ "$mode_arg" == --require-77-framework-terminal ]]; then
   fail "Decision 77 framework has no terminal/revocation/supersession receipt"
 elif [[ "$mode_arg" == --require-77-thesis-current ]]; then
+  TMPDIR="${TMPDIR:-$HOME/.cache/pi-cto-check-tmp}" "$0" --require-77-epoch-active >/dev/null 2>&1 || fail "Decision 77 active epoch prerequisite failed"
   detail="$(jq -r '.payload.node.state_detail' <<<"$projection")"
-  [[ "$detail" != *'thesis_head_evidence_id=none'* ]] || fail "Decision 77 thesis head does not exist"
-  fail "Decision 77 thesis validation requires recorded thesis evidence"
+  [[ "$detail" =~ ^decision77_recurring_framework\;phase=([^\;]+)\;objective_task_id=4221\;thesis_task_ids=4221\;thesis_head_evidence_id=([0-9]+)$ ]] || fail "Decision 77 thesis projection detail invalid"
+  head_evidence_id="${BASH_REMATCH[2]}"
+  jq -e '([.payload.task_links[]|select(.link.task_id==4221 and .link.link_role=="existing_anchor")]|length)==1' <<<"$projection" >/dev/null || fail "thesis task link missing"
+
+  epoch="$(jq '.[-1]' <<<"$applied_epochs")"
+  epoch_id="$(jq -r '.details.epoch_id' <<<"$epoch")"
+  claimant="$(jq -r '.details.claimant_id' <<<"$epoch")"
+  authorized_ns="$(to_ns_strict "$(jq -r '.details.authorized_at_utc' <<<"$epoch")")" || fail "invalid thesis epoch authorization"
+  expires_ns="$(to_ns_strict "$(jq -r '.details.authorization_expires_at_utc' <<<"$epoch")")" || fail "invalid thesis epoch expiry"
+  thesis_task="$(ak task show 4221 --machine)"
+  jq -e --arg claimant "$claimant" '
+   .payload.task.status=="claimed" and .payload.task.claimed_by==$claimant and
+   .payload.task.scope.allowed_paths==["docs/learnings/2026-07-25-softwareco-recurring-portfolio-cto-*","docs/project/2026-07-25-softwareco-recurring-portfolio-cto-*","scripts/check-cto-operator-surface.sh"] and
+   .payload.task.scope.required_paths==["docs/project/2026-07-25-softwareco-recurring-portfolio-cto-recurrence-evidence.md"] and
+   .payload.task.scope.forbidden_paths==[]
+  ' <<<"$thesis_task" >/dev/null || fail "thesis task claim/scope invalid"
+  thesis_claim_ns="$(to_ns "$(jq -r '.payload.task.claimed_at' <<<"$thesis_task")")" || fail "invalid thesis task claim time"
+  thesis_claim_exp_ns="$(to_ns "$(jq -r '.payload.task.lease_expires_at' <<<"$thesis_task")")" || fail "invalid thesis task lease"
+  (( thesis_claim_ns >= authorized_ns && now_ns < thesis_claim_exp_ns && thesis_claim_exp_ns <= expires_ns )) || fail "thesis task lease outside epoch"
+
+  thesis_collection="$(ak evidence task 4221 --machine)"
+  thesis_chain="$(jq '[.payload.evidence[]|select(.check_type=="portfolio_thesis_v2" and .result=="pass" and .details.schema=="softwareco.portfolio-thesis.v2" and .details.decision_id==77)]|sort_by(.details.revision)' <<<"$thesis_collection")"
+  jq -e --argjson head "$head_evidence_id" --arg epoch "$epoch_id" '
+   . as $a | length>0 and length<=100 and .[-1].id==$head and
+   (to_entries|all(. as $e |
+     $e.value.details.epoch_id==$epoch and $e.value.details.revision==($e.key+1) and
+     $e.value.details.prior_thesis_evidence_id==(if $e.key==0 then null else $a[$e.key-1].id end) and
+     ($e.value.details.observed_at_utc|type=="string") and ($e.value.details.valid_until_utc|type=="string") and
+     ($e.value.details.census_basis|type=="array" and length>0) and
+     ($e.value.details.membership|type=="object") and
+     ($e.value.details.observations|type=="array" and length>0) and
+     ($e.value.details.inferences|type=="array") and ($e.value.details.uncertainties|type=="array") and
+     ($e.value.details.ranked_proposals|type=="array") and ($e.value.details.deferred_or_displaced|type=="array") and
+     ($e.value.details.fact_refs|type=="array" and length>0) and
+     $e.value.details.worker_trace.fresh_process==true and $e.value.details.worker_trace.no_session==true and
+     $e.value.details.worker_trace.read_only==true and $e.value.details.worker_trace.prior_transcript_supplied==false and
+     $e.value.details.worker_trace.prior_thesis_supplied==false and $e.value.details.worker_trace.controller_independent_verification==true
+   ))
+  ' <<<"$thesis_chain" >/dev/null || fail "thesis chain invalid"
+  while IFS=$'\t' read -r observed valid; do
+    observed_ns="$(to_ns_strict "$observed")" || fail "invalid thesis observation timestamp"
+    valid_ns="$(to_ns_strict "$valid")" || fail "invalid thesis validity timestamp"
+    (( observed_ns >= authorized_ns && valid_ns > observed_ns && valid_ns-observed_ns <= 86400000000000 && valid_ns <= expires_ns )) || fail "thesis validity outside bounds"
+  done < <(jq -r '.[]|[.details.observed_at_utc,.details.valid_until_utc]|@tsv' <<<"$thesis_chain")
+  head_valid_ns="$(to_ns_strict "$(jq -r '.[-1].details.valid_until_utc' <<<"$thesis_chain")")" || fail "invalid thesis head validity"
+  (( now_ns < head_valid_ns )) || fail "thesis head expired"
+  printf 'cto-operator-surface: PASS (Decision 77 thesis current; head=%s; revisions=%s)\n' "$head_evidence_id" "$(jq 'length' <<<"$thesis_chain")"
+  exit 0
 elif [[ "$mode_arg" == --require-77-objective-complete ]]; then
   fail "Decision 77 recurrence objective evidence does not exist"
 fi
