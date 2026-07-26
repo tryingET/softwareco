@@ -616,6 +616,67 @@ elif [[ "$mode_arg" == --require-77-thesis-current ]]; then
   printf 'cto-operator-surface: PASS (Decision 77 thesis current; head=%s; revisions=%s)\n' "$head_evidence_id" "$(jq 'length' <<<"$thesis_chain")"
   exit 0
 elif [[ "$mode_arg" == --require-77-objective-complete ]]; then
-  fail "Decision 77 recurrence objective evidence does not exist"
+  objective_task="$(ak task show 4221 --machine)"
+  jq -e '
+   .payload.task.status=="done" and .payload.task.claimed_by==null and .payload.task.claimed_at==null and .payload.task.lease_expires_at==null and
+   .payload.task.scope.allowed_paths==["docs/learnings/2026-07-25-softwareco-recurring-portfolio-cto-*","docs/project/2026-07-25-softwareco-recurring-portfolio-cto-*","scripts/check-cto-operator-surface.sh"] and
+   .payload.task.scope.required_paths==["docs/project/2026-07-25-softwareco-recurring-portfolio-cto-recurrence-evidence.md"] and
+   .payload.task.scope.forbidden_paths==[] and
+   .payload.task.result.schema=="softwareco.portfolio-cto-recurrence-objective-closeout.v1" and
+   (.payload.task.result.objective_evidence_id|type=="number") and
+   .payload.task.result.run_a_thesis_evidence_id==5378 and .payload.task.result.run_c_thesis_evidence_id==5407 and
+   .payload.task.result.wave_outcome_evidence_id==5406 and
+   .payload.task.result.framework_terminal_receipt_created==false and
+   .payload.task.result.framework_revocation_receipt_created==false and
+   .payload.task.result.framework_supersession_receipt_created==false and .payload.task.result.external_effects==0
+  ' <<<"$objective_task" >/dev/null || fail "Decision 77 objective task closeout invalid"
+  objective_evidence_id="$(jq -r '.payload.task.result.objective_evidence_id' <<<"$objective_task")"
+
+  objective_collection="$(ak evidence task 4221 --machine)"
+  objective_evidence="$(jq '[.payload.evidence[]|select(.check_type=="portfolio_cto_recurrence_objective_v1" and .result=="pass" and .details.schema=="softwareco.portfolio-cto-recurrence-objective.v1" and .details.decision_id==77)]' <<<"$objective_collection")"
+  jq -e --argjson objective "$objective_evidence_id" '
+   length==1 and .[0].id==$objective and .[0].task_id==4221 and
+   .[0].details.objective_task_id==4221 and .[0].details.epoch_id=="d77-e3-20260726" and
+   .[0].details.run_a_thesis_evidence_id==5378 and .[0].details.run_c_thesis_evidence_id==5407 and
+   .[0].details.thesis_evidence_chain==[5326,5378,5407] and
+   .[0].details.wave_key=="IW-SF3-CTO77-AK-SCHEMA-STATUS" and .[0].details.owner_task_id==4225 and
+   .[0].details.owner_acceptance_receipt_ids==[9063,9064] and
+   .[0].details.terminal_acceptance_receipt_ids==[9087,9088] and .[0].details.owner_release_receipt_id==9089 and
+   .[0].details.admission_evidence_id==5383 and .[0].details.controller_release_evidence_id==5405 and .[0].details.wave_outcome_evidence_id==5406 and
+   .[0].details.owner_validation_evidence_ids==[5397,5400,5401,5402,5403] and
+   .[0].details.run_a_trace.fresh_process==true and .[0].details.run_a_trace.no_session==true and .[0].details.run_a_trace.read_only==true and
+   .[0].details.run_a_trace.stdout_sha256=="8735224fcec27cef481de82200804f21a356d3abb9a59e55f88afacc1764dae0" and
+   .[0].details.run_c_trace.fresh_process==true and .[0].details.run_c_trace.no_session==true and .[0].details.run_c_trace.read_only==true and
+   .[0].details.run_c_trace.stdout_sha256=="6d737119bf0c3617888c7fca48232b04c1dd1cad9c43ac04014856a51545e221" and
+   (. [0].details.checker_results|type=="array" and length>0) and (. [0].details.known_limitations|type=="array") and
+   .[0].details.documentation_ref=="docs/project/2026-07-25-softwareco-recurring-portfolio-cto-recurrence-evidence.md" and
+   .[0].details.framework_terminal_receipt_created==false and .[0].details.framework_revocation_receipt_created==false and
+   .[0].details.framework_supersession_receipt_created==false and .[0].details.external_effects==0
+  ' <<<"$objective_evidence" >/dev/null || fail "Decision 77 recurrence objective evidence invalid"
+
+  jq -e '
+   .payload.node.state=="active" and
+   .payload.node.state_detail=="decision77_recurring_framework;phase=objective_complete;objective_task_id=4221;thesis_task_ids=4221;thesis_head_evidence_id=5407"
+  ' <<<"$projection" >/dev/null || fail "Decision 77 objective-complete projection invalid"
+  wave="$(ak direction show --repo "$root" IW-SF3-CTO77-AK-SCHEMA-STATUS --machine)"
+  jq -e '
+   .payload.node.state=="done" and
+   .payload.node.state_detail=="portfolio_completed_decision_77;admission_evidence_id=5383;release_evidence_ids=5405;outcome_evidence_id=5406" and
+   ([.payload.decision_links[]|select(.link.decision_id==77 and .link.link_role=="governs")]|length)==1
+  ' <<<"$wave" >/dev/null || fail "Decision 77 completed owner wave invalid"
+
+  ak task show 4225 --machine | jq -e '.payload.task.status=="done" and .payload.task.result.commit=="b2548196cb8994f5388293b26918d454c41a4138" and .payload.task.result.external_effects==0' >/dev/null || fail "Decision 77 owner task outcome invalid"
+  ak evidence show 5383 --json | jq -e '.result=="pass" and .details.schema=="softwareco.portfolio-wave-admission.v2" and .details.owner_task_ids==[4225]' >/dev/null || fail "Decision 77 admission evidence invalid"
+  ak evidence show 5405 --json | jq -e '.result=="pass" and .details.schema=="softwareco.portfolio-owner-release-event.v2" and .details.owner_release_receipt_id==9089 and .details.post_outstanding_owner_task_count==0' >/dev/null || fail "Decision 77 controller release evidence invalid"
+  ak evidence show 5406 --json | jq -e '.result=="pass" and .details.schema=="softwareco.portfolio-wave-outcome.v2" and .details.success_criteria_satisfied==true and .details.portfolio_wip_released==true and .details.outstanding_owner_task_ids==[]' >/dev/null || fail "Decision 77 wave outcome evidence invalid"
+  ak evidence show 5378 --json | jq -e '.result=="pass" and .details.worker_trace.run=="A-epoch3" and .details.worker_trace.fresh_process==true and .details.worker_trace.no_session==true' >/dev/null || fail "Decision 77 Run A thesis invalid"
+  ak evidence show 5407 --json | jq -e '.result=="pass" and .details.worker_trace.run=="C" and .details.worker_trace.fresh_process==true and .details.worker_trace.no_session==true and .details.membership.outstanding_owner_task_count==0' >/dev/null || fail "Decision 77 Run C thesis invalid"
+  for receipt in 9063 9064 9087 9088 9089; do
+    ak governance show "$receipt" --json | jq -e '.status=="applied" and .agreement_ref=="decision:77" and .details.decision_id==77 and .details.epoch_id=="d77-e3-20260726" and .details.external_effects==0' >/dev/null || fail "Decision 77 owner receipt invalid: $receipt"
+  done
+  grep -Fqx "objective_evidence_id: $objective_evidence_id" "$root/docs/project/2026-07-25-softwareco-recurring-portfolio-cto-recurrence-evidence.md" || fail "Decision 77 recurrence evidence projection missing objective evidence ID"
+  ak direction check --repo "$root" --json | jq -e '.ok==true and (.issues|length==0)' >/dev/null || fail "Decision 77 objective direction topology invalid"
+  printf 'cto-operator-surface: PASS (Decision 77 recurrence objective complete; evidence=%s; framework remains nonterminal)\n' "$objective_evidence_id"
+  exit 0
 fi
 fail "unhandled mode: $mode_arg"
