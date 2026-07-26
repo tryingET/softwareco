@@ -47,12 +47,14 @@ def runtime_packages(bundle_root: Path | None = None) -> tuple[Path, Path, Path]
     installed_pi = bundle_root / CONFIG["runtime_pi_package_relative"]
     installed_modes = bundle_root / CONFIG["runtime_pi_modes_package_relative"]
     installed_entrypoint = bundle_root / CONFIG["runtime_pi_entrypoint_relative"]
-    if (bundle_root / "manifest.json").is_file():
-        if not installed_pi.is_dir() or not installed_modes.is_dir() or not installed_entrypoint.is_file():
-            raise RuntimeError("installed bundle is missing an isolated Pi/Pi-Modes runtime or entrypoint")
-        return installed_pi, installed_modes, installed_entrypoint
-    # Development-only path before installation; production bundles always contain manifest.json.
-    return Path(CONFIG["pi_package"]), Path(CONFIG["pi_modes_package"]), Path(CONFIG["pi_entrypoint"])
+    if bundle_root.resolve() == ROOT.resolve():
+        # Development-only path in the canonical source checkout before installation.
+        return Path(CONFIG["pi_package"]), Path(CONFIG["pi_modes_package"]), Path(CONFIG["pi_entrypoint"])
+    if not (bundle_root / "manifest.json").is_file():
+        raise RuntimeError("installed runtime location has no accepted bundle manifest")
+    if not installed_pi.is_dir() or not installed_modes.is_dir() or not installed_entrypoint.is_file():
+        raise RuntimeError("installed bundle is missing an isolated Pi/Pi-Modes runtime or entrypoint")
+    return installed_pi, installed_modes, installed_entrypoint
 
 
 def git_blob(commit: str, relative: str) -> bytes:

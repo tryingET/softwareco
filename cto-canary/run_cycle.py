@@ -126,17 +126,17 @@ def read_activation(path: Path, state_dir: Path, current_run_reserved: bool = Fa
     if not isinstance(chain, list) or not chain or chain[-1].get("id") != value["activation_receipt_id"]:
         errors.append("canary control chain head is not the activation receipt")
     errors.extend(verify_bundle(value))
-    pi_package, modes_package, pi_entrypoint = runtime_packages()
     try:
+        pi_package, modes_package, pi_entrypoint = runtime_packages()
         if directory_digest(modes_package) != CONFIG["pi_modes_package_digest"]:
             errors.append("installed pi-modes package differs from the reviewed pinned digest")
         if directory_digest(pi_package) != CONFIG["pi_package_digest"]:
             errors.append("installed Pi package differs from the reviewed pinned digest")
+        version = run(["/usr/bin/node", str(pi_entrypoint), "--version"]).stdout.strip()
+        if version != CONFIG["pi_version"]:
+            errors.append(f"Pi version drift: expected {CONFIG['pi_version']}, observed {version}")
     except (OSError, RuntimeError) as exc:
-        errors.append(f"runtime package digest failed closed: {exc}")
-    version = run(["/usr/bin/node", str(pi_entrypoint), "--version"]).stdout.strip()
-    if version != CONFIG["pi_version"]:
-        errors.append(f"Pi version drift: expected {CONFIG['pi_version']}, observed {version}")
+        errors.append(f"runtime package verification failed closed: {exc}")
     return value, errors
 
 def watched_state(packet: dict[str, Any], db_path: Path) -> list[str]:
@@ -198,7 +198,6 @@ def expected_composed_prompt() -> str:
             f"\n\nCurrent date: {datetime.now(timezone.utc).date().isoformat()}" +
             f"\nCurrent working directory: {ROOT}")
 
-
 def mode_proof_errors(records: list[dict[str, Any]]) -> list[str]:
     mode_path = ROOT / ".pi/modes/softwareco-cto-canary.json"
     try:
@@ -218,7 +217,6 @@ def mode_proof_errors(records: list[dict[str, Any]]) -> list[str]:
                 not value.get("diagnostics")):
             return []
     return ["mode preview did not exactly match accepted source, fingerprint, base, append, context files, date, and cwd"]
-
 
 def read_mode_records(stderr_path: Path) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
@@ -376,6 +374,8 @@ def prior_cost(state: Path, current_run: Path) -> tuple[float, list[str]]:
                     not math.isfinite(float(cost)) or cost < 0):
                 raise ValueError("cost is not finite nonnegative numeric")
             total += float(cost)
+            if cost > CONFIG["max_cost_usd_per_cycle"]:
+                errors.append(f"prior cycle exceeded per-cycle stop threshold: {run_dir.name}: {cost}")
         except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
             errors.append(f"prior cycle cost is unverifiable: {run_dir.name}: {exc}")
     return total, errors

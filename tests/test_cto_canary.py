@@ -18,6 +18,7 @@ from collect_snapshot import registered_under_owned, run as collector_run
 from run_cycle import CONFIG, expected_composed_prompt, mode_proof_errors, prior_cost, read_activation
 from runtime_integrity import UNIT_NAMES, directory_digest, rendered_unit, runtime_packages, verify_bundle
 from start_candidate import acceptance_errors
+from stop_candidate import cgroup_members
 
 
 class CanaryContractTests(unittest.TestCase):
@@ -146,6 +147,10 @@ class CanaryContractTests(unittest.TestCase):
         record["components"][0]["path"] = str(mode_path)
         record["prompt"] += "\nunreviewed injection"
         self.assertTrue(mode_proof_errors([record]))
+        source = (ROOT / "cto-canary/run_cycle.py").read_text()
+        cycle_prompt = source.index('send(proc, {"id": "cycle-prompt"')
+        self.assertLess(source.index("preview_errors = mode_proof_errors"), cycle_prompt)
+        self.assertLess(source.index("pre-model provider/model gate failed"), cycle_prompt)
 
     def test_expired_activation_refuses_before_live_ak_readback(self):
         now = datetime.now(timezone.utc)
@@ -180,18 +185,35 @@ class CanaryContractTests(unittest.TestCase):
             home = Path(tmp); state = home / ".local/state/softwareco-cto-canary"; state.mkdir(parents=True)
             (state / "activation.json").write_text(json.dumps(activation))
             bindir = home / "bin"; bindir.mkdir(); fake = bindir / "systemctl"
-            fake.write_text("#!/bin/sh\ncase \"$*\" in\n  *\"stop softwareco-cto-canary.service\"*) [ \"$FAKE_STOP_FAIL\" = 1 ] && exit 1 || exit 0;;\n  *\"show softwareco-cto-canary.service --property=ActiveState\"*) [ \"$FAKE_ACTIVE\" = 1 ] && echo active || echo inactive; exit 0;;\n  *\"show softwareco-cto-canary.service --property=ControlGroup\"*) echo ''; exit 0;;\n  *\"show softwareco-cto-canary.timer --property=ActiveState\"*|*\"show softwareco-cto-canary-stop.timer --property=ActiveState\"*) echo inactive; exit 0;;\n  *\"is-enabled\"*) echo disabled; exit 1;;\n  *\"disable --now\"*) exit 0;;\n  *) exit 0;;\nesac\n")
+            fake.write_text("#!/bin/sh\ncase \"$*\" in\n  *\"disable --now\"*) exit 0;;\n  *\"show softwareco-cto-canary.timer --property=ActiveState\"*|*\"show softwareco-cto-canary-stop.timer --property=ActiveState\"*) [ \"$FAKE_TIMER_FAIL\" = 1 ] && echo active || echo inactive; exit 0;;\n  *\"is-enabled\"*) [ \"$FAKE_TIMER_FAIL\" = 1 ] && { echo enabled; exit 0; } || { echo disabled; exit 1; };;\n  *\"stop softwareco-cto-canary.service\"*) [ \"$FAKE_STOP_FAIL\" = 1 ] && exit 1 || exit 0;;\n  *\"show softwareco-cto-canary.service --property=ActiveState\"*) [ \"$FAKE_QUERY_FAIL\" = 1 ] && exit 1; [ \"$FAKE_ACTIVE\" = 1 ] && echo active || echo inactive; exit 0;;\n  *\"show softwareco-cto-canary.service --property=ControlGroup\"*) [ \"$FAKE_QUERY_FAIL\" = 1 ] && exit 1; echo ''; exit 0;;\n  *) exit 0;;\nesac\n")
             fake.chmod(0o755)
-            env = os.environ.copy(); env.update({"HOME": str(home), "PATH": str(bindir) + ":/usr/bin", "FAKE_ACTIVE": "1", "FAKE_STOP_FAIL": "0"})
+            env = os.environ.copy(); env.update({"HOME": str(home), "PATH": str(bindir) + ":/usr/bin",
+                                                 "FAKE_ACTIVE": "1", "FAKE_STOP_FAIL": "0",
+                                                 "FAKE_QUERY_FAIL": "0", "FAKE_TIMER_FAIL": "0"})
             failed = subprocess.run([sys.executable, str(ROOT / "cto-canary/stop_candidate.py"), "--expiry"],
                                     cwd=ROOT, env=env, text=True, capture_output=True)
             self.assertEqual(failed.returncode, 2)
             self.assertEqual(json.loads((state / "activation.json").read_text())["state"], "active")
-            env["FAKE_ACTIVE"] = "0"
+            env["FAKE_ACTIVE"] = "0"; env["FAKE_STOP_FAIL"] = "1"
+            self.assertEqual(subprocess.run([sys.executable, str(ROOT / "cto-canary/stop_candidate.py"), "--expiry"],
+                                            cwd=ROOT, env=env).returncode, 2)
+            env["FAKE_STOP_FAIL"] = "0"; env["FAKE_QUERY_FAIL"] = "1"
+            self.assertEqual(subprocess.run([sys.executable, str(ROOT / "cto-canary/stop_candidate.py"), "--expiry"],
+                                            cwd=ROOT, env=env).returncode, 2)
+            env["FAKE_QUERY_FAIL"] = "0"; env["FAKE_TIMER_FAIL"] = "1"
+            self.assertEqual(subprocess.run([sys.executable, str(ROOT / "cto-canary/stop_candidate.py"), "--expiry"],
+                                            cwd=ROOT, env=env).returncode, 2)
+            env["FAKE_TIMER_FAIL"] = "0"
             passed = subprocess.run([sys.executable, str(ROOT / "cto-canary/stop_candidate.py"), "--expiry"],
                                     cwd=ROOT, env=env, text=True, capture_output=True)
             self.assertEqual(passed.returncode, 0, passed.stderr)
             self.assertEqual(json.loads((state / "activation.json").read_text())["state"], "expired_by_time")
+
+    def test_populated_cgroup_is_not_treated_as_stopped(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); group = root / "user.slice/canary"; group.mkdir(parents=True)
+            (group / "cgroup.procs").write_text("123\n456\n")
+            self.assertEqual(cgroup_members("/user.slice/canary", root), "123\n456")
 
     def test_runtime_digest_rejects_external_symlink(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -202,7 +224,10 @@ class CanaryContractTests(unittest.TestCase):
 
     def test_installed_runtime_never_falls_back_to_shared_source(self):
         with tempfile.TemporaryDirectory() as tmp:
-            bundle = Path(tmp); (bundle / "manifest.json").write_text("{}")
+            bundle = Path(tmp)
+            with self.assertRaisesRegex(RuntimeError, "no accepted bundle manifest"):
+                runtime_packages(bundle)
+            (bundle / "manifest.json").write_text("{}")
             with self.assertRaisesRegex(RuntimeError, "missing an isolated"):
                 runtime_packages(bundle)
     def test_collector_output_limit_is_enforced_by_bounded_pipe_capture(self):
@@ -220,6 +245,10 @@ class CanaryContractTests(unittest.TestCase):
             self.assertTrue(prior_cost(state, current)[1])
             (prior / "result.json").write_text(json.dumps({"usage": {"cost": float("nan")}}))
             self.assertTrue(prior_cost(state, current)[1])
+            (prior / "result.json").write_text(json.dumps({"usage": {"cost": float("inf")}}))
+            self.assertTrue(prior_cost(state, current)[1])
+            (prior / "result.json").write_text(json.dumps({"usage": {"cost": CONFIG["max_cost_usd_per_cycle"] + 0.01}}))
+            self.assertTrue(any("exceeded per-cycle" in error for error in prior_cost(state, current)[1]))
 
     def test_installer_clean_scope_includes_decision_and_plans(self):
         source = (ROOT / "cto-canary/activate_candidate.py").read_text()

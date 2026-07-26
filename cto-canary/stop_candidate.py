@@ -30,6 +30,12 @@ def unit_property(unit: str, name: str) -> tuple[str | None, str | None]:
     return result.stdout.strip(), None
 
 
+def cgroup_members(control_group: str | None, root: Path = Path("/sys/fs/cgroup")) -> str:
+    if not control_group:
+        return ""
+    procs = root / control_group.lstrip("/") / "cgroup.procs"
+    return procs.read_text().strip() if procs.exists() else ""
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
@@ -44,16 +50,24 @@ def main() -> int:
     now = datetime.now(timezone.utc)
     if args.expiry and now < expiry:
         print("REFUSED: expiry service fired before the exact authority deadline", file=sys.stderr); return 3
+    # Remove every trigger before stopping the main service so it cannot race/retrigger during reconciliation.
+    units = ["softwareco-cto-canary.timer", "softwareco-cto-canary-stop.timer"]
+    disable = run(["systemctl", "--user", "disable", "--now", *units], check=False)
+    residual: list[str] = []
+    for unit in units:
+        active, active_error = unit_property(unit, "ActiveState")
+        enabled = run(["systemctl", "--user", "is-enabled", unit], check=False)
+        if active_error or active != "inactive" or enabled.stdout.strip() != "disabled":
+            residual.append(f"{unit}(active={active},active_error={active_error},enabled={enabled.stdout.strip()},rc={enabled.returncode})")
+    if disable.returncode or residual:
+        print(f"REFUSED: trigger cleanup failed before service stop (rc={disable.returncode}): {residual}", file=sys.stderr)
+        return 2
     # Kill any in-flight model process through the main service cgroup before recording stopped state.
     service = "softwareco-cto-canary.service"
     stop_result = run(["systemctl", "--user", "stop", service], check=False)
     active_state, state_error = unit_property(service, "ActiveState")
     control_group, cgroup_error = unit_property(service, "ControlGroup")
-    cgroup_processes = ""
-    if control_group:
-        procs = Path("/sys/fs/cgroup" + control_group + "/cgroup.procs")
-        if procs.exists():
-            cgroup_processes = procs.read_text().strip()
+    cgroup_processes = cgroup_members(control_group)
     if stop_result.returncode or state_error or cgroup_error or active_state != "inactive" or cgroup_processes:
         print(f"REFUSED: main service termination unverified: stop_rc={stop_result.returncode} "
               f"state={active_state} state_error={state_error} cgroup_error={cgroup_error} "
@@ -81,17 +95,6 @@ def main() -> int:
     state["stopped_at_utc"] = now.isoformat()
     temporary = STATE.with_suffix(".tmp")
     temporary.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n"); temporary.chmod(0o600); temporary.replace(STATE)
-    units = ["softwareco-cto-canary.timer", "softwareco-cto-canary-stop.timer"]
-    disable = run(["systemctl", "--user", "disable", "--now", *units], check=False)
-    residual: list[str] = []
-    for unit in units:
-        active, active_error = unit_property(unit, "ActiveState")
-        enabled = run(["systemctl", "--user", "is-enabled", unit], check=False)
-        if active_error or active != "inactive" or enabled.stdout.strip() != "disabled":
-            residual.append(f"{unit}(active={active},active_error={active_error},enabled={enabled.stdout.strip()},rc={enabled.returncode})")
-    if disable.returncode or residual:
-        print(f"AUTHORITY STOPPED BUT UNIT CLEANUP FAILED (rc={disable.returncode}): {residual}", file=sys.stderr)
-        return 2
     print(json.dumps({"state": state["state"], "stopped_at_utc": state["stopped_at_utc"],
                       "main_service_active": False, "timers_active_or_enabled": []}, sort_keys=True))
     return 0

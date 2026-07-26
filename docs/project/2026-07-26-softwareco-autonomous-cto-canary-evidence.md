@@ -18,7 +18,7 @@ decision_id: 83
 - Candidate mode and preset lint successfully.
 - A fresh trusted-root no-session RPC process, with all extensions disabled except the pinned Pi Modes entrypoint, selected `softwareco-cto-canary` as role `base`, strategy `replace_base`, with no overlay and no diagnostics.
 - `/mode-preview --json` contained the exact canary prompt plus global/workspace/Softwareco AGENTS context, current date, and cwd.
-- Python compilation and twenty-three deterministic unit tests passed, including path-escape, prompt-source/fingerprint, expiry, home-hiding, in-flight stop, and scoped-installer controls.
+- Python compilation and twenty-four deterministic unit tests passed, including path-escape, prompt-source/fingerprint, expiry, home-hiding, in-flight stop, and scoped-installer controls.
 - Two fixture cycles used distinct process IDs, produced noncanonical proposal-only outputs, and passed strict validation.
 - Production cycle invocation without activation refused with exit `3`.
 - Rendered service, hourly timer, expiry service, and 24-hour timer passed `systemd-analyze --user verify`. The command also reported an unrelated pre-existing warning from `school-asr-recorder.service`.
@@ -38,6 +38,8 @@ Attempt-2 authority and runtime reviews of `443d45e` also returned `REVISE`. The
 
 Attempt-3 authority and runtime reviews of `a53427a` again returned `REVISE`. The latest correction removes installed-runtime fallback, verifies isolated trees, gates exact prompt and provider/model before any model call, strictly verifies systemd stop/cgroup/timer state, bounds top-level iteration before sorting, rejects non-finite cost, reserves the next cycle threshold, discloses possible one-call billing overrun, and fixes the Python recovery command. It requires final independent review.
 
+Attempt-4 authority/runtime reviews of `f73a351` found an absent-manifest fallback, missing prior-cycle threshold stop, incomplete negative paths, and a timer-retrigger race during stop. The latest correction requires isolated runtime at every non-canonical location, verifies runtime copies, fails on prior threshold breach, disables/verifies triggers before main-service/cgroup stop, and adds 24 total executable controls. It requires closure review.
+
 ## Not yet proved
 
 - AK Decision `83` exists but remains `review_pending`; it grants no operational authority;
@@ -46,6 +48,6 @@ Attempt-3 authority and runtime reviews of `a53427a` again returned `REVISE`. Th
 - no service/timer has been enabled or started;
 - no production model cycle or 24-hour canary has run;
 - no canary output usefulness, cost, reliability, or complete-window behavior has been observed;
-- three authority/security attempts and two runtime/operator attempts required revision; no review of the latest correction commit has closed.
+- four authority/security attempts and three runtime/operator attempts required revision; no review of the latest correction commit has closed.
 
 Passing fixtures and prompt preview are implementation proofs only, not operational canary proof.
