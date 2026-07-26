@@ -4,10 +4,11 @@ read_when:
   - "Verifying Decision 77 recurring CTO operation or task 4221 closeout."
   - "Auditing the independent non-DesignMD owner outcome and fresh-session traces."
 type: "evidence"
-status: "evidence_ready"
+status: "verified"
 date: "2026-07-26"
 decision_id: 77
 objective_task_id: 4221
+objective_evidence_id: 5412
 ---
 
 # Decision 77 Recurrence Evidence
@@ -68,4 +69,4 @@ At evidence preparation time:
 - completed wave WIP is released;
 - external effects equal `0`.
 
-The canonical `portfolio_cto_recurrence_objective_v1` evidence ID is recorded in AK during closeout and then projected here.
+Canonical AK evidence `5412` (`portfolio_cto_recurrence_objective_v1`) records the verified recurrence objective. Only objective task `4221` closes; Decision 77 and its recurring framework remain nonterminal.
