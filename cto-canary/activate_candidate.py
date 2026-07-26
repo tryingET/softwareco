@@ -7,6 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 
@@ -90,8 +91,20 @@ def main() -> int:
         file_hashes[relative] = hashlib.sha256(data).hexdigest()
     manifest = {"schema_version": 1, "accepted_commit": args.accepted_commit,
                 "decision_id": args.decision_id, "acceptance_receipt_id": args.acceptance_receipt_id,
-                "files": file_hashes}
+                "files": file_hashes, "runtime_digests": {
+                    CONFIG["runtime_pi_package_relative"]: CONFIG["pi_package_digest"],
+                    CONFIG["runtime_pi_modes_package_relative"]: CONFIG["pi_modes_package_digest"]}}
     (bundle / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    sys.path.insert(0, str(bundle / "cto-canary"))
+    from runtime_integrity import directory_digest  # noqa: E402
+    runtime_sources = ((Path(CONFIG["pi_package"]), bundle / CONFIG["runtime_pi_package_relative"], CONFIG["pi_package_digest"]),
+                       (Path(CONFIG["pi_modes_package"]), bundle / CONFIG["runtime_pi_modes_package_relative"], CONFIG["pi_modes_package_digest"]))
+    for source, target, expected_digest in runtime_sources:
+        if directory_digest(source) != expected_digest:
+            raise RuntimeError(f"reviewed runtime source digest drift: {source}")
+        shutil.copytree(source, target, symlinks=True)
+        if directory_digest(target) != expected_digest:
+            raise RuntimeError(f"isolated runtime copy digest mismatch: {target}")
 
     unit_dir = Path.home() / ".config/systemd/user"
     unit_dir.mkdir(parents=True, exist_ok=True)
@@ -108,7 +121,7 @@ def main() -> int:
     subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
     print(json.dumps({"installed": True, "started": False, "enabled": False,
                       "bundle": str(bundle), "accepted_commit": args.accepted_commit}, sort_keys=True))
-    print(f"Next direct-human gate: {bundle / 'cto-canary/start_candidate.py'}")
+    print(f"Next direct-human gate: python3 {bundle / 'cto-canary/start_candidate.py'} <exact arguments>")
     return 0
 
 

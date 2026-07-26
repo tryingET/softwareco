@@ -37,8 +37,12 @@ def main() -> int:
     now = datetime.now(timezone.utc)
     if args.expiry and now < expiry:
         print("REFUSED: expiry service fired before the exact authority deadline", file=sys.stderr); return 3
-    # Kill any in-flight model process through the main service cgroup before disabling triggers.
-    run(["systemctl", "--user", "stop", "softwareco-cto-canary.service"], check=False)
+    # Kill any in-flight model process through the main service cgroup before recording stopped state.
+    stop_result = run(["systemctl", "--user", "stop", "softwareco-cto-canary.service"], check=False)
+    still_active = run(["systemctl", "--user", "is-active", "--quiet", "softwareco-cto-canary.service"], check=False).returncode == 0
+    if still_active:
+        print(f"REFUSED: main canary service remains active after stop (rc={stop_result.returncode})", file=sys.stderr)
+        return 2
     if args.human_stop:
         chain = json.loads(run(["ak", "governance", "list", "--concern", state["control_concern"], "--limit", "100", "--json"]).stdout)
         if not chain or chain[-1].get("id") != state["activation_receipt_id"]:
@@ -61,8 +65,16 @@ def main() -> int:
     state["stopped_at_utc"] = now.isoformat()
     temporary = STATE.with_suffix(".tmp")
     temporary.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n"); temporary.chmod(0o600); temporary.replace(STATE)
-    run(["systemctl", "--user", "disable", "--now", "softwareco-cto-canary.timer", "softwareco-cto-canary-stop.timer"], check=False)
-    print(json.dumps({"state": state["state"], "stopped_at_utc": state["stopped_at_utc"]}, sort_keys=True))
+    units = ["softwareco-cto-canary.timer", "softwareco-cto-canary-stop.timer"]
+    disable = run(["systemctl", "--user", "disable", "--now", *units], check=False)
+    residual = [unit for unit in units if
+                run(["systemctl", "--user", "is-active", "--quiet", unit], check=False).returncode == 0 or
+                run(["systemctl", "--user", "is-enabled", "--quiet", unit], check=False).returncode == 0]
+    if residual:
+        print(f"AUTHORITY STOPPED BUT UNIT CLEANUP FAILED (rc={disable.returncode}): {residual}", file=sys.stderr)
+        return 2
+    print(json.dumps({"state": state["state"], "stopped_at_utc": state["stopped_at_utc"],
+                      "main_service_active": False, "timers_active_or_enabled": []}, sort_keys=True))
     return 0
 
 

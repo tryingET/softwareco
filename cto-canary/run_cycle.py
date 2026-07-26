@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import fcntl
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -14,7 +13,6 @@ import selectors
 import signal
 import subprocess
 import sys
-import tempfile
 import time
 from typing import Any
 
@@ -23,6 +21,7 @@ CONFIG = json.loads((HERE / "config.json").read_text())
 ROOT = Path(CONFIG["cwd"])
 sys.path.insert(0, str(HERE))
 from validate_output import validate  # noqa: E402
+from runtime_integrity import directory_digest, runtime_packages, sha256, verify_bundle  # noqa: E402
 
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
 ACTIVATION_KEYS = {
@@ -30,15 +29,6 @@ ACTIVATION_KEYS = {
     "accepted_commit", "bundle_dir", "bundle_manifest_sha256", "started_at_utc", "expires_at_utc",
     "max_cycles", "interval_seconds", "activated_by", "control_concern",
 }
-UNIT_NAMES = (
-    "softwareco-cto-canary.service", "softwareco-cto-canary.timer",
-    "softwareco-cto-canary-stop.service", "softwareco-cto-canary-stop.timer",
-)
-
-
-def sha256(path: Path) -> str | None:
-    return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
-
 
 def parse_time(value: object) -> datetime | None:
     if not isinstance(value, str):
@@ -69,78 +59,6 @@ def payload(value: Any) -> Any:
             raise RuntimeError("AK machine envelope reported failure")
         return value["payload"]
     return value
-
-
-def directory_digest(root: Path) -> str:
-    h = hashlib.sha256()
-    for path in sorted(p for p in root.rglob("*") if p.is_file()):
-        relative = path.relative_to(root).as_posix().encode()
-        data = path.read_bytes()
-        h.update(len(relative).to_bytes(8, "big")); h.update(relative)
-        h.update(len(data).to_bytes(8, "big")); h.update(data)
-    return h.hexdigest()
-
-
-def git_blob(commit: str, relative: str) -> bytes:
-    cp = subprocess.run(["git", "show", f"{commit}:{relative}"], cwd=ROOT, capture_output=True, check=False)
-    if cp.returncode:
-        raise RuntimeError(f"accepted Git blob is unavailable: {relative}: {cp.stderr.decode(errors='replace').strip()}")
-    return cp.stdout
-
-
-def rendered_unit(commit: str, name: str, bundle: Path) -> bytes:
-    text = git_blob(commit, f"cto-canary/systemd/{name}").decode()
-    text = text.replace("@BUNDLE_DIR@", str(bundle / "cto-canary")).replace("@ROOT@", str(ROOT))
-    return text.encode()
-
-
-def verify_bundle(activation: dict[str, Any], unit_dir: Path | None = None) -> list[str]:
-    """Bind bundle, manifest, project mode, and installed units to accepted Git objects."""
-    errors: list[str] = []
-    bundle = Path(activation["bundle_dir"])
-    commit = activation["accepted_commit"]
-    manifest_path = bundle / "manifest.json"
-    if sha256(manifest_path) != activation["bundle_manifest_sha256"]:
-        errors.append("installed bundle manifest digest differs from activation")
-    try:
-        manifest = json.loads(manifest_path.read_text())
-    except (OSError, json.JSONDecodeError):
-        return errors + ["installed bundle manifest is unreadable"]
-    try:
-        accepted_config = json.loads(git_blob(commit, "cto-canary/config.json"))
-        expected_files = accepted_config["accepted_bundle_files"]
-    except (RuntimeError, KeyError, json.JSONDecodeError) as exc:
-        return errors + [f"accepted Git config/file set is unreadable: {exc}"]
-    if (manifest.get("accepted_commit") != commit or manifest.get("decision_id") != activation["decision_id"] or
-            manifest.get("acceptance_receipt_id") != activation["acceptance_receipt_id"] or
-            set(manifest.get("files", {})) != set(expected_files)):
-        errors.append("installed bundle manifest identity/file set is invalid")
-    for relative in expected_files:
-        try:
-            accepted = git_blob(commit, relative)
-        except RuntimeError as exc:
-            errors.append(str(exc)); continue
-        accepted_sha = hashlib.sha256(accepted).hexdigest()
-        if manifest.get("files", {}).get(relative) != accepted_sha:
-            errors.append(f"manifest is not bound to accepted Git blob: {relative}")
-        if sha256(bundle / relative) != accepted_sha:
-            errors.append(f"installed artifact differs from accepted Git blob: {relative}")
-    try:
-        accepted_mode_sha = hashlib.sha256(git_blob(commit, ".pi/modes/softwareco-cto-canary.json")).hexdigest()
-    except RuntimeError as exc:
-        errors.append(str(exc)); accepted_mode_sha = None
-    if sha256(ROOT / ".pi/modes/softwareco-cto-canary.json") != accepted_mode_sha:
-        errors.append("trusted-root CTO canary mode differs from accepted Git blob")
-    unit_dir = unit_dir or Path.home() / ".config/systemd/user"
-    for name in UNIT_NAMES:
-        try:
-            expected = rendered_unit(commit, name, bundle)
-        except RuntimeError as exc:
-            errors.append(str(exc)); continue
-        installed = unit_dir / name
-        if not installed.is_file() or installed.read_bytes() != expected:
-            errors.append(f"installed systemd unit differs from accepted rendered template: {name}")
-    return errors
 
 
 def read_activation(path: Path, state_dir: Path, current_run_reserved: bool = False) -> tuple[dict[str, Any] | None, list[str]]:
@@ -208,13 +126,15 @@ def read_activation(path: Path, state_dir: Path, current_run_reserved: bool = Fa
     if not isinstance(chain, list) or not chain or chain[-1].get("id") != value["activation_receipt_id"]:
         errors.append("canary control chain head is not the activation receipt")
     errors.extend(verify_bundle(value))
-    modes_package = Path(CONFIG["pi_modes_package"])
-    if directory_digest(modes_package) != CONFIG["pi_modes_package_digest"]:
-        errors.append("installed pi-modes package differs from the reviewed pinned digest")
-    pi_package = Path(CONFIG["pi_package"])
-    if directory_digest(pi_package) != CONFIG["pi_package_digest"]:
-        errors.append("installed Pi package differs from the reviewed pinned digest")
-    version = run(["/usr/bin/node", CONFIG["pi_entrypoint"], "--version"]).stdout.strip()
+    pi_package, modes_package, pi_entrypoint = runtime_packages()
+    try:
+        if directory_digest(modes_package) != CONFIG["pi_modes_package_digest"]:
+            errors.append("installed pi-modes package differs from the reviewed pinned digest")
+        if directory_digest(pi_package) != CONFIG["pi_package_digest"]:
+            errors.append("installed Pi package differs from the reviewed pinned digest")
+    except (OSError, RuntimeError) as exc:
+        errors.append(f"runtime package digest failed closed: {exc}")
+    version = run(["/usr/bin/node", str(pi_entrypoint), "--version"]).stdout.strip()
     if version != CONFIG["pi_version"]:
         errors.append(f"Pi version drift: expected {CONFIG['pi_version']}, observed {version}")
     return value, errors
@@ -239,8 +159,10 @@ def watched_state(packet: dict[str, Any], db_path: Path) -> list[str]:
 
 
 def worker_argv() -> list[str]:
-    extension = str(Path(CONFIG["pi_modes_package"]) / "extensions/mode.ts")
-    return ["/usr/bin/node", CONFIG["pi_entrypoint"], *CONFIG["worker_arguments"], "--extension", extension]
+    _, modes_package, pi_entrypoint = runtime_packages()
+    extension = str(modes_package / "extensions/mode.ts")
+    return ["/usr/bin/node", str(pi_entrypoint), *CONFIG["worker_arguments"],
+            "--provider", CONFIG["model_provider"], "--model", CONFIG["model_id"], "--extension", extension]
 
 
 def read_event(proc: subprocess.Popen[str], selector: selectors.BaseSelector, deadline: float) -> dict[str, Any]:
@@ -266,12 +188,26 @@ def send(proc: subprocess.Popen[str], value: dict[str, Any]) -> None:
     proc.stdin.flush()
 
 
+def expected_composed_prompt() -> str:
+    mode_path = ROOT / ".pi/modes/softwareco-cto-canary.json"
+    base_prompt = json.loads(mode_path.read_text())["systemPrompt"]
+    append_prompt = Path(CONFIG["append_system_file"]).read_text().rstrip()
+    context = "<project_context>\n\nProject-specific instructions and guidelines:\n"
+    for raw in CONFIG["context_files"]:
+        path = Path(raw)
+        context += f'\n<project_instructions path="{path}">\n{path.read_text().rstrip()}\n\n</project_instructions>\n'
+    context += "\n</project_context>"
+    return (base_prompt + "\n\n" + append_prompt + "\n\n\n" + context +
+            f"\n\nCurrent date: {datetime.now(timezone.utc).date().isoformat()}" +
+            f"\nCurrent working directory: {ROOT}")
+
+
 def mode_proof_errors(records: list[dict[str, Any]]) -> list[str]:
     mode_path = ROOT / ".pi/modes/softwareco-cto-canary.json"
     try:
-        base_prompt = json.loads(mode_path.read_text())["systemPrompt"]
+        expected_prompt = expected_composed_prompt()
     except (OSError, KeyError, json.JSONDecodeError) as exc:
-        return [f"accepted mode is unreadable: {exc}"]
+        return [f"accepted mode/dynamic context is unreadable: {exc}"]
     expected_selection = {"baseKey": CONFIG["mode_base_key"], "overlayKeys": []}
     for value in records:
         components = value.get("components", [])
@@ -281,13 +217,10 @@ def mode_proof_errors(records: list[dict[str, Any]]) -> list[str]:
             component.get("path") == str(mode_path) and component.get("digest") == CONFIG["mode_component_digest"]
             for component in components
         )
-        prompt = value.get("prompt")
-        prompt_ok = (isinstance(prompt, str) and prompt.startswith(base_prompt) and "<project_context>" in prompt and
-                     f"Current date: {datetime.now().date().isoformat()}" in prompt and
-                     f"Current working directory: {ROOT}" in prompt)
-        if value.get("selection") == expected_selection and component_ok and prompt_ok and not value.get("diagnostics"):
+        if (value.get("selection") == expected_selection and component_ok and value.get("prompt") == expected_prompt and
+                not value.get("diagnostics")):
             return []
-    return ["mode preview did not prove accepted project source, fingerprint, replace_base prompt, and dynamic context"]
+    return ["mode preview did not exactly match accepted source, fingerprint, base, append, context files, date, and cwd"]
 
 
 def rpc_cycle(packet: dict[str, Any], stderr_path: Path, timeout: int) -> tuple[object, dict[str, Any]]:
@@ -297,6 +230,8 @@ def rpc_cycle(packet: dict[str, Any], stderr_path: Path, timeout: int) -> tuple[
     argv = worker_argv()
     events: list[dict[str, Any]] = []
     violations: list[str] = []
+    model: dict[str, Any] = {}
+    usage: dict[str, Any] = {}
     with stderr_path.open("w") as stderr:
         proc = subprocess.Popen(argv, cwd=ROOT, env=env, text=True, stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE, stderr=stderr, start_new_session=True)
@@ -314,6 +249,16 @@ def rpc_cycle(packet: dict[str, Any], stderr_path: Path, timeout: int) -> tuple[
                     if event.get("success") is not True:
                         raise RuntimeError("mode preview command failed")
                     break
+            send(proc, {"id": "cycle-state", "type": "get_state"})
+            while True:
+                event = read_event(proc, selector, deadline); events.append(event)
+                if event.get("id") == "cycle-state":
+                    if event.get("success") is not True:
+                        raise RuntimeError("worker state command failed")
+                    model = event.get("data", {}).get("model") or {}
+                    break
+            if model.get("provider") != CONFIG["model_provider"] or model.get("id") != CONFIG["model_id"]:
+                violations.append(f"worker model mismatch: {model.get('provider')}/{model.get('id')}")
             prompt = (
                 "Produce exactly one JSON object matching the CTO canary output schema below. "
                 "Use only the supplied snapshot. Every factual reference must resolve as "
@@ -355,6 +300,19 @@ def rpc_cycle(packet: dict[str, Any], stderr_path: Path, timeout: int) -> tuple[
                 proposal = json.loads(result)
             except json.JSONDecodeError as exc:
                 raise RuntimeError(f"worker response was not an exact JSON object: {exc}") from exc
+            send(proc, {"id": "cycle-stats", "type": "get_session_stats"})
+            while True:
+                event = read_event(proc, selector, deadline); events.append(event)
+                if event.get("id") == "cycle-stats":
+                    if event.get("success") is not True:
+                        raise RuntimeError("worker stats command failed")
+                    usage = event.get("data") or {}
+                    break
+            cost = usage.get("cost")
+            if not isinstance(cost, (int, float)) or isinstance(cost, bool) or cost < 0:
+                violations.append("worker did not report a valid normalized cycle cost")
+            elif cost > CONFIG["max_cost_usd_per_cycle"]:
+                violations.append(f"cycle cost limit exceeded: {cost}")
         finally:
             selector.close()
             if proc.poll() is None:
@@ -378,7 +336,7 @@ def rpc_cycle(packet: dict[str, Any], stderr_path: Path, timeout: int) -> tuple[
             status_records.append(value)
     violations.extend(mode_proof_errors(status_records))
     return proposal, {"pid": proc.pid, "argv": argv, "events": events, "violations": violations,
-                      "mode_status_records": status_records}
+                      "mode_status_records": status_records, "model": model, "usage": usage}
 
 
 def fixture_cycle() -> tuple[object, dict[str, Any]]:
@@ -393,7 +351,26 @@ def fixture_cycle() -> tuple[object, dict[str, Any]]:
     proposal = json.loads(result_event["data"]["text"])
     pid = proc.pid
     proc.stdin.close(); proc.wait(timeout=5)
-    return proposal, {"pid": pid, "argv": argv, "events": events, "violations": [], "mode_status_records": []}
+    return proposal, {"pid": pid, "argv": argv, "events": events, "violations": [], "mode_status_records": [],
+                      "model": {"provider": "fixture", "id": "fixture"}, "usage": {"cost": 0.0, "tokens": {}}}
+
+
+def prior_cost(state: Path, current_run: Path) -> tuple[float, list[str]]:
+    total = 0.0
+    errors: list[str] = []
+    for run_dir in sorted((state / "runs").glob("*")):
+        if not run_dir.is_dir() or run_dir == current_run:
+            continue
+        result_path = run_dir / "result.json"
+        try:
+            value = json.loads(result_path.read_text())
+            cost = value["usage"]["cost"]
+            if not isinstance(cost, (int, float)) or isinstance(cost, bool) or cost < 0:
+                raise ValueError("cost is not nonnegative numeric")
+            total += float(cost)
+        except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
+            errors.append(f"prior cycle cost is unverifiable: {run_dir.name}: {exc}")
+    return total, errors
 
 
 def main() -> int:
@@ -413,6 +390,17 @@ def main() -> int:
         if gate_errors:
             print("REFUSED: " + "; ".join(gate_errors), file=sys.stderr)
             return 3
+        assert activation is not None
+        expiry = parse_time(activation["expires_at_utc"])
+        assert expiry is not None
+        process_budget = (expiry - datetime.now(timezone.utc)).total_seconds() - CONFIG["expiry_guard_seconds"]
+        if process_budget < 1:
+            print("REFUSED: insufficient authority time remains for a supervised cycle", file=sys.stderr)
+            return 3
+        def authority_alarm(_signum: int, _frame: object) -> None:
+            raise TimeoutError("supervised cycle reached its pre-expiry termination deadline")
+        signal.signal(signal.SIGALRM, authority_alarm)
+        signal.setitimer(signal.ITIMER_REAL, process_budget)
 
     lock_file = (state / "cycle.lock").open("w")
     try:
@@ -439,6 +427,12 @@ def main() -> int:
         if cp.returncode:
             return cp.returncode
         packet = json.loads(packet_path.read_text())
+        spent_before, cost_errors = prior_cost(state, run_dir)
+        if cost_errors or spent_before >= CONFIG["max_cost_usd_total"]:
+            reasons = cost_errors or [f"total cost budget already exhausted: {spent_before}"]
+            (run_dir / "failure.txt").write_text("; ".join(reasons) + "\n")
+            print("REFUSED: " + "; ".join(reasons), file=sys.stderr)
+            return 3
         activation, gate_errors = read_activation(activation_file, state, current_run_reserved=True)
         if gate_errors or activation is None:
             (run_dir / "failure.txt").write_text("authority changed before worker start: " + "; ".join(gate_errors) + "\n")
@@ -469,10 +463,16 @@ def main() -> int:
     if not args.fixture:
         _, final_gate_errors = read_activation(activation_file, state, current_run_reserved=True)
         trace["violations"].extend(f"post-cycle authority gate: {error}" for error in final_gate_errors)
+    cycle_cost = trace["usage"].get("cost") if isinstance(trace.get("usage"), dict) else None
+    spent_before = 0.0 if args.fixture else prior_cost(state, run_dir)[0]
+    cumulative_cost = spent_before + float(cycle_cost or 0.0)
+    if not args.fixture and cumulative_cost > CONFIG["max_cost_usd_total"]:
+        trace["violations"].append(f"total cost limit exceeded: {cumulative_cost}")
     verified = not errors and not drift and not trace["violations"]
     result = {
         "schema_version": 2, "canonical": False, "classification": "proposal_only", "run_id": run_id,
         "fresh_worker_pid": trace["pid"], "worker_argv": trace["argv"], "proposal": proposal,
+        "model": trace["model"], "usage": trace["usage"], "cumulative_cost_usd": cumulative_cost,
         "validation_errors": errors, "watched_state_changes": drift,
         "runtime_policy_violations": trace["violations"], "verified_behavior": verified,
         "verification_scope": "output contract, accepted runtime gate, mode composition, disabled tools/extensions, and watched AK/Git before-after checks; not proof of all external effects",

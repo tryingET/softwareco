@@ -25,7 +25,7 @@ Require all of the following:
 - candidate ADR and implementation/validation plans are committed;
 - exact candidate commit passes code, mode, systemd, docs, decision, and independent-review gates;
 - Decisions 74 and 77 remain unchanged;
-- direct human reviews the external effects: up to 24 model calls plus private local state.
+- direct human reviews the external effects: up to 24 `openai-codex/gpt-5.6-sol` calls, USD 2 per-cycle and USD 25 cumulative fail-closed budgets, plus private local state.
 
 The controller prepares one exact acceptance script with concrete `<DECISION_ID>`, `<TASK_ID>`, `<COMMIT>`, and review references, then pauses. The human executes it directly. Fresh-read the resulting receipt and decision; pasted output is not authority.
 
@@ -48,7 +48,7 @@ Expected result states `installed=true`, `started=false`, and `enabled=false`. I
 From the installer-reported accepted bundle:
 
 ```bash
-<ACCEPTED_BUNDLE>/cto-canary/start_candidate.py \
+python3 <ACCEPTED_BUNDLE>/cto-canary/start_candidate.py \
   --decision-id 83 \
   --acceptance-receipt-id <ACCEPTANCE_RECEIPT_ID> \
   --accepted-commit <COMMIT> \
@@ -71,7 +71,7 @@ For each cycle inspect `result.json`, `mode-preview.json`, and errors. Treat all
 ## Early stop
 
 ```bash
-<ACCEPTED_BUNDLE>/cto-canary/stop_candidate.py --human-stop
+python3 <ACCEPTED_BUNDLE>/cto-canary/stop_candidate.py --human-stop
 ```
 
 Fresh-read the stop receipt and disabled timer state. Preserve run artifacts for synthesis.

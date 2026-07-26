@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -13,8 +14,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "cto-canary"))
 from validate_output import validate
 from fixture_rpc_worker import PROPOSAL
-from collect_snapshot import registered_under_owned
-from run_cycle import CONFIG, UNIT_NAMES, mode_proof_errors, read_activation, rendered_unit, verify_bundle
+from collect_snapshot import registered_under_owned, run as collector_run
+from run_cycle import CONFIG, expected_composed_prompt, mode_proof_errors, prior_cost, read_activation
+from runtime_integrity import UNIT_NAMES, directory_digest, rendered_unit, verify_bundle
+from start_candidate import acceptance_errors
 
 
 class CanaryContractTests(unittest.TestCase):
@@ -36,6 +39,11 @@ class CanaryContractTests(unittest.TestCase):
         for required in ("--no-session", "--no-tools", "--no-skills", "--no-prompt-templates",
                          "--no-themes", "--no-extensions", "--offline"):
             self.assertIn(required, arguments)
+
+        self.assertEqual((config["model_provider"], config["model_id"]), ("openai-codex", "gpt-5.6-sol"))
+        self.assertGreater(config["max_cost_usd_per_cycle"], 0)
+        self.assertGreater(config["max_cost_usd_total"], config["max_cost_usd_per_cycle"])
+        self.assertGreaterEqual(config["expiry_guard_seconds"], 30)
 
     def test_timer_and_expiry_timer_are_bounded(self):
         timer = (ROOT / "cto-canary/systemd/softwareco-cto-canary.timer").read_text()
@@ -79,6 +87,16 @@ class CanaryContractTests(unittest.TestCase):
         self.assertEqual(cp.returncode, 3)
         self.assertIn("REFUSED", cp.stderr)
 
+    def test_install_and_start_require_explicit_human_acknowledgement_flags(self):
+        install = subprocess.run([sys.executable, str(ROOT / "cto-canary/activate_candidate.py"),
+                                  "--decision-id", "83", "--acceptance-receipt-id", "1",
+                                  "--accepted-commit", "a" * 40], cwd=ROOT, text=True, capture_output=True)
+        start = subprocess.run([sys.executable, str(ROOT / "cto-canary/start_candidate.py"),
+                                "--decision-id", "83", "--acceptance-receipt-id", "1",
+                                "--accepted-commit", "a" * 40], cwd=ROOT, text=True, capture_output=True)
+        self.assertEqual((install.returncode, start.returncode), (3, 3))
+        self.assertIn("REFUSED", install.stderr); self.assertIn("REFUSED", start.stderr)
+
     def test_deterministic_manual_fixture_cycles_are_noncanonical_and_fresh(self):
         with tempfile.TemporaryDirectory() as tmp:
             command = [sys.executable, str(ROOT / "cto-canary/run_cycle.py"), "--fixture",
@@ -115,17 +133,18 @@ class CanaryContractTests(unittest.TestCase):
 
     def test_mode_proof_binds_source_fingerprint_prompt_and_dynamic_context(self):
         mode_path = ROOT / ".pi/modes/softwareco-cto-canary.json"
-        base = json.loads(mode_path.read_text())["systemPrompt"]
         record = {
             "selection": {"baseKey": "softwareco-cto-canary", "overlayKeys": []},
             "components": [{"key": "softwareco-cto-canary", "role": "base", "strategy": "replace_base",
                             "scope": "project", "path": str(mode_path), "digest": CONFIG["mode_component_digest"]}],
-            "prompt": base + "\n<project_context>\nCurrent date: " + datetime.now().date().isoformat() +
-                      "\nCurrent working directory: " + str(ROOT),
+            "prompt": expected_composed_prompt(),
             "diagnostics": [],
         }
         self.assertEqual(mode_proof_errors([record]), [])
         record["components"][0]["path"] = "/wrong/mode.json"
+        self.assertTrue(mode_proof_errors([record]))
+        record["components"][0]["path"] = str(mode_path)
+        record["prompt"] += "\nunreviewed injection"
         self.assertTrue(mode_proof_errors([record]))
 
     def test_expired_activation_refuses_before_live_ak_readback(self):
@@ -151,6 +170,49 @@ class CanaryContractTests(unittest.TestCase):
         self.assertIn("KillMode=control-group", service)
         self.assertIn('"stop", "softwareco-cto-canary.service"', stop)
 
+        self.assertIn("BindReadOnlyPaths=%h/ai-society/society.v2.db", service)
+
+    def test_expiry_stop_verifies_inflight_service_termination(self):
+        activation = {"state": "active", "expires_at_utc": (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat(),
+                      "control_concern": "fixture", "activation_receipt_id": 1, "decision_id": 83}
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp); state = home / ".local/state/softwareco-cto-canary"; state.mkdir(parents=True)
+            (state / "activation.json").write_text(json.dumps(activation))
+            bindir = home / "bin"; bindir.mkdir(); fake = bindir / "systemctl"
+            fake.write_text("#!/bin/sh\ncase \"$*\" in\n  *\"is-active --quiet softwareco-cto-canary.service\"*) [ \"$FAKE_ACTIVE\" = 1 ] && exit 0 || exit 3;;\n  *\"is-active --quiet\"*|*\"is-enabled --quiet\"*) exit 3;;\n  *) exit 0;;\nesac\n")
+            fake.chmod(0o755)
+            env = os.environ.copy(); env.update({"HOME": str(home), "PATH": str(bindir) + ":/usr/bin", "FAKE_ACTIVE": "1"})
+            failed = subprocess.run([sys.executable, str(ROOT / "cto-canary/stop_candidate.py"), "--expiry"],
+                                    cwd=ROOT, env=env, text=True, capture_output=True)
+            self.assertEqual(failed.returncode, 2)
+            self.assertEqual(json.loads((state / "activation.json").read_text())["state"], "active")
+            env["FAKE_ACTIVE"] = "0"
+            passed = subprocess.run([sys.executable, str(ROOT / "cto-canary/stop_candidate.py"), "--expiry"],
+                                    cwd=ROOT, env=env, text=True, capture_output=True)
+            self.assertEqual(passed.returncode, 0, passed.stderr)
+            self.assertEqual(json.loads((state / "activation.json").read_text())["state"], "expired_by_time")
+
+    def test_runtime_digest_rejects_external_symlink(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "root"; root.mkdir(); outside = Path(tmp) / "outside"; outside.write_text("x")
+            (root / "escape").symlink_to(outside)
+            with self.assertRaises(RuntimeError):
+                directory_digest(root)
+
+    def test_collector_output_limit_is_enforced_by_bounded_pipe_capture(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = collector_run([sys.executable, "-c", "import os; os.write(1, b'x'*2100000)"], Path(tmp), 20)
+        self.assertTrue(result["oversized"] or result["exit_code"] != 0)
+
+    def test_prior_cost_is_normalized_and_malformed_history_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = Path(tmp); prior = state / "runs/one"; current = state / "runs/two"
+            prior.mkdir(parents=True); current.mkdir()
+            (prior / "result.json").write_text(json.dumps({"usage": {"cost": 1.25}}))
+            self.assertEqual(prior_cost(state, current), (1.25, []))
+            (prior / "result.json").write_text("{}")
+            self.assertTrue(prior_cost(state, current)[1])
+
     def test_installer_clean_scope_includes_decision_and_plans(self):
         source = (ROOT / "cto-canary/activate_candidate.py").read_text()
         self.assertIn("docs/decisions/2026-07-26-softwareco-autonomous-cto-canary.md", source)
@@ -172,7 +234,10 @@ class CanaryContractTests(unittest.TestCase):
                 target = bundle / relative; target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
                 hashes[relative] = hashlib.sha256(data).hexdigest()
             manifest = {"schema_version": 1, "accepted_commit": commit, "decision_id": 83,
-                        "acceptance_receipt_id": 999, "files": hashes}
+                        "acceptance_receipt_id": 999, "files": hashes,
+                        "runtime_digests": {
+                            accepted_config["runtime_pi_package_relative"]: accepted_config["pi_package_digest"],
+                            accepted_config["runtime_pi_modes_package_relative"]: accepted_config["pi_modes_package_digest"]}}
             manifest_path = bundle / "manifest.json"
             manifest_path.write_text(json.dumps(manifest, sort_keys=True))
             for name in UNIT_NAMES:
@@ -181,11 +246,28 @@ class CanaryContractTests(unittest.TestCase):
                           "acceptance_receipt_id": 999,
                           "bundle_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest()}
             self.assertEqual(verify_bundle(activation, units), [])
+            unit = units / "softwareco-cto-canary.service"; original_unit = unit.read_bytes(); unit.write_text("tampered\n")
+            self.assertTrue(any("systemd unit" in error for error in verify_bundle(activation, units)))
+            unit.write_bytes(original_unit)
             target = bundle / "cto-canary/run_cycle.py"; target.write_text("tampered\n")
             manifest["files"]["cto-canary/run_cycle.py"] = hashlib.sha256(target.read_bytes()).hexdigest()
             manifest_path.write_text(json.dumps(manifest, sort_keys=True))
             activation["bundle_manifest_sha256"] = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
             self.assertTrue(any("accepted Git blob" in error for error in verify_bundle(activation, units)))
+
+    def test_activation_authority_contract_rejects_state_actor_and_commit_drift(self):
+        decision_id, receipt_id, commit = 83, 999, "a" * 40
+        decision = {"outcome": "accepted", "state": "unblocked",
+                    "rfc_ref": str(ROOT / "docs/project/2026-07-26-softwareco-autonomous-cto-canary-rfc.md"),
+                    "evidence_ref": f"governance:{receipt_id}"}
+        receipt = {"source_authority": "human-operator", "actor": "human-operator", "status": "applied",
+                   "to_state": "accepted", "agreement_ref": f"decision:{decision_id}",
+                   "details": {"schema": "softwareco.architecture-decision-acceptance.v1",
+                               "decision_id": decision_id, "rfc_commit": commit}}
+        self.assertEqual(acceptance_errors(decision, receipt, decision_id, receipt_id, commit), [])
+        decision["state"] = "blocked"; receipt["actor"] = "agent"; receipt["details"]["rfc_commit"] = "b" * 40
+        errors = acceptance_errors(decision, receipt, decision_id, receipt_id, commit)
+        self.assertEqual(set(errors), {"decision unblocked", "human actor", "accepted commit"})
 
 
 if __name__ == "__main__":

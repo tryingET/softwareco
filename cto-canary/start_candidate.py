@@ -17,7 +17,7 @@ CONFIG = json.loads((HERE / "config.json").read_text())
 MANIFEST_PATH = BUNDLE / "manifest.json"
 ROOT = Path(CONFIG["cwd"])
 ROLLBACK = str(ROOT / "docs/project/2026-07-26-softwareco-autonomous-cto-canary-validation-rollout-rollback.md")
-from run_cycle import directory_digest, verify_bundle  # noqa: E402
+from runtime_integrity import directory_digest, verify_bundle  # noqa: E402
 
 
 def run(argv: list[str], check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -25,6 +25,24 @@ def run(argv: list[str], check: bool = True) -> subprocess.CompletedProcess[str]
     if check and cp.returncode:
         raise RuntimeError(f"{' '.join(argv)} failed: {cp.stderr.strip()}")
     return cp
+
+
+def acceptance_errors(decision: dict, receipt: dict, decision_id: int, acceptance_id: int, commit: str) -> list[str]:
+    expected_rfc = str(ROOT / "docs/project/2026-07-26-softwareco-autonomous-cto-canary-rfc.md")
+    checks = {
+        "decision accepted": decision.get("outcome") == "accepted",
+        "decision unblocked": decision.get("state") == "unblocked",
+        "decision RFC": decision.get("rfc_ref") == expected_rfc,
+        "decision evidence": decision.get("evidence_ref") == f"governance:{acceptance_id}",
+        "human source": receipt.get("source_authority") == "human-operator",
+        "human actor": receipt.get("actor") == "human-operator",
+        "applied acceptance": receipt.get("status") == "applied" and receipt.get("to_state") == "accepted",
+        "decision agreement": receipt.get("agreement_ref") == f"decision:{decision_id}",
+        "receipt schema": receipt.get("details", {}).get("schema") == "softwareco.architecture-decision-acceptance.v1",
+        "receipt decision": receipt.get("details", {}).get("decision_id") == decision_id,
+        "accepted commit": receipt.get("details", {}).get("rfc_commit") == commit,
+    }
+    return [label for label, passed in checks.items() if not passed]
 
 
 def main() -> int:
@@ -49,24 +67,20 @@ def main() -> int:
     decision_envelope = json.loads(run(["ak", "decision", "get", str(decision_id), "--machine"]).stdout)
     decision = decision_envelope.get("payload", {}).get("decision", {})
     receipt = json.loads(run(["ak", "governance", "show", str(acceptance_id), "--format", "json"]).stdout)
-    expected_rfc = str(ROOT / "docs/project/2026-07-26-softwareco-autonomous-cto-canary-rfc.md")
-    if not (decision.get("outcome") == "accepted" and decision.get("state") == "unblocked" and
-            decision.get("rfc_ref") == expected_rfc and decision.get("evidence_ref") == f"governance:{acceptance_id}" and
-            receipt.get("source_authority") == "human-operator" and receipt.get("actor") == "human-operator" and
-            receipt.get("status") == "applied" and receipt.get("to_state") == "accepted" and
-            receipt.get("agreement_ref") == f"decision:{decision_id}" and
-            receipt.get("details", {}).get("schema") == "softwareco.architecture-decision-acceptance.v1" and
-            receipt.get("details", {}).get("decision_id") == decision_id and
-            receipt.get("details", {}).get("rfc_commit") == commit):
-        print("REFUSED: live decision/acceptance no longer authorizes this exact bundle", file=sys.stderr); return 3
+    authority_errors = acceptance_errors(decision, receipt, decision_id, acceptance_id, commit)
+    if authority_errors:
+        print("REFUSED: live decision/acceptance mismatch: " + ", ".join(authority_errors), file=sys.stderr); return 3
     pseudo_activation = {"bundle_dir": str(BUNDLE), "accepted_commit": commit, "decision_id": decision_id,
                          "acceptance_receipt_id": acceptance_id,
                          "bundle_manifest_sha256": hashlib.sha256(MANIFEST_PATH.read_bytes()).hexdigest()}
     artifact_errors = verify_bundle(pseudo_activation)
-    if directory_digest(Path(CONFIG["pi_modes_package"])) != CONFIG["pi_modes_package_digest"]:
-        artifact_errors.append("pi-modes package digest drift")
-    if directory_digest(Path(CONFIG["pi_package"])) != CONFIG["pi_package_digest"]:
-        artifact_errors.append("Pi package digest drift")
+    try:
+        if directory_digest(Path(CONFIG["pi_modes_package"])) != CONFIG["pi_modes_package_digest"]:
+            artifact_errors.append("pi-modes package digest drift")
+        if directory_digest(Path(CONFIG["pi_package"])) != CONFIG["pi_package_digest"]:
+            artifact_errors.append("Pi package digest drift")
+    except (OSError, RuntimeError) as exc:
+        artifact_errors.append(f"runtime package digest failed closed: {exc}")
     version = run(["/usr/bin/node", CONFIG["pi_entrypoint"], "--version"]).stdout.strip()
     if version != CONFIG["pi_version"]:
         artifact_errors.append("Pi version drift")

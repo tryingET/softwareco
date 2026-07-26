@@ -34,7 +34,7 @@ pi --system-prompt <text-or-file>
 
 The canary deliberately uses the reviewed Pi Modes `replace_base` strategy instead. `replace_base` replaces Pi's static native base while retaining append-system content, trusted AGENTS/CLAUDE context, visible skills, date, cwd, and explicitly selected overlays. It adds fingerprints, drift blocking, mode status, and exact composition preview that a loose flag does not provide.
 
-The accepted mode is `.pi/modes/softwareco-cto-canary.json`; the preset selects it as the sole base with no overlays. Production workers start with structured `PI_MODES`, then prove through `/mode-preview --json` that the effective component has the accepted project path and semantic fingerprint, uses `replace_base`, has no diagnostics, and composes the accepted base with current dynamic context.
+The accepted mode is `.pi/modes/softwareco-cto-canary.json`; the preset selects it as the sole base with no overlays. Production workers start with structured `PI_MODES`, then prove through `/mode-preview --json` that the effective component has the accepted project path and semantic fingerprint, uses `replace_base`, and has no diagnostics. The supervisor independently reconstructs the exact expected prompt from the accepted base, full current append-system file, exact ordered AGENTS files, UTC date, and cwd; byte inequality fails closed.
 
 The production worker intentionally selects no tools, skills, prompt templates, themes, or extensions except the pinned `@tryinget/pi-modes` extension. The replace-base composition mechanism still preserves those dynamic slots; their selected skill/tool sets are empty for this first canary.
 
@@ -64,11 +64,11 @@ A separate 24-hour stop timer disables future triggers. Runtime independently re
 - a direct-human architecture-acceptance receipt binding the full accepted commit;
 - exact accepted `HEAD`, installer blob, and clean scoped candidate paths.
 
-It installs blobs read from the accepted Git object into a commit-addressed bundle and writes a digest manifest. It installs but does not enable or start systemd units.
+It installs blobs read from the accepted Git object into a commit-addressed bundle and writes a digest manifest. It also verifies and copies the complete pinned Pi and Pi Modes package trees into isolated bundle runtime directories, preserving and hashing contained symlinks while rejecting any escaping symlink. It installs but does not enable or start systemd units.
 
 `start_candidate.py` with repeated exact decision/receipt/commit arguments and `--start` is a second direct-human action. It fresh-reads the decision, acceptance receipt, accepted Git blobs, installed bundle, rendered units, runtime package digests, and requires an empty decision-specific control chain, records one direct-human activation receipt, writes a local activation membrane, and enables the hourly and expiry timers. The receipt binds an exact start, exact 24-hour expiry, 24-cycle maximum, accepted commit, and activity envelope. The script's flags and attribution fields do not technically prove a person is present; the transition is lawful only when the accountable human directly invokes the reviewed command. Automation is forbidden from invoking this activation path.
 
-Every production cycle fresh-reads the decision, acceptance receipt, control-chain head, activation receipt, bundle and rendered units against accepted Git objects, trusted-root mode source/fingerprint/composed preview, pinned Pi package digest/version, and pinned Pi Modes package digest. Any drift fails closed.
+Every production cycle fresh-reads the decision, acceptance receipt, control-chain head, activation receipt, bundle and rendered units against accepted Git objects, trusted-root mode source/fingerprint/composed preview, pinned Pi package digest/version, and pinned Pi Modes package digest. Any drift fails closed. The honest runtime uses the isolated package copies, not the shared `/tmp` Pi tree.
 
 ## Allowed autonomous activity
 
@@ -95,7 +95,7 @@ The worker may recommend but never self-dispatch any orchestrator.
 
 The worker and supervisor may not create, claim, update, close, or mutate AK tasks, evidence, direction, governance, or decisions; mutate Git or owner repos; write FCOS; publish or release; cause public/irreversible effects; treat a draft as consent; or use a Pi transcript/result as authority. Installation, architecture acceptance, activation, and early stop are direct-human operations, not canary operations.
 
-Model API calls and private local canary state are explicit operational effects of activation. The verifier does not overclaim proof of all external effects: it proves prompt/runtime gates, disabled capabilities, output/reference contracts, and watched AK/Git before-after equality.
+Model API calls and private local canary state are explicit operational effects of activation. The verifier does not overclaim proof of all external effects: it proves prompt/runtime gates, disabled capabilities, output/reference contracts, and watched AK/Git before-after equality. The accepted model is pinned to `openai-codex/gpt-5.6-sol`. Every cycle records normalized provider/model/session statistics and cost; execution refuses at USD 2 per-cycle or USD 25 cumulative budget.
 
 The service hides the general home directory and read-only binds only the Softwareco tree, accepted bundle, required Pi authentication/configuration, pinned Pi Modes package, and AK binary. The worker receives a filtered environment, no tools, and only the pinned Pi Modes extension. Pi and Pi Modes package trees are digest-pinned. Provider networking remains necessary and is not destination-restricted; the canary does not defend against a malicious same-UID operator who can rewrite user services or Git. Its threat model is autonomous-process containment and fail-closed drift detection, not protection from the accountable workstation owner.
 

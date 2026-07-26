@@ -8,38 +8,66 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import selectors
+import signal
 import subprocess
 import sys
-import tempfile
+import time
 from typing import Any
 
 MAX_PROBE_BYTES = 2_000_000
 MAX_PACKET_BYTES = 8_000_000
+MAX_TOP_LEVEL_ENTRIES = 5_000
+MAX_GIT_ROOTS = 500
 
 
 def run(argv: list[str], cwd: Path, timeout: int = 60) -> dict[str, Any]:
     env = {k: v for k, v in os.environ.items() if k in {"HOME", "PATH", "AK_DB"}}
     env.update({"GIT_OPTIONAL_LOCKS": "0", "LC_ALL": "C", "TZ": "UTC"})
-    with tempfile.TemporaryFile() as stdout_file, tempfile.TemporaryFile() as stderr_file:
-        try:
-            cp = subprocess.run(argv, cwd=cwd, env=env, stdout=stdout_file, stderr=stderr_file,
-                                timeout=timeout, check=False)
-            exit_code = cp.returncode
-        except subprocess.TimeoutExpired:
-            exit_code = 124
-        stdout_size, stderr_size = stdout_file.tell(), stderr_file.tell()
-        stdout_file.seek(0); stderr_file.seek(0)
-        stdout = stdout_file.read(MAX_PROBE_BYTES)
-        stderr = stderr_file.read(MAX_PROBE_BYTES)
-    oversized = stdout_size > MAX_PROBE_BYTES or stderr_size > MAX_PROBE_BYTES
-    if exit_code == 124 and not stderr:
-        stderr = f"timeout after {timeout}s".encode()
-    return {
-        "argv": argv, "exit_code": exit_code,
-        "stdout": stdout.decode("utf-8", "replace"),
-        "stderr": stderr.decode("utf-8", "replace"),
-        "oversized": oversized,
-    }
+    proc = subprocess.Popen(argv, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            start_new_session=True)
+    assert proc.stdout and proc.stderr
+    selector = selectors.DefaultSelector()
+    selector.register(proc.stdout, selectors.EVENT_READ, "stdout")
+    selector.register(proc.stderr, selectors.EVENT_READ, "stderr")
+    buffers = {"stdout": bytearray(), "stderr": bytearray()}
+    deadline = time.monotonic() + timeout
+    oversized = timed_out = False
+    try:
+        while selector.get_map():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                timed_out = True; break
+            for key, _ in selector.select(min(remaining, 0.5)):
+                chunk = os.read(key.fileobj.fileno(), 65_536)
+                if not chunk:
+                    selector.unregister(key.fileobj); continue
+                buffer = buffers[key.data]
+                if len(buffer) + len(chunk) > MAX_PROBE_BYTES:
+                    buffer.extend(chunk[:MAX_PROBE_BYTES - len(buffer)])
+                    oversized = True; break
+                buffer.extend(chunk)
+            if oversized:
+                break
+        if oversized or timed_out:
+            os.killpg(proc.pid, signal.SIGKILL)
+        exit_code = proc.wait(timeout=5)
+    finally:
+        selector.close()
+        if proc.poll() is None:
+            os.killpg(proc.pid, signal.SIGKILL); proc.wait(timeout=5)
+        proc.stdout.close(); proc.stderr.close()
+    if timed_out:
+        exit_code = 124
+        if not buffers["stderr"]:
+            buffers["stderr"].extend(f"timeout after {timeout}s".encode())
+    elif oversized:
+        exit_code = 125
+        buffers["stderr"].extend(b"\nprobe output exceeded bounded capture")
+    return {"argv": argv, "exit_code": exit_code,
+            "stdout": buffers["stdout"].decode("utf-8", "replace"),
+            "stderr": buffers["stderr"].decode("utf-8", "replace"),
+            "oversized": oversized}
 
 
 def parse_json(result: dict[str, Any]) -> Any:
@@ -57,6 +85,37 @@ def payload(value: Any) -> Any:
     return value
 
 
+def compact_tasks(value: Any) -> Any:
+    if not isinstance(value, dict) or not isinstance(value.get("tasks"), list):
+        return value
+    fields = ("id", "title", "status", "priority", "claimed_by", "lease_expires_at", "depends_on", "entity_version")
+    return {"view": value.get("view"), "repo_scope": value.get("repo_scope"),
+            "status_filter": value.get("status_filter"), "count": value.get("count"),
+            "tasks": [{key: task.get(key) for key in fields} for task in value["tasks"]]}
+
+
+def compact_direction(value: Any) -> Any:
+    if not isinstance(value, dict) or not isinstance(value.get("nodes"), list):
+        return value
+    node_fields = ("key", "display_id", "kind", "title", "state", "state_detail", "horizon_class",
+                   "parent_key", "summary")
+    link_fields = ("link_role", "task_id", "task_status", "task_title", "decision_id", "decision_state", "decision_title")
+    nodes = []
+    for node in value["nodes"]:
+        compact = {key: node.get(key) for key in node_fields}
+        compact["task_links"] = [
+            {key: link.get(key) for key in link_fields if key in link}
+            for link in node.get("task_links", []) if link.get("task_status") != "done"
+        ]
+        compact["decision_links"] = [
+            {key: link.get(key) for key in link_fields if key in link}
+            for link in node.get("decision_links", [])
+        ]
+        nodes.append(compact)
+    return {"repo_scope": value.get("repo_scope"), "vision": value.get("vision"), "nodes": nodes,
+            "projection_note": "completed task-link edges and vnext compatibility expansion omitted; current nodes and nonterminal task links retained"}
+
+
 def digest(path: Path) -> dict[str, Any]:
     if not path.exists() or not path.is_file():
         return {"exists": False}
@@ -65,12 +124,21 @@ def digest(path: Path) -> dict[str, Any]:
             "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "mtime_ns": stat.st_mtime_ns}
 
 
-def discover_git_roots(owned: Path) -> list[str]:
+def discover_git_roots(owned: Path) -> tuple[list[str], list[str]]:
+    """Bounded supplemental top-level census; AK registration remains portfolio authority."""
     roots: set[str] = set()
-    for marker in owned.rglob(".git"):
+    entries = sorted(owned.iterdir())
+    if len(entries) > MAX_TOP_LEVEL_ENTRIES:
+        return [], [f"top-level filesystem census exceeded {MAX_TOP_LEVEL_ENTRIES} entries"]
+    for child in entries:
+        if not child.is_dir() or child.is_symlink():
+            continue
+        marker = child / ".git"
         if marker.is_dir() or marker.is_file():
-            roots.add(str(marker.parent.resolve()))
-    return sorted(roots)
+            roots.add(str(child.resolve()))
+        if len(roots) > MAX_GIT_ROOTS:
+            return sorted(roots), [f"top-level filesystem census exceeded {MAX_GIT_ROOTS} Git roots"]
+    return sorted(roots), []
 
 
 def registered_under_owned(inventory: list[dict[str, Any]], owned: Path) -> tuple[list[dict[str, Any]], list[str]]:
@@ -106,11 +174,11 @@ def main() -> int:
         print("AK repository inventory was not valid bounded JSON", file=sys.stderr)
         return 2
     registered, escaped_registrations = registered_under_owned(inventory, owned)
-    filesystem = discover_git_roots(owned)
+    filesystem, filesystem_census_gaps = discover_git_roots(owned)
     registered_paths = [str(Path(r["path"]).resolve()) for r in registered]
 
     records: list[dict[str, Any]] = []
-    gaps: list[str] = list(escaped_registrations)
+    gaps: list[str] = list(escaped_registrations) + filesystem_census_gaps
     for registration in registered:
         path = Path(registration["path"]).resolve()
         record: dict[str, Any] = {"registration": registration, "exists": path.is_dir()}
@@ -131,7 +199,8 @@ def main() -> int:
             parsed = parse_json(probe) if name.startswith("tasks_") or name == "direction" else None
             normalized[name] = {
                 "argv": probe["argv"], "exit_code": probe["exit_code"], "oversized": probe["oversized"],
-                "data": payload(parsed) if parsed is not None else None,
+                "data": (compact_direction(payload(parsed)) if name == "direction" else
+                         compact_tasks(payload(parsed))) if parsed is not None else None,
                 "stdout": probe["stdout"] if parsed is None else None,
                 "stderr": probe["stderr"],
             }

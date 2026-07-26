@@ -61,6 +61,8 @@ Prove refusal for:
 - 24 existing run directories;
 - failed/oversized/incomplete portfolio probes;
 - mode diagnostics, extension errors, UI, or tool execution;
+- wrong provider/model, missing normalized usage/cost, per-cycle budget breach, malformed prior cost history, or cumulative budget exhaustion;
+- runtime-package symlink escape or isolated package-copy digest drift;
 - malformed, unresolvable, or coverage-divergent proposal output;
 - watched AK DB or repository state change during a cycle.
 
@@ -79,7 +81,7 @@ systemctl --user list-timers 'softwareco-cto-canary*'
 journalctl --user -u softwareco-cto-canary.service --since today
 ```
 
-Do not call a cycle successful merely because the process exited zero. Inspect `result.json`, mode status, coverage, validation errors, watched state changes, runtime policy violations, and the proposal's evidence references.
+Do not call a cycle successful merely because the process exited zero. Inspect `result.json`, exact mode preview, provider/model, token/usage/cost and cumulative cost, coverage, validation errors, watched state changes, runtime policy violations, and the proposal's evidence references.
 
 ## Stop conditions
 
@@ -88,7 +90,7 @@ Stop immediately on unexpected AK/Git change, tool or extension activation, prom
 Direct-human early stop:
 
 ```bash
-<accepted-bundle>/cto-canary/stop_candidate.py --human-stop
+python3 <accepted-bundle>/cto-canary/stop_candidate.py --human-stop
 ```
 
 Expiry is authority by time. The stop timer invokes `--expiry` to disable triggers and update only local state; it does not impersonate a human AK receipt. Runtime also rejects late execution independently.

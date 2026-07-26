@@ -18,11 +18,11 @@ decision_id: 83
 - Candidate mode and preset lint successfully.
 - A fresh trusted-root no-session RPC process, with all extensions disabled except the pinned Pi Modes entrypoint, selected `softwareco-cto-canary` as role `base`, strategy `replace_base`, with no overlay and no diagnostics.
 - `/mode-preview --json` contained the exact canary prompt plus global/workspace/Softwareco AGENTS context, current date, and cwd.
-- Python compilation and fifteen deterministic unit tests passed, including path-escape, prompt-source/fingerprint, expiry, home-hiding, in-flight stop, and scoped-installer controls.
+- Python compilation and twenty-two deterministic unit tests passed, including path-escape, prompt-source/fingerprint, expiry, home-hiding, in-flight stop, and scoped-installer controls.
 - Two fixture cycles used distinct process IDs, produced noncanonical proposal-only outputs, and passed strict validation.
 - Production cycle invocation without activation refused with exit `3`.
 - Rendered service, hourly timer, expiry service, and 24-hour timer passed `systemd-analyze --user verify`. The command also reported an unrelated pre-existing warning from `school-asr-recorder.service`.
-- A real read-only collector run enumerated all 41 registered owned child repositories and produced a bounded 2.6 MB packet. It truthfully reported two missing registered repositories (`fcos-proving-lane` and `voice-dictation`) as coverage gaps rather than inferring completeness.
+- A real read-only collector run enumerated all 41 registered owned child repositories and produced a compact bounded 742 KB packet. It truthfully reported two missing registered repositories (`fcos-proving-lane` and `voice-dictation`) as coverage gaps rather than inferring completeness.
 
 ## Review correction
 
@@ -34,6 +34,8 @@ The first transcendent-loop implementation phase timed out and was not accepted 
 
 The first formal authority/security review of commit `3c551c4` returned `REVISE`. It additionally found self-attested bundle/unit identity, stale activation readback, in-flight expiry, path escape, broad home/environment exposure, incomplete mode-source proof, and missing negative controls. The correction compares bundle and rendered units with accepted Git objects, rereads decision/receipt before activation, caps and kills in-flight workers at stop/expiry, resolves portfolio paths under the owned root, hides general home state, filters the worker environment, pins Pi and Pi Modes trees, validates exact preview source/fingerprint/context, and adds negative tests. Remaining claims require fresh review of the correction commit.
 
+Attempt-2 authority and runtime reviews of `443d45e` also returned `REVISE`. The next correction verifies service/timer stop results, uses a 30-second process-wide pre-expiry guard, binds the AK DB, copies Pi and Pi Modes into digest-pinned isolated bundle trees with symlink containment, reconstructs the complete expected prompt byte-for-byte, bounds probe pipes and the supplemental top-level census, pins `openai-codex/gpt-5.6-sol`, records normalized usage/cost, and enforces USD 2 cycle/USD 25 cumulative budgets. These changes require another independent review.
+
 ## Not yet proved
 
 - AK Decision `83` exists but remains `review_pending`; it grants no operational authority;
@@ -42,6 +44,6 @@ The first formal authority/security review of commit `3c551c4` returned `REVISE`
 - no service/timer has been enabled or started;
 - no production model cycle or 24-hour canary has run;
 - no canary output usefulness, cost, reliability, or complete-window behavior has been observed;
-- the first authority/security review required revision and the first runtime/operator dispatch timed out; no review of the correction commit has closed.
+- two authority/security attempts and one completed runtime/operator attempt required revision; no review of the latest correction commit has closed.
 
 Passing fixtures and prompt preview are implementation proofs only, not operational canary proof.
