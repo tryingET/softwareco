@@ -355,6 +355,8 @@ Discovery uses `ak direction show IW-SF3-CTO77-RECURRING --machine`, validates e
 
 Revision 1 has no predecessor. Each later revision references one collected predecessor and equals predecessor revision + 1. Missing or wrong projected task/head, gaps, duplicate revisions, multiple successors, forks, cycles, multiple heads, expired head, invalid fact refs, over-limit sets, or missing census basis fails closed. Recommendations are proposal-only and never create owner commitments.
 
+The thesis series is Decision-77-global, not epoch-local. An epoch transition does not reset revision or predecessor lineage. Each thesis record is validated against the unique non-invalidated authorization named by its own `epoch_id`; only the projected head must belong to the currently active epoch and remain unexpired.
+
 ## Canonical wave and WIP model
 
 Successor wave keys use `IW-SF3-CTO77-<SLUG>` and are direct children of `SF3`, linked to Decision 77. Every admitted wave requires:
