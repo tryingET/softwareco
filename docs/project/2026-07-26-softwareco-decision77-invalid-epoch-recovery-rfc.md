@@ -106,12 +106,14 @@ Receipt `8967` may be quarantined only when its immediate successor is the uniqu
 1. the Decision-79 acceptance membrane passes and predates invalidation;
 2. direct-human source/actor, applied status, exact predecessor/state/schema/identities;
 3. measured constants equal the immutable timestamps in receipt `8967`;
-4. the pinned zero-operation evidence records task `4220` at `entity_version=1`, pending/null claim fields, source-mutation-forbidden scope, and active deferral `182`;
+4. the pinned zero-operation evidence records, and every live checker pass freshly rereads, task `4220` at `entity_version=1`, pending/null claim fields, source-mutation-forbidden scope, and active unresolved deferral `182` with `kind=until_decision`, `trigger_ref=decision:79`, no expiry, and exact recovery reason;
 5. bounded AK censuses show zero controller/objective evidence, thesis head `none`, no Decision-77 child outcome wave, and no owner admission/release receipt before invalidation;
 6. the direct-human receipts attest zero unenumerated external effects;
 7. no duplicate, fork, gap, malformed candidate, or later reuse of epoch, controller, or claimant identity exists.
 
-The epoch-index query requests `101` receipts and fails if more than `100` applied receipts exist. Validation builds the predecessor graph rather than trusting storage order: exactly one null-predecessor root, each non-root predecessor exists, at most one successor per node, no cycles, all nodes reachable, and exactly one head. Exactly one invalidation-schema receipt may exist; it must be the sole immediate successor of `8967`. The chain validator has three explicit branches: ordinary authorization, ordinary handback, and this exact one-time invalidation. Every field of `8967` remains validated; only its duration-equality failure is quarantined after the complete invalidation branch succeeds. All other authorizations retain exact equality.
+The epoch-index query requests `101` total receipts and fails closed whenever the raw response contains `101` entries, regardless of status; this is the overflow sentinel because the API has no applied-only count. Validation then filters applied receipts and builds the predecessor graph rather than trusting storage order: exactly one null-predecessor root, each non-root predecessor exists, at most one successor per node, no cycles, all nodes reachable, and exactly one head. Exactly one invalidation-schema receipt may exist; it must be the sole immediate successor of `8967`.
+
+The validator preserves all Decision-77 epoch-index transitions with explicit branches: ordinary authorization; ordinary claimant/human handback; direct-human revocation to `revoked`; direct-human terminal transition to `terminal`; and this exact one-time invalidation. Revocation/terminal branches must also match their fixed Decision-77 governance concerns and retain terminal precedence. Invalidation is the sole new branch. Every field of `8967` remains validated; only its duration-equality failure is quarantined after the complete invalidation branch succeeds. All other authorizations retain exact equality.
 
 The checker must never make receipt `8967` active or valid. Before the exact invalidation exists, every Decision 77 mode remains fail-closed.
 
