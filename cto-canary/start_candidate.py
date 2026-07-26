@@ -17,6 +17,7 @@ CONFIG = json.loads((HERE / "config.json").read_text())
 MANIFEST_PATH = BUNDLE / "manifest.json"
 ROOT = Path(CONFIG["cwd"])
 ROLLBACK = str(ROOT / "docs/project/2026-07-26-softwareco-autonomous-cto-canary-validation-rollout-rollback.md")
+from run_cycle import directory_digest, verify_bundle  # noqa: E402
 
 
 def run(argv: list[str], check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -28,6 +29,9 @@ def run(argv: list[str], check: bool = True) -> subprocess.CompletedProcess[str]
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Record direct-human activation and start the exact 24-hour canary")
+    parser.add_argument("--decision-id", required=True, type=int)
+    parser.add_argument("--acceptance-receipt-id", required=True, type=int)
+    parser.add_argument("--accepted-commit", required=True)
     parser.add_argument("--start", action="store_true", help="explicit direct-human activation acknowledgement")
     args = parser.parse_args()
     if not args.start:
@@ -39,8 +43,40 @@ def main() -> int:
     decision_id = manifest.get("decision_id")
     acceptance_id = manifest.get("acceptance_receipt_id")
     commit = manifest.get("accepted_commit")
-    if not isinstance(decision_id, int) or decision_id in (74, 77):
-        print("REFUSED: invalid installed decision identity", file=sys.stderr); return 3
+    if (not isinstance(decision_id, int) or decision_id in (74, 77) or
+            (args.decision_id, args.acceptance_receipt_id, args.accepted_commit) != (decision_id, acceptance_id, commit)):
+        print("REFUSED: explicit activation identity differs from installed accepted identity", file=sys.stderr); return 3
+    decision_envelope = json.loads(run(["ak", "decision", "get", str(decision_id), "--machine"]).stdout)
+    decision = decision_envelope.get("payload", {}).get("decision", {})
+    receipt = json.loads(run(["ak", "governance", "show", str(acceptance_id), "--format", "json"]).stdout)
+    expected_rfc = str(ROOT / "docs/project/2026-07-26-softwareco-autonomous-cto-canary-rfc.md")
+    if not (decision.get("outcome") == "accepted" and decision.get("state") == "unblocked" and
+            decision.get("rfc_ref") == expected_rfc and decision.get("evidence_ref") == f"governance:{acceptance_id}" and
+            receipt.get("source_authority") == "human-operator" and receipt.get("actor") == "human-operator" and
+            receipt.get("status") == "applied" and receipt.get("to_state") == "accepted" and
+            receipt.get("agreement_ref") == f"decision:{decision_id}" and
+            receipt.get("details", {}).get("schema") == "softwareco.architecture-decision-acceptance.v1" and
+            receipt.get("details", {}).get("decision_id") == decision_id and
+            receipt.get("details", {}).get("rfc_commit") == commit):
+        print("REFUSED: live decision/acceptance no longer authorizes this exact bundle", file=sys.stderr); return 3
+    pseudo_activation = {"bundle_dir": str(BUNDLE), "accepted_commit": commit, "decision_id": decision_id,
+                         "acceptance_receipt_id": acceptance_id,
+                         "bundle_manifest_sha256": hashlib.sha256(MANIFEST_PATH.read_bytes()).hexdigest()}
+    artifact_errors = verify_bundle(pseudo_activation)
+    if directory_digest(Path(CONFIG["pi_modes_package"])) != CONFIG["pi_modes_package_digest"]:
+        artifact_errors.append("pi-modes package digest drift")
+    if directory_digest(Path(CONFIG["pi_package"])) != CONFIG["pi_package_digest"]:
+        artifact_errors.append("Pi package digest drift")
+    version = run(["/usr/bin/node", CONFIG["pi_entrypoint"], "--version"]).stdout.strip()
+    if version != CONFIG["pi_version"]:
+        artifact_errors.append("Pi version drift")
+    for unit in ("softwareco-cto-canary.timer", "softwareco-cto-canary-stop.timer"):
+        if run(["systemctl", "--user", "is-active", "--quiet", unit], check=False).returncode == 0:
+            artifact_errors.append(f"unit unexpectedly active before activation: {unit}")
+        if run(["systemctl", "--user", "is-enabled", "--quiet", unit], check=False).returncode == 0:
+            artifact_errors.append(f"unit unexpectedly enabled before activation: {unit}")
+    if artifact_errors:
+        print("REFUSED: " + "; ".join(artifact_errors), file=sys.stderr); return 3
     state_dir = Path.home() / ".local/state/softwareco-cto-canary"
     activation_path = state_dir / "activation.json"
     if activation_path.exists():

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -12,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "cto-canary"))
 from validate_output import validate
 from fixture_rpc_worker import PROPOSAL
+from collect_snapshot import registered_under_owned
+from run_cycle import CONFIG, UNIT_NAMES, mode_proof_errors, read_activation, rendered_unit, verify_bundle
 
 
 class CanaryContractTests(unittest.TestCase):
@@ -95,6 +98,94 @@ class CanaryContractTests(unittest.TestCase):
         start = datetime.now(timezone.utc)
         expiry = start + timedelta(seconds=json.loads((ROOT / "cto-canary/config.json").read_text())["window_seconds"])
         self.assertEqual(int((expiry - start).total_seconds()), 86_400)
+
+    def test_registered_path_escape_and_symlink_escape_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp); owned = base / "owned"; owned.mkdir()
+            outside = base / "outside"; outside.mkdir()
+            (owned / "link").symlink_to(outside, target_is_directory=True)
+            inventory = [
+                {"path": str(owned / "valid")},
+                {"path": str(owned / ".." / "outside")},
+                {"path": str(owned / "link")},
+            ]
+            accepted, rejected = registered_under_owned(inventory, owned)
+        self.assertEqual([Path(item["path"]).name for item in accepted], ["valid"])
+        self.assertEqual(len(rejected), 2)
+
+    def test_mode_proof_binds_source_fingerprint_prompt_and_dynamic_context(self):
+        mode_path = ROOT / ".pi/modes/softwareco-cto-canary.json"
+        base = json.loads(mode_path.read_text())["systemPrompt"]
+        record = {
+            "selection": {"baseKey": "softwareco-cto-canary", "overlayKeys": []},
+            "components": [{"key": "softwareco-cto-canary", "role": "base", "strategy": "replace_base",
+                            "scope": "project", "path": str(mode_path), "digest": CONFIG["mode_component_digest"]}],
+            "prompt": base + "\n<project_context>\nCurrent date: " + datetime.now().date().isoformat() +
+                      "\nCurrent working directory: " + str(ROOT),
+            "diagnostics": [],
+        }
+        self.assertEqual(mode_proof_errors([record]), [])
+        record["components"][0]["path"] = "/wrong/mode.json"
+        self.assertTrue(mode_proof_errors([record]))
+
+    def test_expired_activation_refuses_before_live_ak_readback(self):
+        now = datetime.now(timezone.utc)
+        start = now - timedelta(hours=25); expiry = start + timedelta(hours=24)
+        activation = {
+            "schema_version": 1, "state": "active", "decision_id": 83,
+            "acceptance_receipt_id": 1, "activation_receipt_id": 2,
+            "accepted_commit": "a" * 40, "bundle_dir": "/missing", "bundle_manifest_sha256": "b" * 64,
+            "started_at_utc": start.isoformat(), "expires_at_utc": expiry.isoformat(),
+            "max_cycles": 24, "interval_seconds": 3600, "activated_by": "human-operator",
+            "control_concern": "fixture",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "activation.json"; path.write_text(json.dumps(activation))
+            _, errors = read_activation(path, Path(tmp))
+        self.assertTrue(any("not currently active" in error for error in errors))
+
+    def test_service_hides_home_and_stop_kills_inflight_worker(self):
+        service = (ROOT / "cto-canary/systemd/softwareco-cto-canary.service").read_text()
+        stop = (ROOT / "cto-canary/stop_candidate.py").read_text()
+        self.assertIn("ProtectHome=tmpfs", service)
+        self.assertIn("KillMode=control-group", service)
+        self.assertIn('"stop", "softwareco-cto-canary.service"', stop)
+
+    def test_installer_clean_scope_includes_decision_and_plans(self):
+        source = (ROOT / "cto-canary/activate_candidate.py").read_text()
+        self.assertIn("docs/decisions/2026-07-26-softwareco-autonomous-cto-canary.md", source)
+        self.assertIn("docs/project/2026-07-26-softwareco-autonomous-cto-canary-rfc.md", source)
+        self.assertIn("tests/test_cto_canary.py", source)
+
+    def test_bundle_and_units_bind_to_git_not_rewritten_manifest(self):
+        commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
+                                capture_output=True, check=True).stdout.strip()
+        accepted_config = json.loads(subprocess.run(
+            ["git", "show", f"{commit}:cto-canary/config.json"], cwd=ROOT,
+            text=True, capture_output=True, check=True).stdout)
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = Path(tmp) / "bundle"; units = Path(tmp) / "units"; units.mkdir()
+            hashes = {}
+            for relative in accepted_config["accepted_bundle_files"]:
+                data = subprocess.run(["git", "show", f"{commit}:{relative}"], cwd=ROOT,
+                                      capture_output=True, check=True).stdout
+                target = bundle / relative; target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
+                hashes[relative] = hashlib.sha256(data).hexdigest()
+            manifest = {"schema_version": 1, "accepted_commit": commit, "decision_id": 83,
+                        "acceptance_receipt_id": 999, "files": hashes}
+            manifest_path = bundle / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest, sort_keys=True))
+            for name in UNIT_NAMES:
+                (units / name).write_bytes(rendered_unit(commit, name, bundle))
+            activation = {"bundle_dir": str(bundle), "accepted_commit": commit, "decision_id": 83,
+                          "acceptance_receipt_id": 999,
+                          "bundle_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest()}
+            self.assertEqual(verify_bundle(activation, units), [])
+            target = bundle / "cto-canary/run_cycle.py"; target.write_text("tampered\n")
+            manifest["files"]["cto-canary/run_cycle.py"] = hashlib.sha256(target.read_bytes()).hexdigest()
+            manifest_path.write_text(json.dumps(manifest, sort_keys=True))
+            activation["bundle_manifest_sha256"] = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+            self.assertTrue(any("accepted Git blob" in error for error in verify_bundle(activation, units)))
 
 
 if __name__ == "__main__":

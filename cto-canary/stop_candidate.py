@@ -37,6 +37,8 @@ def main() -> int:
     now = datetime.now(timezone.utc)
     if args.expiry and now < expiry:
         print("REFUSED: expiry service fired before the exact authority deadline", file=sys.stderr); return 3
+    # Kill any in-flight model process through the main service cgroup before disabling triggers.
+    run(["systemctl", "--user", "stop", "softwareco-cto-canary.service"], check=False)
     if args.human_stop:
         chain = json.loads(run(["ak", "governance", "list", "--concern", state["control_concern"], "--limit", "100", "--json"]).stdout)
         if not chain or chain[-1].get("id") != state["activation_receipt_id"]:

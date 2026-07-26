@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 from typing import Any
 
 MAX_PROBE_BYTES = 2_000_000
@@ -19,19 +20,26 @@ MAX_PACKET_BYTES = 8_000_000
 def run(argv: list[str], cwd: Path, timeout: int = 60) -> dict[str, Any]:
     env = {k: v for k, v in os.environ.items() if k in {"HOME", "PATH", "AK_DB"}}
     env.update({"GIT_OPTIONAL_LOCKS": "0", "LC_ALL": "C", "TZ": "UTC"})
-    try:
-        cp = subprocess.run(argv, cwd=cwd, env=env, text=False, capture_output=True,
-                            timeout=timeout, check=False)
-        stdout, stderr = cp.stdout, cp.stderr
-        oversized = len(stdout) > MAX_PROBE_BYTES or len(stderr) > MAX_PROBE_BYTES
-        return {
-            "argv": argv, "exit_code": cp.returncode,
-            "stdout": stdout[:MAX_PROBE_BYTES].decode("utf-8", "replace"),
-            "stderr": stderr[:MAX_PROBE_BYTES].decode("utf-8", "replace"),
-            "oversized": oversized,
-        }
-    except subprocess.TimeoutExpired:
-        return {"argv": argv, "exit_code": 124, "stdout": "", "stderr": f"timeout after {timeout}s", "oversized": False}
+    with tempfile.TemporaryFile() as stdout_file, tempfile.TemporaryFile() as stderr_file:
+        try:
+            cp = subprocess.run(argv, cwd=cwd, env=env, stdout=stdout_file, stderr=stderr_file,
+                                timeout=timeout, check=False)
+            exit_code = cp.returncode
+        except subprocess.TimeoutExpired:
+            exit_code = 124
+        stdout_size, stderr_size = stdout_file.tell(), stderr_file.tell()
+        stdout_file.seek(0); stderr_file.seek(0)
+        stdout = stdout_file.read(MAX_PROBE_BYTES)
+        stderr = stderr_file.read(MAX_PROBE_BYTES)
+    oversized = stdout_size > MAX_PROBE_BYTES or stderr_size > MAX_PROBE_BYTES
+    if exit_code == 124 and not stderr:
+        stderr = f"timeout after {timeout}s".encode()
+    return {
+        "argv": argv, "exit_code": exit_code,
+        "stdout": stdout.decode("utf-8", "replace"),
+        "stderr": stderr.decode("utf-8", "replace"),
+        "oversized": oversized,
+    }
 
 
 def parse_json(result: dict[str, Any]) -> Any:
@@ -65,6 +73,24 @@ def discover_git_roots(owned: Path) -> list[str]:
     return sorted(roots)
 
 
+def registered_under_owned(inventory: list[dict[str, Any]], owned: Path) -> tuple[list[dict[str, Any]], list[str]]:
+    owned = owned.resolve()
+    accepted: list[dict[str, Any]] = []
+    rejected: list[str] = []
+    for registration in inventory:
+        raw = registration.get("path")
+        if not isinstance(raw, str):
+            continue
+        resolved = Path(raw).expanduser().resolve()
+        if resolved == owned:
+            continue  # lane root is the container, not an owned-portfolio child repository
+        if resolved.is_relative_to(owned):
+            item = dict(registration); item["path"] = str(resolved); accepted.append(item)
+        elif raw.startswith(str(owned)):
+            rejected.append(f"registered path escapes resolved owned root: {raw} -> {resolved}")
+    return sorted(accepted, key=lambda r: r["path"]), sorted(rejected)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True, type=Path)
@@ -79,13 +105,12 @@ def main() -> int:
     if not isinstance(inventory, list):
         print("AK repository inventory was not valid bounded JSON", file=sys.stderr)
         return 2
-    prefix = str(owned) + os.sep
-    registered = sorted((r for r in inventory if str(r.get("path", "")).startswith(prefix)), key=lambda r: r["path"])
+    registered, escaped_registrations = registered_under_owned(inventory, owned)
     filesystem = discover_git_roots(owned)
     registered_paths = [str(Path(r["path"]).resolve()) for r in registered]
 
     records: list[dict[str, Any]] = []
-    gaps: list[str] = []
+    gaps: list[str] = list(escaped_registrations)
     for registration in registered:
         path = Path(registration["path"]).resolve()
         record: dict[str, Any] = {"registration": registration, "exists": path.is_dir()}

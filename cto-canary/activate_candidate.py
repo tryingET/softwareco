@@ -13,21 +13,18 @@ import sys
 ROOT = Path(__file__).resolve().parent.parent
 RFC = str(ROOT / "docs/project/2026-07-26-softwareco-autonomous-cto-canary-rfc.md")
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
-FILES = [
-    ".pi/modes/softwareco-cto-canary.json",
-    ".pi/mode-presets/softwareco-cto-canary.json",
-    "cto-canary/config.json",
-    "cto-canary/output.schema.json",
-    "cto-canary/collect_snapshot.py",
-    "cto-canary/validate_output.py",
-    "cto-canary/fixture_rpc_worker.py",
-    "cto-canary/run_cycle.py",
-    "cto-canary/start_candidate.py",
-    "cto-canary/stop_candidate.py",
-    "cto-canary/systemd/softwareco-cto-canary.service",
-    "cto-canary/systemd/softwareco-cto-canary.timer",
-    "cto-canary/systemd/softwareco-cto-canary-stop.service",
-    "cto-canary/systemd/softwareco-cto-canary-stop.timer",
+CONFIG = json.loads((ROOT / "cto-canary/config.json").read_text())
+FILES = CONFIG["accepted_bundle_files"]
+SCOPED_PATHS = [
+    ".gitignore", ".pi/modes/softwareco-cto-canary.json", ".pi/mode-presets/softwareco-cto-canary.json",
+    "cto-canary", "tests/test_cto_canary.py",
+    "docs/decisions/2026-07-26-softwareco-autonomous-cto-canary.md",
+    "docs/project/2026-07-26-softwareco-autonomous-cto-canary-problem-intent.md",
+    "docs/project/2026-07-26-softwareco-autonomous-cto-canary-rfc.md",
+    "docs/project/2026-07-26-softwareco-autonomous-cto-canary-implementation-plan.md",
+    "docs/project/2026-07-26-softwareco-autonomous-cto-canary-validation-rollout-rollback.md",
+    "docs/project/2026-07-26-softwareco-autonomous-cto-canary-handoff.md",
+    "docs/project/2026-07-26-softwareco-autonomous-cto-canary-evidence.md",
 ]
 
 
@@ -61,7 +58,7 @@ def main() -> int:
     source_blob = blob(args.accepted_commit, "cto-canary/activate_candidate.py")
     if head != args.accepted_commit or hashlib.sha256(Path(__file__).read_bytes()).digest() != hashlib.sha256(source_blob).digest():
         print("REFUSED: installer is not executing from the exact accepted HEAD/blob", file=sys.stderr); return 3
-    scoped_status = command(["git", "status", "--porcelain", "--", *FILES, "cto-canary/activate_candidate.py"]).stdout
+    scoped_status = command(["git", "status", "--porcelain", "--", *SCOPED_PATHS]).stdout
     if scoped_status:
         print("REFUSED: accepted canary paths have uncommitted changes", file=sys.stderr); return 3
 
@@ -105,6 +102,9 @@ def main() -> int:
         for old, new in replacements.items():
             text = text.replace(old, new)
         (unit_dir / name).write_text(text)
+    for path in sorted(bundle.rglob("*"), reverse=True):
+        path.chmod(0o555 if path.is_dir() else 0o444)
+    bundle.chmod(0o555)
     subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
     print(json.dumps({"installed": True, "started": False, "enabled": False,
                       "bundle": str(bundle), "accepted_commit": args.accepted_commit}, sort_keys=True))

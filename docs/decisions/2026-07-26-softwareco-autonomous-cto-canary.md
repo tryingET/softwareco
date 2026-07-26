@@ -34,7 +34,7 @@ The worker may sense bounded AK-registered portfolio facts, detect drift/blocker
 
 The worker and supervisor may not mutate AK, direction, evidence, governance, decisions, Git, owner repos, FCOS, publication, release, or external systems. Model API calls and private local canary state are the only accepted operational effects. Outputs are proposal-only and noncanonical.
 
-Architecture acceptance does not start the canary. A direct human separately installs the exact accepted Git bundle and separately records an exact activation receipt before enabling timers. Runtime rereads authority and immutable artifacts every cycle. Authority ends at the exact 24-hour deadline even if timer cleanup fails.
+Architecture acceptance does not start the canary. A direct human separately installs the exact accepted Git bundle and separately records an exact activation receipt before enabling timers. Runtime rereads authority and compares bundle, units, prompt source, and runtime packages against accepted Git/digest facts every cycle. Authority ends at the exact 24-hour deadline even if timer cleanup fails.
 
 ## Relationship to existing decisions
 
@@ -62,4 +62,4 @@ Costs and risks:
 
 ## Rollback
 
-Before acceptance, revert candidate source only. After install but before activation, remove disabled units and immutable bundle. After activation, use the direct-human stop path, preserve receipts/results, disable timers, and review discrepancies. Never delete AK history or mutate owner tasks as rollback.
+Before acceptance, revert candidate source only. After install but before activation, remove disabled units and the commit-addressed bundle. After activation, use the direct-human stop path, preserve receipts/results, disable timers, and review discrepancies. Never delete AK history or mutate owner tasks as rollback.

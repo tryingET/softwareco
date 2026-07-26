@@ -12,7 +12,7 @@ review_closure_mode: "multi_lane_requires_synthesis"
 system4d:
   container: "Softwareco company-level observational canary."
   compass: "Learn whether continuous CTO sensing is useful without transferring owner authority."
-  engine: "Human acceptance -> immutable install -> human activation -> 24 fresh cycles -> expiry -> synthesis."
+  engine: "Human acceptance -> commit-addressed install -> human activation -> 24 fresh cycles -> expiry -> synthesis."
   fog: "Prompt identity, hidden session state, authority drift, incomplete census, model cost, and scheduler persistence."
 ---
 
@@ -34,7 +34,7 @@ pi --system-prompt <text-or-file>
 
 The canary deliberately uses the reviewed Pi Modes `replace_base` strategy instead. `replace_base` replaces Pi's static native base while retaining append-system content, trusted AGENTS/CLAUDE context, visible skills, date, cwd, and explicitly selected overlays. It adds fingerprints, drift blocking, mode status, and exact composition preview that a loose flag does not provide.
 
-The accepted mode is `.pi/modes/softwareco-cto-canary.json`; the preset selects it as the sole base with no overlays. Production workers start with structured `PI_MODES`, then prove through `/mode-status --json` that the effective component is the expected project-scoped `replace_base` definition with no diagnostics.
+The accepted mode is `.pi/modes/softwareco-cto-canary.json`; the preset selects it as the sole base with no overlays. Production workers start with structured `PI_MODES`, then prove through `/mode-preview --json` that the effective component has the accepted project path and semantic fingerprint, uses `replace_base`, has no diagnostics, and composes the accepted base with current dynamic context.
 
 The production worker intentionally selects no tools, skills, prompt templates, themes, or extensions except the pinned `@tryinget/pi-modes` extension. The replace-base composition mechanism still preserves those dynamic slots; their selected skill/tool sets are empty for this first canary.
 
@@ -42,20 +42,20 @@ The production worker intentionally selects no tools, skills, prompt templates, 
 
 ```text
 systemd hourly timer
--> immutable accepted bundle/run_cycle.py
+-> commit-addressed accepted bundle/run_cycle.py
 -> live AK decision, acceptance, activation-chain, expiry, bundle, Pi, and mode checks
 -> bounded read-only AK/Git portfolio snapshot
 -> fresh pi --mode rpc --no-session worker
--> exact replace_base mode-status proof
+-> exact replace_base mode-preview proof
 -> tool-free model proposal
 -> strict schema/reference/coverage validation
 -> watched AK/Git before-after comparison
 -> noncanonical local result
 ```
 
-A separate 24-hour stop timer disables future triggers. Runtime independently rejects execution after the exact activation deadline or after 24 run directories, even if timer shutdown is delayed.
+A separate 24-hour stop timer disables future triggers. Runtime independently rejects execution after the exact activation deadline or after 24 run directories, even if timer shutdown is delayed. A worker timeout is capped to the remaining authorized interval with a guard margin. Expiry or direct-human stop terminates the main service cgroup, so an in-flight worker is not allowed to continue model effects after authority ends.
 
-## Immutable installation and activation
+## Commit-addressed installation and activation
 
 `activate_candidate.py` may run only by direct human after the new AK decision is accepted. It requires:
 
@@ -66,9 +66,9 @@ A separate 24-hour stop timer disables future triggers. Runtime independently re
 
 It installs blobs read from the accepted Git object into a commit-addressed bundle and writes a digest manifest. It installs but does not enable or start systemd units.
 
-`start_candidate.py --start` is a second direct-human action. It fresh-reads the installed manifest, requires an empty decision-specific control chain, records one direct-human activation receipt, writes a local activation membrane, and enables the hourly and expiry timers. The receipt binds an exact start, exact 24-hour expiry, 24-cycle maximum, accepted commit, and activity envelope.
+`start_candidate.py` with repeated exact decision/receipt/commit arguments and `--start` is a second direct-human action. It fresh-reads the decision, acceptance receipt, accepted Git blobs, installed bundle, rendered units, runtime package digests, and requires an empty decision-specific control chain, records one direct-human activation receipt, writes a local activation membrane, and enables the hourly and expiry timers. The receipt binds an exact start, exact 24-hour expiry, 24-cycle maximum, accepted commit, and activity envelope. The script's flags and attribution fields do not technically prove a person is present; the transition is lawful only when the accountable human directly invokes the reviewed command. Automation is forbidden from invoking this activation path.
 
-Every production cycle fresh-reads the decision, acceptance receipt, control-chain head, activation receipt, bundle manifest, trusted-root mode digest, pinned Pi version, and pinned Pi Modes package digest. Any drift fails closed.
+Every production cycle fresh-reads the decision, acceptance receipt, control-chain head, activation receipt, bundle and rendered units against accepted Git objects, trusted-root mode source/fingerprint/composed preview, pinned Pi package digest/version, and pinned Pi Modes package digest. Any drift fails closed.
 
 ## Allowed autonomous activity
 
@@ -96,6 +96,8 @@ The worker may recommend but never self-dispatch any orchestrator.
 The worker and supervisor may not create, claim, update, close, or mutate AK tasks, evidence, direction, governance, or decisions; mutate Git or owner repos; write FCOS; publish or release; cause public/irreversible effects; treat a draft as consent; or use a Pi transcript/result as authority. Installation, architecture acceptance, activation, and early stop are direct-human operations, not canary operations.
 
 Model API calls and private local canary state are explicit operational effects of activation. The verifier does not overclaim proof of all external effects: it proves prompt/runtime gates, disabled capabilities, output/reference contracts, and watched AK/Git before-after equality.
+
+The service hides the general home directory and read-only binds only the Softwareco tree, accepted bundle, required Pi authentication/configuration, pinned Pi Modes package, and AK binary. The worker receives a filtered environment, no tools, and only the pinned Pi Modes extension. Pi and Pi Modes package trees are digest-pinned. Provider networking remains necessary and is not destination-restricted; the canary does not defend against a malicious same-UID operator who can rewrite user services or Git. Its threat model is autonomous-process containment and fail-closed drift detection, not protection from the accountable workstation owner.
 
 ## Portfolio and proposal contract
 
@@ -126,7 +128,7 @@ The canary creates no backlog. AK remains task, decision, direction, evidence, a
 3. Obtain controlling multi-lane `ready_for_adr` synthesis.
 4. Prepare candidate ADR and exact accepted commit.
 5. Pause for direct-human architecture acceptance.
-6. Direct human installs the immutable accepted bundle.
+6. Direct human installs the commit-addressed accepted bundle.
 7. Direct human separately activates the exact 24-hour window.
 8. Observe hourly results and fail-closed behavior.
 9. Expire automatically or stop early by direct human.

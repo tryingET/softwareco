@@ -29,7 +29,7 @@ Require all of the following:
 
 The controller prepares one exact acceptance script with concrete `<DECISION_ID>`, `<TASK_ID>`, `<COMMIT>`, and review references, then pauses. The human executes it directly. Fresh-read the resulting receipt and decision; pasted output is not authority.
 
-## Gate B — immutable install, no start
+## Gate B — commit-addressed install, no start
 
 After accepted readback:
 
@@ -48,7 +48,11 @@ Expected result states `installed=true`, `started=false`, and `enabled=false`. I
 From the installer-reported accepted bundle:
 
 ```bash
-<ACCEPTED_BUNDLE>/cto-canary/start_candidate.py --start
+<ACCEPTED_BUNDLE>/cto-canary/start_candidate.py \
+  --decision-id 83 \
+  --acceptance-receipt-id <ACCEPTANCE_RECEIPT_ID> \
+  --accepted-commit <COMMIT> \
+  --start
 ```
 
 This direct-human command records the decision-specific activation receipt, writes its exact 24-hour activation membrane, and enables both timers. Fresh-read the control concern and timer state. Stop if receipt, time, commit, or timer state differs.
@@ -62,7 +66,7 @@ journalctl --user -u softwareco-cto-canary.service --since today
 find ~/.local/state/softwareco-cto-canary/runs -mindepth 1 -maxdepth 1 -type d | sort
 ```
 
-For each cycle inspect `result.json`, `mode-status.json`, and errors. Treat all content as proposal-only. Human/AK/owner workflows remain separate.
+For each cycle inspect `result.json`, `mode-preview.json`, and errors. Treat all content as proposal-only. Human/AK/owner workflows remain separate.
 
 ## Early stop
 

@@ -14,7 +14,7 @@ decision_id: 83
 ## Slice 1 — inactive artifacts
 
 1. Track the `replace_base` mode and exact preset.
-2. Track bounded collector, validator, supervisor cycle, immutable installer, direct-human start/stop tools, and systemd unit templates.
+2. Track bounded collector, validator, supervisor cycle, commit-addressed drift-detecting installer, direct-human start/stop tools, and systemd unit templates.
 3. Track strict output schema and deterministic fixture tests.
 4. Keep every production cycle fail-closed without accepted decision plus activation receipt.
 
@@ -27,7 +27,7 @@ Validate:
 - rendered systemd unit verification;
 - absent-activation refusal;
 - two deterministic fresh fixture cycles;
-- fresh real Pi `/mode-status` and `/mode-preview` proof;
+- fresh real Pi `/mode-preview` source/fingerprint/composition proof;
 - collector bounded real read-only snapshot;
 - no AK, Git, direction, owner, service, or external mutation from fixture proof.
 
@@ -41,7 +41,7 @@ A real model cycle is not legal before acceptance and activation.
 4. Require a controlling synthesis that cites both tracks.
 5. Prepare the ADR only after `ready_for_adr` closure.
 
-## Slice 4 — human acceptance and immutable installation
+## Slice 4 — human acceptance and commit-addressed installation
 
 1. Commit the exact reviewed candidate and ADR.
 2. Prepare one exact architecture-acceptance command binding the full commit.
@@ -52,7 +52,7 @@ A real model cycle is not legal before acceptance and activation.
 ## Slice 5 — 24-hour test drive
 
 1. Review installed manifest and systemd units.
-2. Direct human runs `start_candidate.py --start`.
+2. Direct human runs `start_candidate.py` with exact decision, receipt, commit, and `--start` arguments.
 3. Fresh-read activation receipt and timer status.
 4. Observe the first cycle before relying on later cycles.
 5. Monitor at most 24 hourly run directories, model/API failures, coverage, usefulness, and cost.

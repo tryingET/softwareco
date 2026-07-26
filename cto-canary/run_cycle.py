@@ -30,6 +30,10 @@ ACTIVATION_KEYS = {
     "accepted_commit", "bundle_dir", "bundle_manifest_sha256", "started_at_utc", "expires_at_utc",
     "max_cycles", "interval_seconds", "activated_by", "control_concern",
 }
+UNIT_NAMES = (
+    "softwareco-cto-canary.service", "softwareco-cto-canary.timer",
+    "softwareco-cto-canary-stop.service", "softwareco-cto-canary-stop.timer",
+)
 
 
 def sha256(path: Path) -> str | None:
@@ -77,28 +81,69 @@ def directory_digest(root: Path) -> str:
     return h.hexdigest()
 
 
-def verify_bundle(activation: dict[str, Any]) -> list[str]:
+def git_blob(commit: str, relative: str) -> bytes:
+    cp = subprocess.run(["git", "show", f"{commit}:{relative}"], cwd=ROOT, capture_output=True, check=False)
+    if cp.returncode:
+        raise RuntimeError(f"accepted Git blob is unavailable: {relative}: {cp.stderr.decode(errors='replace').strip()}")
+    return cp.stdout
+
+
+def rendered_unit(commit: str, name: str, bundle: Path) -> bytes:
+    text = git_blob(commit, f"cto-canary/systemd/{name}").decode()
+    text = text.replace("@BUNDLE_DIR@", str(bundle / "cto-canary")).replace("@ROOT@", str(ROOT))
+    return text.encode()
+
+
+def verify_bundle(activation: dict[str, Any], unit_dir: Path | None = None) -> list[str]:
+    """Bind bundle, manifest, project mode, and installed units to accepted Git objects."""
     errors: list[str] = []
     bundle = Path(activation["bundle_dir"])
+    commit = activation["accepted_commit"]
     manifest_path = bundle / "manifest.json"
     if sha256(manifest_path) != activation["bundle_manifest_sha256"]:
-        return ["installed bundle manifest digest differs from activation"]
+        errors.append("installed bundle manifest digest differs from activation")
     try:
         manifest = json.loads(manifest_path.read_text())
     except (OSError, json.JSONDecodeError):
-        return ["installed bundle manifest is unreadable"]
-    if manifest.get("accepted_commit") != activation["accepted_commit"] or not isinstance(manifest.get("files"), dict):
-        return ["installed bundle manifest identity is invalid"]
-    for relative, expected in manifest["files"].items():
-        if sha256(bundle / relative) != expected:
-            errors.append(f"installed accepted artifact drift: {relative}")
-    accepted_mode = manifest["files"].get(".pi/modes/softwareco-cto-canary.json")
-    if sha256(ROOT / ".pi/modes/softwareco-cto-canary.json") != accepted_mode:
-        errors.append("trusted-root CTO canary mode differs from the accepted artifact")
+        return errors + ["installed bundle manifest is unreadable"]
+    try:
+        accepted_config = json.loads(git_blob(commit, "cto-canary/config.json"))
+        expected_files = accepted_config["accepted_bundle_files"]
+    except (RuntimeError, KeyError, json.JSONDecodeError) as exc:
+        return errors + [f"accepted Git config/file set is unreadable: {exc}"]
+    if (manifest.get("accepted_commit") != commit or manifest.get("decision_id") != activation["decision_id"] or
+            manifest.get("acceptance_receipt_id") != activation["acceptance_receipt_id"] or
+            set(manifest.get("files", {})) != set(expected_files)):
+        errors.append("installed bundle manifest identity/file set is invalid")
+    for relative in expected_files:
+        try:
+            accepted = git_blob(commit, relative)
+        except RuntimeError as exc:
+            errors.append(str(exc)); continue
+        accepted_sha = hashlib.sha256(accepted).hexdigest()
+        if manifest.get("files", {}).get(relative) != accepted_sha:
+            errors.append(f"manifest is not bound to accepted Git blob: {relative}")
+        if sha256(bundle / relative) != accepted_sha:
+            errors.append(f"installed artifact differs from accepted Git blob: {relative}")
+    try:
+        accepted_mode_sha = hashlib.sha256(git_blob(commit, ".pi/modes/softwareco-cto-canary.json")).hexdigest()
+    except RuntimeError as exc:
+        errors.append(str(exc)); accepted_mode_sha = None
+    if sha256(ROOT / ".pi/modes/softwareco-cto-canary.json") != accepted_mode_sha:
+        errors.append("trusted-root CTO canary mode differs from accepted Git blob")
+    unit_dir = unit_dir or Path.home() / ".config/systemd/user"
+    for name in UNIT_NAMES:
+        try:
+            expected = rendered_unit(commit, name, bundle)
+        except RuntimeError as exc:
+            errors.append(str(exc)); continue
+        installed = unit_dir / name
+        if not installed.is_file() or installed.read_bytes() != expected:
+            errors.append(f"installed systemd unit differs from accepted rendered template: {name}")
     return errors
 
 
-def read_activation(path: Path, state_dir: Path) -> tuple[dict[str, Any] | None, list[str]]:
+def read_activation(path: Path, state_dir: Path, current_run_reserved: bool = False) -> tuple[dict[str, Any] | None, list[str]]:
     errors: list[str] = []
     try:
         value = json.loads(path.read_text())
@@ -126,7 +171,7 @@ def read_activation(path: Path, state_dir: Path) -> tuple[dict[str, Any] | None,
     if value.get("max_cycles") != CONFIG["max_cycles"] or value.get("interval_seconds") != CONFIG["interval_seconds"]:
         errors.append("activation cycle bounds differ from accepted config")
     run_count = len([p for p in (state_dir / "runs").glob("*") if p.is_dir()]) if (state_dir / "runs").exists() else 0
-    if run_count >= CONFIG["max_cycles"]:
+    if run_count > CONFIG["max_cycles"] or (run_count == CONFIG["max_cycles"] and not current_run_reserved):
         errors.append("maximum canary cycle count reached")
     if errors:
         return value, errors
@@ -163,10 +208,13 @@ def read_activation(path: Path, state_dir: Path) -> tuple[dict[str, Any] | None,
     if not isinstance(chain, list) or not chain or chain[-1].get("id") != value["activation_receipt_id"]:
         errors.append("canary control chain head is not the activation receipt")
     errors.extend(verify_bundle(value))
-    package = Path(CONFIG["pi_modes_package"])
-    if directory_digest(package) != CONFIG["pi_modes_package_digest"]:
+    modes_package = Path(CONFIG["pi_modes_package"])
+    if directory_digest(modes_package) != CONFIG["pi_modes_package_digest"]:
         errors.append("installed pi-modes package differs from the reviewed pinned digest")
-    version = run(["pi", "--version"]).stdout.strip()
+    pi_package = Path(CONFIG["pi_package"])
+    if directory_digest(pi_package) != CONFIG["pi_package_digest"]:
+        errors.append("installed Pi package differs from the reviewed pinned digest")
+    version = run(["/usr/bin/node", CONFIG["pi_entrypoint"], "--version"]).stdout.strip()
     if version != CONFIG["pi_version"]:
         errors.append(f"Pi version drift: expected {CONFIG['pi_version']}, observed {version}")
     return value, errors
@@ -192,7 +240,7 @@ def watched_state(packet: dict[str, Any], db_path: Path) -> list[str]:
 
 def worker_argv() -> list[str]:
     extension = str(Path(CONFIG["pi_modes_package"]) / "extensions/mode.ts")
-    return ["pi", *CONFIG["worker_arguments"], "--extension", extension]
+    return ["/usr/bin/node", CONFIG["pi_entrypoint"], *CONFIG["worker_arguments"], "--extension", extension]
 
 
 def read_event(proc: subprocess.Popen[str], selector: selectors.BaseSelector, deadline: float) -> dict[str, Any]:
@@ -218,10 +266,34 @@ def send(proc: subprocess.Popen[str], value: dict[str, Any]) -> None:
     proc.stdin.flush()
 
 
+def mode_proof_errors(records: list[dict[str, Any]]) -> list[str]:
+    mode_path = ROOT / ".pi/modes/softwareco-cto-canary.json"
+    try:
+        base_prompt = json.loads(mode_path.read_text())["systemPrompt"]
+    except (OSError, KeyError, json.JSONDecodeError) as exc:
+        return [f"accepted mode is unreadable: {exc}"]
+    expected_selection = {"baseKey": CONFIG["mode_base_key"], "overlayKeys": []}
+    for value in records:
+        components = value.get("components", [])
+        component_ok = any(
+            component.get("key") == CONFIG["mode_base_key"] and component.get("role") == "base" and
+            component.get("strategy") == "replace_base" and component.get("scope") == "project" and
+            component.get("path") == str(mode_path) and component.get("digest") == CONFIG["mode_component_digest"]
+            for component in components
+        )
+        prompt = value.get("prompt")
+        prompt_ok = (isinstance(prompt, str) and prompt.startswith(base_prompt) and "<project_context>" in prompt and
+                     f"Current date: {datetime.now().date().isoformat()}" in prompt and
+                     f"Current working directory: {ROOT}" in prompt)
+        if value.get("selection") == expected_selection and component_ok and prompt_ok and not value.get("diagnostics"):
+            return []
+    return ["mode preview did not prove accepted project source, fingerprint, replace_base prompt, and dynamic context"]
+
+
 def rpc_cycle(packet: dict[str, Any], stderr_path: Path, timeout: int) -> tuple[object, dict[str, Any]]:
-    env = os.environ.copy()
-    env.update({"PI_MODES": json.dumps({"baseKey": CONFIG["mode_base_key"], "overlayKeys": []}, separators=(",", ":")),
-                "GIT_OPTIONAL_LOCKS": "0", "LC_ALL": "C", "TZ": "UTC"})
+    env = {key: os.environ[key] for key in ("HOME", "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS") if key in os.environ}
+    env.update({"PATH": "/usr/bin:/bin", "PI_MODES": json.dumps({"baseKey": CONFIG["mode_base_key"], "overlayKeys": []}, separators=(",", ":")),
+                "GIT_OPTIONAL_LOCKS": "0", "LC_ALL": "C", "TZ": "UTC", "TMPDIR": os.environ.get("TMPDIR", "/tmp")})
     argv = worker_argv()
     events: list[dict[str, Any]] = []
     violations: list[str] = []
@@ -233,14 +305,14 @@ def rpc_cycle(packet: dict[str, Any], stderr_path: Path, timeout: int) -> tuple[
         selector.register(proc.stdout, selectors.EVENT_READ)
         deadline = time.monotonic() + timeout
         try:
-            send(proc, {"id": "mode-status", "type": "prompt", "message": "/mode-status --json"})
+            send(proc, {"id": "mode-preview", "type": "prompt", "message": "/mode-preview --json"})
             while True:
                 event = read_event(proc, selector, deadline); events.append(event)
                 if event.get("type") == "extension_error":
                     violations.append(f"extension error: {event.get('error')}")
-                if event.get("id") == "mode-status":
+                if event.get("id") == "mode-preview":
                     if event.get("success") is not True:
-                        raise RuntimeError("mode status command failed")
+                        raise RuntimeError("mode preview command failed")
                     break
             prompt = (
                 "Produce exactly one JSON object matching the CTO canary output schema below. "
@@ -304,12 +376,24 @@ def rpc_cycle(packet: dict[str, Any], stderr_path: Path, timeout: int) -> tuple[
             continue
         if isinstance(value, dict) and "selection" in value:
             status_records.append(value)
-    if not any(v.get("selection") == {"baseKey": CONFIG["mode_base_key"], "overlayKeys": []} and
-               any(c.get("key") == CONFIG["mode_base_key"] and c.get("role") == "base" and c.get("strategy") == "replace_base"
-                   for c in v.get("components", [])) and not v.get("diagnostics") for v in status_records):
-        violations.append("mode-status did not prove the accepted replace_base composition")
+    violations.extend(mode_proof_errors(status_records))
     return proposal, {"pid": proc.pid, "argv": argv, "events": events, "violations": violations,
                       "mode_status_records": status_records}
+
+
+def fixture_cycle() -> tuple[object, dict[str, Any]]:
+    """Exercise the RPC framing with a distinct deterministic no-model worker process."""
+    argv = [sys.executable, str(HERE / "fixture_rpc_worker.py")]
+    proc = subprocess.Popen(argv, cwd=ROOT, text=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    assert proc.stdin and proc.stdout
+    send(proc, {"id": "fixture-prompt", "type": "prompt", "message": "fixture"})
+    events = [json.loads(proc.stdout.readline()) for _ in range(3)]
+    send(proc, {"id": "fixture-result", "type": "get_last_assistant_text"})
+    result_event = json.loads(proc.stdout.readline()); events.append(result_event)
+    proposal = json.loads(result_event["data"]["text"])
+    pid = proc.pid
+    proc.stdin.close(); proc.wait(timeout=5)
+    return proposal, {"pid": pid, "argv": argv, "events": events, "violations": [], "mode_status_records": []}
 
 
 def main() -> int:
@@ -323,8 +407,9 @@ def main() -> int:
     state.mkdir(parents=True, exist_ok=True)
     activation_file = args.activation_file or state / "activation.json"
 
+    activation: dict[str, Any] | None = None
     if not args.fixture:
-        _, gate_errors = read_activation(activation_file, state)
+        activation, gate_errors = read_activation(activation_file, state)
         if gate_errors:
             print("REFUSED: " + "; ".join(gate_errors), file=sys.stderr)
             return 3
@@ -348,17 +433,27 @@ def main() -> int:
                                "registered_paths_without_git_marker": []},
                   "repositories": [], "authority_db_before": {"sha256": sha256(db_path)}}
         packet_path.write_text(json.dumps(packet) + "\n")
-        from fixture_rpc_worker import PROPOSAL
-        proposal = PROPOSAL
-        trace = {"pid": os.getpid(), "argv": [sys.executable, str(HERE / "fixture_rpc_worker.py")],
-                 "events": [], "violations": [], "mode_status_records": []}
+        proposal, trace = fixture_cycle()
     else:
         cp = subprocess.run([sys.executable, str(HERE / "collect_snapshot.py"), "--output", str(packet_path)], cwd=ROOT)
         if cp.returncode:
             return cp.returncode
         packet = json.loads(packet_path.read_text())
+        activation, gate_errors = read_activation(activation_file, state, current_run_reserved=True)
+        if gate_errors or activation is None:
+            (run_dir / "failure.txt").write_text("authority changed before worker start: " + "; ".join(gate_errors) + "\n")
+            print("REFUSED: authority changed before worker start: " + "; ".join(gate_errors), file=sys.stderr)
+            return 3
+        expiry = parse_time(activation["expires_at_utc"])
+        assert expiry is not None
+        remaining = int((expiry - datetime.now(timezone.utc)).total_seconds()) - CONFIG["expiry_guard_seconds"]
+        worker_timeout = min(args.timeout, remaining)
+        if worker_timeout < 1:
+            (run_dir / "failure.txt").write_text("insufficient authority time remains for a worker\n")
+            print("REFUSED: insufficient authority time remains for a worker", file=sys.stderr)
+            return 3
         try:
-            proposal, trace = rpc_cycle(packet, run_dir / "worker.stderr", args.timeout)
+            proposal, trace = rpc_cycle(packet, run_dir / "worker.stderr", worker_timeout)
         except Exception as exc:
             (run_dir / "failure.txt").write_text(f"{type(exc).__name__}: {exc}\n")
             print(f"cycle failed closed: {exc}", file=sys.stderr)
@@ -371,6 +466,9 @@ def main() -> int:
         if proposal_coverage.get(key) != packet_coverage.get(key):
             errors.append(f"coverage does not match snapshot: {key}")
     drift = [] if args.fixture else watched_state(packet, db_path)
+    if not args.fixture:
+        _, final_gate_errors = read_activation(activation_file, state, current_run_reserved=True)
+        trace["violations"].extend(f"post-cycle authority gate: {error}" for error in final_gate_errors)
     verified = not errors and not drift and not trace["violations"]
     result = {
         "schema_version": 2, "canonical": False, "classification": "proposal_only", "run_id": run_id,
@@ -380,7 +478,7 @@ def main() -> int:
         "verification_scope": "output contract, accepted runtime gate, mode composition, disabled tools/extensions, and watched AK/Git before-after checks; not proof of all external effects",
     }
     (run_dir / "rpc-events.json").write_text(json.dumps(trace["events"], indent=2) + "\n")
-    (run_dir / "mode-status.json").write_text(json.dumps(trace["mode_status_records"], indent=2) + "\n")
+    (run_dir / "mode-preview.json").write_text(json.dumps(trace["mode_status_records"], indent=2) + "\n")
     (run_dir / "result.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     print(json.dumps({"run_dir": str(run_dir), "verified_behavior": verified,
                       "validation_errors": errors, "watched_state_changes": drift,

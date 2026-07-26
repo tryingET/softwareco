@@ -25,7 +25,7 @@ Render `@ROOT@` and `@BUNDLE_DIR@` into a temporary directory and run `systemd-a
 
 Run two `--fixture` cycles in a temporary state directory and require distinct process IDs, `canonical=false`, empty validation/runtime violations, and `verified_behavior=true`. Run production without an activation file and require exit `3` plus `REFUSED`.
 
-Start a fresh no-session Pi RPC process with only the pinned Pi Modes extension and structured `PI_MODES`. `/mode-status --json` and `/mode-preview --json` must prove:
+Start a fresh no-session Pi RPC process with only the pinned Pi Modes extension and structured `PI_MODES`. `/mode-preview --json` must prove:
 
 - base `softwareco-cto-canary`;
 - role `base` and strategy `replace_base`;
@@ -39,7 +39,7 @@ This is prompt-composition proof, not a live canary cycle.
 
 Before ADR readiness require:
 
-1. authority/security review of source-owner boundaries, receipt law, immutable install, capability isolation, secret exposure, and expiry;
+1. authority/security review of source-owner boundaries, receipt law, accepted-Git binding, capability isolation, secret exposure, and expiry;
 2. runtime/operator review of Pi RPC, mode composition, systemd behavior, timeouts, cost, observability, recovery, and usefulness;
 3. controlling synthesis citing both exact reviews.
 
@@ -69,7 +69,7 @@ Prove refusal for:
 The candidate is inactive until two separate human actions:
 
 1. `activate_candidate.py --install` installs exact accepted Git blobs and disabled units;
-2. installed `start_candidate.py --start` records the activation receipt and enables the hourly and expiry timers.
+2. installed `start_candidate.py` with repeated exact identity arguments plus `--start` records the activation receipt and enables the hourly and expiry timers.
 
 Immediately inspect:
 
