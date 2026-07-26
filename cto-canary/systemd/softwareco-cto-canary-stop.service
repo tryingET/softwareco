@@ -1,0 +1,18 @@
+[Unit]
+Description=Expire and disable the Softwareco observational CTO canary
+ConditionPathExists=%S/softwareco-cto-canary/activation.json
+
+[Service]
+Type=oneshot
+WorkingDirectory=@ROOT@
+ExecStart=/usr/bin/python3 @BUNDLE_DIR@/stop_candidate.py --expiry
+StateDirectory=softwareco-cto-canary
+UMask=0077
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%S/softwareco-cto-canary
+LockPersonality=yes
+RestrictSUIDSGID=yes

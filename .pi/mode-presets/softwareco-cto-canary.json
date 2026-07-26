@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "key": "softwareco-cto-canary",
+  "label": "Softwareco CTO Observational Canary",
+  "description": "replace_base canary with no optional overlays selected by default.",
+  "selection": {
+    "baseKey": "softwareco-cto-canary",
+    "overlayKeys": []
+  }
+}

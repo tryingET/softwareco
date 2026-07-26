@@ -1,0 +1,11 @@
+[Unit]
+Description=Hard 24-hour expiry for Softwareco observational CTO canary
+
+[Timer]
+OnActiveSec=24h
+AccuracySec=1min
+Persistent=false
+Unit=softwareco-cto-canary-stop.service
+
+[Install]
+WantedBy=timers.target

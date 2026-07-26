@@ -1,0 +1,28 @@
+{
+  "schema_version": 2,
+  "candidate_state": "inactive_pending_direct_human_acceptance",
+  "cwd": "/home/tryinget/ai-society/softwareco",
+  "portfolio_root": "/home/tryinget/ai-society/softwareco/owned",
+  "interval_seconds": 3600,
+  "window_seconds": 86400,
+  "max_cycles": 24,
+  "cycle_timeout_seconds": 1800,
+  "mode_base_key": "softwareco-cto-canary",
+  "overlay_keys": [],
+  "pi_version": "0.80.10",
+  "pi_modes_package": "/home/tryinget/.pi/agent/npm/node_modules/@tryinget/pi-modes",
+  "pi_modes_package_version": "0.3.0",
+  "pi_modes_package_digest": "bad17647adf099216c05c19e892180334a862e3606754ab49773873022bad692",
+  "worker_arguments": [
+    "--mode", "rpc", "--no-session", "--approve", "--offline",
+    "--no-tools", "--no-skills", "--no-prompt-templates", "--no-themes",
+    "--no-extensions", "--thinking", "low"
+  ],
+  "activity_envelope": [
+    "read_only_portfolio_sensing",
+    "drift_and_blocker_detection",
+    "evidence_cited_thesis_ranking",
+    "human_approval_drafts",
+    "orchestrator_recommendation_without_dispatch"
+  ]
+}

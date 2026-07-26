@@ -9,9 +9,11 @@ tmp/
 !.pi/modes/
 .pi/modes/*
 !.pi/modes/softwareco-cto.json
+!.pi/modes/softwareco-cto-canary.json
 !.pi/mode-presets/
 .pi/mode-presets/*
 !.pi/mode-presets/softwareco-cto.json
+!.pi/mode-presets/softwareco-cto-canary.json
 !.pi/prompts/
 .pi/prompts/*
 !.pi/prompts/cto.md

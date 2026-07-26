@@ -1,0 +1,23 @@
+[Unit]
+Description=Softwareco observational CTO canary (one fresh proposal-only cycle)
+Documentation=file://@ROOT@/docs/project/2026-07-26-softwareco-autonomous-cto-canary-handoff.md
+ConditionPathExists=%S/softwareco-cto-canary/activation.json
+
+[Service]
+Type=oneshot
+WorkingDirectory=@ROOT@
+ExecStart=/usr/bin/python3 @BUNDLE_DIR@/run_cycle.py --state-dir %S/softwareco-cto-canary --activation-file %S/softwareco-cto-canary/activation.json --timeout 1800
+StateDirectory=softwareco-cto-canary
+RuntimeDirectory=softwareco-cto-canary
+Environment=TMPDIR=%t/softwareco-cto-canary
+UMask=0077
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%S/softwareco-cto-canary
+LockPersonality=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+TimeoutStartSec=35min
