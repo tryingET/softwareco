@@ -168,7 +168,8 @@ class CanaryContractTests(unittest.TestCase):
         stop = (ROOT / "cto-canary/stop_candidate.py").read_text()
         self.assertIn("ProtectHome=tmpfs", service)
         self.assertIn("KillMode=control-group", service)
-        self.assertIn('"stop", "softwareco-cto-canary.service"', stop)
+        self.assertIn('["systemctl", "--user", "stop", service]', stop)
+        self.assertIn('unit_property(service, "ControlGroup")', stop)
 
         self.assertIn("BindReadOnlyPaths=%h/ai-society/society.v2.db", service)
 
