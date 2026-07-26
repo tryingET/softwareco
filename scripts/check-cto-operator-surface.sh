@@ -645,10 +645,20 @@ elif [[ "$mode_arg" == --require-77-objective-complete ]]; then
    .[0].details.admission_evidence_id==5383 and .[0].details.controller_release_evidence_id==5405 and .[0].details.wave_outcome_evidence_id==5406 and
    .[0].details.owner_validation_evidence_ids==[5397,5400,5401,5402,5403] and
    .[0].details.run_a_trace.fresh_process==true and .[0].details.run_a_trace.no_session==true and .[0].details.run_a_trace.read_only==true and
+   .[0].details.run_a_trace.prior_transcript_supplied==false and .[0].details.run_a_trace.prior_thesis_supplied==false and
+   .[0].details.run_a_trace.pid==3377969 and .[0].details.run_a_trace.started_at_utc=="2026-07-26T08:32:15.471831824Z" and
+   .[0].details.run_a_trace.runner_sha256=="bb9670c515aff9e6215a7eb60dfcd4db41d713f5c8f48cde268e80544329e9cc" and
    .[0].details.run_a_trace.stdout_sha256=="8735224fcec27cef481de82200804f21a356d3abb9a59e55f88afacc1764dae0" and
    .[0].details.run_c_trace.fresh_process==true and .[0].details.run_c_trace.no_session==true and .[0].details.run_c_trace.read_only==true and
+   .[0].details.run_c_trace.prior_transcript_supplied==false and .[0].details.run_c_trace.prior_thesis_supplied==false and
+   .[0].details.run_c_trace.pid==3986608 and .[0].details.run_c_trace.started_at_utc=="2026-07-26T10:06:04.806358186Z" and
+   .[0].details.run_c_trace.runner_sha256=="c95c977799ff44db39b9df21e58251332428bc8c1506e6027105e3dbe4165c34" and
    .[0].details.run_c_trace.stdout_sha256=="6d737119bf0c3617888c7fca48232b04c1dd1cad9c43ac04014856a51545e221" and
-   (. [0].details.checker_results|type=="array" and length>0) and (. [0].details.known_limitations|type=="array") and
+   .[0].details.run_a_trace.pid!=.[0].details.run_c_trace.pid and
+   .[0].details.run_a_trace.started_at_utc!=.[0].details.run_c_trace.started_at_utc and
+   .[0].details.run_a_trace.runner_sha256!=.[0].details.run_c_trace.runner_sha256 and
+   .[0].details.run_a_trace.stdout_sha256!=.[0].details.run_c_trace.stdout_sha256 and
+   (.[0].details.checker_results|type=="array" and length>0) and (.[0].details.known_limitations|type=="array") and
    .[0].details.documentation_ref=="docs/project/2026-07-25-softwareco-recurring-portfolio-cto-recurrence-evidence.md" and
    .[0].details.framework_terminal_receipt_created==false and .[0].details.framework_revocation_receipt_created==false and
    .[0].details.framework_supersession_receipt_created==false and .[0].details.external_effects==0
@@ -665,15 +675,150 @@ elif [[ "$mode_arg" == --require-77-objective-complete ]]; then
    ([.payload.decision_links[]|select(.link.decision_id==77 and .link.link_role=="governs")]|length)==1
   ' <<<"$wave" >/dev/null || fail "Decision 77 completed owner wave invalid"
 
+  sf3_objective="$(ak direction show --repo "$root" SF3 --machine)"
+  jq -e '
+   [.payload.children[]|select((.key|startswith("IW-SF3-CTO77-")) and .key!="IW-SF3-CTO77-RECURRING")] as $waves |
+   ($waves|length)==1 and $waves[0].key=="IW-SF3-CTO77-AK-SCHEMA-STATUS" and $waves[0].state=="done" and
+   $waves[0].state_detail=="portfolio_completed_decision_77;admission_evidence_id=5383;release_evidence_ids=5405;outcome_evidence_id=5406"
+  ' <<<"$sf3_objective" >/dev/null || fail "Decision 77 global wave census invalid"
+  membership_census='[]'
+  while IFS= read -r objective_controller_id; do
+    controller_evidence="$(ak evidence task "$objective_controller_id" --machine)"
+    membership_census="$(jq -n --argjson prior "$membership_census" --argjson collection "$controller_evidence" '
+     $prior + [$collection.payload.evidence[]|select(
+       .check_type=="portfolio_wave_admission_v2" or .check_type=="portfolio_owner_release_v2" or .check_type=="portfolio_wave_outcome_v2"
+     )]
+    ')"
+  done < <(jq -r '[.[]|select(.details.schema=="softwareco.portfolio-cto-epoch-authorization.v1")|.details.controller_task_id]|unique|.[]' <<<"$applied_epochs")
+  jq -e '
+   sort_by(.id) as $events |
+   ($events|map(.id))==[5383,5405,5406] and
+   $events[0].details.schema=="softwareco.portfolio-wave-admission.v2" and
+   $events[1].details.schema=="softwareco.portfolio-owner-release-event.v2" and
+   $events[1].details.prior_owner_task_event_evidence_id==5383 and
+   $events[2].details.schema=="softwareco.portfolio-wave-outcome.v2" and
+   $events[2].details.controller_release_evidence_ids==[5405] and
+   $events[2].details.outstanding_owner_task_ids==[]
+  ' <<<"$membership_census" >/dev/null || fail "Decision 77 global membership/WIP census invalid"
+
   ak task show 4225 --machine | jq -e '.payload.task.status=="done" and .payload.task.result.commit=="b2548196cb8994f5388293b26918d454c41a4138" and .payload.task.result.external_effects==0' >/dev/null || fail "Decision 77 owner task outcome invalid"
   ak evidence show 5383 --json | jq -e '.result=="pass" and .details.schema=="softwareco.portfolio-wave-admission.v2" and .details.owner_task_ids==[4225]' >/dev/null || fail "Decision 77 admission evidence invalid"
   ak evidence show 5405 --json | jq -e '.result=="pass" and .details.schema=="softwareco.portfolio-owner-release-event.v2" and .details.owner_release_receipt_id==9089 and .details.post_outstanding_owner_task_count==0' >/dev/null || fail "Decision 77 controller release evidence invalid"
   ak evidence show 5406 --json | jq -e '.result=="pass" and .details.schema=="softwareco.portfolio-wave-outcome.v2" and .details.success_criteria_satisfied==true and .details.portfolio_wip_released==true and .details.outstanding_owner_task_ids==[]' >/dev/null || fail "Decision 77 wave outcome evidence invalid"
-  ak evidence show 5378 --json | jq -e '.result=="pass" and .details.worker_trace.run=="A-epoch3" and .details.worker_trace.fresh_process==true and .details.worker_trace.no_session==true' >/dev/null || fail "Decision 77 Run A thesis invalid"
-  ak evidence show 5407 --json | jq -e '.result=="pass" and .details.worker_trace.run=="C" and .details.worker_trace.fresh_process==true and .details.worker_trace.no_session==true and .details.membership.outstanding_owner_task_count==0' >/dev/null || fail "Decision 77 Run C thesis invalid"
-  for receipt in 9063 9064 9087 9088 9089; do
-    ak governance show "$receipt" --json | jq -e '.status=="applied" and .agreement_ref=="decision:77" and .details.decision_id==77 and .details.epoch_id=="d77-e3-20260726" and .details.external_effects==0' >/dev/null || fail "Decision 77 owner receipt invalid: $receipt"
-  done
+  run_a="$(ak evidence show 5378 --json)"
+  jq -e '
+   .task_id==4221 and .check_type=="portfolio_thesis_v2" and .result=="pass" and .details.schema=="softwareco.portfolio-thesis.v2" and
+   .details.decision_id==77 and .details.epoch_id=="d77-e3-20260726" and .details.revision==2 and .details.prior_thesis_evidence_id==5326 and
+   .details.worker_trace.run=="A-epoch3" and .details.worker_trace.fresh_process==true and .details.worker_trace.no_session==true and
+   .details.worker_trace.read_only==true and .details.worker_trace.prior_transcript_supplied==false and .details.worker_trace.prior_thesis_supplied==false and
+   .details.worker_trace.controller_independent_verification==true and .details.worker_trace.pid==3377969 and
+   .details.worker_trace.started_at_utc=="2026-07-26T08:32:15.471831824Z" and
+   .details.worker_trace.runner_sha256=="bb9670c515aff9e6215a7eb60dfcd4db41d713f5c8f48cde268e80544329e9cc" and
+   .details.worker_trace.stdout_sha256=="8735224fcec27cef481de82200804f21a356d3abb9a59e55f88afacc1764dae0"
+  ' <<<"$run_a" >/dev/null || fail "Decision 77 Run A thesis invalid"
+  run_c="$(ak evidence show 5407 --json)"
+  jq -e '
+   .task_id==4221 and .check_type=="portfolio_thesis_v2" and .result=="pass" and .details.schema=="softwareco.portfolio-thesis.v2" and
+   .details.decision_id==77 and .details.epoch_id=="d77-e3-20260726" and .details.revision==3 and .details.prior_thesis_evidence_id==5378 and
+   .details.worker_trace.run=="C" and .details.worker_trace.fresh_process==true and .details.worker_trace.no_session==true and
+   .details.worker_trace.read_only==true and .details.worker_trace.prior_transcript_supplied==false and .details.worker_trace.prior_thesis_supplied==false and
+   .details.worker_trace.controller_independent_verification==true and .details.worker_trace.pid==3986608 and
+   .details.worker_trace.started_at_utc=="2026-07-26T10:06:04.806358186Z" and
+   .details.worker_trace.runner_sha256=="c95c977799ff44db39b9df21e58251332428bc8c1506e6027105e3dbe4165c34" and
+   .details.worker_trace.stdout_sha256=="6d737119bf0c3617888c7fca48232b04c1dd1cad9c43ac04014856a51545e221" and
+   .details.membership.state=="proved_released" and .details.membership.admitted_wave_count==0 and
+   .details.membership.outstanding_owner_task_count==0 and .details.membership.unresolved_objection_count==0
+  ' <<<"$run_c" >/dev/null || fail "Decision 77 Run C thesis invalid"
+  jq -e --argjson a "$run_a" '
+   .details.worker_trace.pid!=$a.details.worker_trace.pid and
+   .details.worker_trace.started_at_utc!=$a.details.worker_trace.started_at_utc and
+   .details.worker_trace.runner_sha256!=$a.details.worker_trace.runner_sha256 and
+   .details.worker_trace.stdout_sha256!=$a.details.worker_trace.stdout_sha256
+  ' <<<"$run_c" >/dev/null || fail "Decision 77 fresh runs are not distinct"
+
+  ak governance show 9063 --json | jq -e '
+   .status=="applied" and .source_authority=="human-operator" and .actor=="human-operator" and .agreement_ref=="decision:77" and
+   .from_state=="proposed" and .to_state=="envelope_accepted" and .task_id==4225 and .repo_scope=="/home/tryinget/ai-society/softwareco/owned/agent-kernel" and
+   .details.schema=="softwareco.portfolio-owner-envelope-acceptance.v2" and .details.decision_id==77 and
+   .details.wave_key=="IW-SF3-CTO77-AK-SCHEMA-STATUS" and .details.role=="product-domain" and .details.owner_id=="human-operator" and
+   .details.scope_id=="task-4225" and .details.epoch_id=="d77-e3-20260726" and .details.external_effects==0
+  ' >/dev/null || fail "Decision 77 product acceptance receipt invalid"
+  ak governance show 9064 --json | jq -e '
+   .status=="applied" and .source_authority=="human-operator" and .actor=="human-operator" and .agreement_ref=="decision:77" and
+   .from_state=="proposed" and .to_state=="task_scope_accepted" and .task_id==4225 and
+   .details.schema=="softwareco.portfolio-owner-task-scope-acceptance.v2" and .details.decision_id==77 and
+   .details.wave_key=="IW-SF3-CTO77-AK-SCHEMA-STATUS" and .details.role=="project-source" and .details.owner_task_ids==[4225] and
+   .details.epoch_id=="d77-e3-20260726" and .details.external_effects==0
+  ' >/dev/null || fail "Decision 77 project acceptance receipt invalid"
+  ak governance show 9087 --json | jq -e '
+   .status=="applied" and .source_authority=="human-operator" and .actor=="human-operator" and .agreement_ref=="decision:77" and
+   .from_state=="admitted" and .to_state=="terminal_accepted" and .task_id==4225 and
+   .details.schema=="softwareco.portfolio-terminal-acceptance.v2" and .details.role=="product-domain" and
+   .details.wave_key=="IW-SF3-CTO77-AK-SCHEMA-STATUS" and .details.owner_task_ids==[4225] and .details.acceptance_receipt_id==9063 and .details.external_effects==0
+  ' >/dev/null || fail "Decision 77 product terminal receipt invalid"
+  ak governance show 9088 --json | jq -e '
+   .status=="applied" and .source_authority=="human-operator" and .actor=="human-operator" and .agreement_ref=="decision:77" and
+   .from_state=="admitted" and .to_state=="terminal_accepted" and .task_id==4225 and
+   .details.schema=="softwareco.portfolio-terminal-acceptance.v2" and .details.role=="project-source" and
+   .details.wave_key=="IW-SF3-CTO77-AK-SCHEMA-STATUS" and .details.owner_task_ids==[4225] and .details.acceptance_receipt_id==9064 and
+   .details.product_terminal_acceptance_receipt_id==9087 and .details.external_effects==0
+  ' >/dev/null || fail "Decision 77 project terminal receipt invalid"
+  ak governance show 9089 --json | jq -e '
+   .status=="applied" and .source_authority=="human-operator" and .actor=="human-operator" and .agreement_ref=="decision:77" and
+   .from_state=="admitted" and .to_state=="released_terminal" and .task_id==4225 and
+   .details.schema=="softwareco.portfolio-owner-release.v2" and .details.role=="project-source" and
+   .details.wave_key=="IW-SF3-CTO77-AK-SCHEMA-STATUS" and .details.owner_task_ids==[4225] and
+   .details.terminal_acceptance_receipt_ids==[9087,9088] and .details.disposition=="released_terminal" and
+   .details.continuing_owner_lifecycle==false and .details.external_effects==0
+  ' >/dev/null || fail "Decision 77 owner release receipt invalid"
+
+  manifest_task="$(ak task show 4273 --machine)"
+  jq -e '
+   .payload.task.status=="done" and .payload.task.result.schema=="softwareco.portfolio-cto-recurrence-proof-hardening.v1" and
+   .payload.task.result.objective_evidence_id==5412 and (.payload.task.result.manifest_evidence_id|type=="number") and
+   .payload.task.result.run_a_manifest_sha256=="fe706a37db971c9844aa69c9f3b0b3c1238afeccf10a83e59163cfcea1726352" and
+   .payload.task.result.run_c_manifest_sha256=="00bb3ffce11fa4c195456f2ddc86c0ebfb9cd12167389128919dbf31dae59ee5"
+  ' <<<"$manifest_task" >/dev/null || fail "Decision 77 manifest hardening task invalid"
+  manifest_evidence_id="$(jq -r '.payload.task.result.manifest_evidence_id' <<<"$manifest_task")"
+  manifest_collection="$(ak evidence task 4273 --machine)"
+  jq -e --argjson manifest "$manifest_evidence_id" '
+   [.payload.evidence[]|select(.check_type=="portfolio_cto_worker_manifest_v1" and .result=="pass")] as $matches |
+   ($matches|length)==1 and $matches[0].id==$manifest and
+   $matches[0].details.schema=="softwareco.portfolio-cto-worker-manifest-bundle.v1" and
+   $matches[0].details.decision_id==77 and $matches[0].details.objective_evidence_id==5412 and
+   $matches[0].details.run_a_manifest_sha256=="fe706a37db971c9844aa69c9f3b0b3c1238afeccf10a83e59163cfcea1726352" and
+   $matches[0].details.run_c_manifest_sha256=="00bb3ffce11fa4c195456f2ddc86c0ebfb9cd12167389128919dbf31dae59ee5" and
+   $matches[0].details.run_a_stdout_sha256=="8735224fcec27cef481de82200804f21a356d3abb9a59e55f88afacc1764dae0" and
+   $matches[0].details.run_c_stdout_sha256=="6d737119bf0c3617888c7fca48232b04c1dd1cad9c43ac04014856a51545e221" and
+   $matches[0].details.distinct_processes==true and $matches[0].details.prior_context_excluded==true and
+   $matches[0].details.raw_artifacts_hash_verified==true
+  ' <<<"$manifest_collection" >/dev/null || fail "Decision 77 worker manifest evidence invalid"
+  [[ "$(sha256sum "$root/docs/project/2026-07-25-softwareco-recurring-portfolio-cto-run-a-manifest.json" | cut -d' ' -f1)" == fe706a37db971c9844aa69c9f3b0b3c1238afeccf10a83e59163cfcea1726352 ]] || fail "Decision 77 Run A manifest hash mismatch"
+  [[ "$(sha256sum "$root/docs/project/2026-07-25-softwareco-recurring-portfolio-cto-run-c-manifest.json" | cut -d' ' -f1)" == 00bb3ffce11fa4c195456f2ddc86c0ebfb9cd12167389128919dbf31dae59ee5 ]] || fail "Decision 77 Run C manifest hash mismatch"
+  jq -e '
+   .schema=="softwareco.portfolio-cto-worker-manifest.v1" and .decision_id==77 and .run=="A-epoch3" and
+   .fresh_process==true and .no_session==true and .session_persistence==false and .prior_session_id==null and
+   .prior_transcript_supplied==false and .prior_thesis_content_supplied==false and .read_only==true and
+   .process.pid==3377969 and .process.started_at_utc=="2026-07-26T08:32:15.471831824Z" and
+   .process.argv==["pi","--mode","rpc","--no-session","--approve","--offline","--no-skills","--no-tools","--thinking","low"] and
+   [.rpc_input_manifest[].id]==["mode","pre","ask","last"] and
+   .artifact_manifest.runner_source.sha256=="bb9670c515aff9e6215a7eb60dfcd4db41d713f5c8f48cde268e80544329e9cc" and
+   .artifact_manifest.rpc_event_output.sha256=="8735224fcec27cef481de82200804f21a356d3abb9a59e55f88afacc1764dae0" and
+   .artifact_manifest.bounded_readback_output.sha256=="e672de9b52182c3bc42b6ee441b789e8db52c004de5d3754407b37105863d062" and
+   .artifact_manifest.candidate_response.sha256=="e8f61efb144ddd80da25929e03802df45a6a5d90cc652d5a33390bc7591df87a"
+  ' "$root/docs/project/2026-07-25-softwareco-recurring-portfolio-cto-run-a-manifest.json" >/dev/null || fail "Decision 77 Run A manifest invalid"
+  jq -e '
+   .schema=="softwareco.portfolio-cto-worker-manifest.v1" and .decision_id==77 and .run=="C" and
+   .fresh_process==true and .no_session==true and .session_persistence==false and .prior_session_id==null and
+   .prior_transcript_supplied==false and .prior_thesis_content_supplied==false and .read_only==true and
+   .process.pid==3986608 and .process.started_at_utc=="2026-07-26T10:06:04.806358186Z" and
+   .process.argv==["pi","--mode","rpc","--no-session","--approve","--offline","--no-skills","--no-tools","--thinking","low"] and
+   [.rpc_input_manifest[].id]==["mode","pre","ask","last"] and
+   .artifact_manifest.runner_source.sha256=="c95c977799ff44db39b9df21e58251332428bc8c1506e6027105e3dbe4165c34" and
+   .artifact_manifest.rpc_event_output.sha256=="6d737119bf0c3617888c7fca48232b04c1dd1cad9c43ac04014856a51545e221" and
+   .artifact_manifest.bounded_readback_output.sha256=="f8380d94d8987a219ef09158f2c12a6910c569f6b0c33fd2b34c8d1423f8b032" and
+   .artifact_manifest.candidate_response.sha256=="f440c0cd70331bf6340b2c5a73d95a642fb2c22da8c253b0c9599ed47e231731"
+  ' "$root/docs/project/2026-07-25-softwareco-recurring-portfolio-cto-run-c-manifest.json" >/dev/null || fail "Decision 77 Run C manifest invalid"
   grep -Fqx "objective_evidence_id: $objective_evidence_id" "$root/docs/project/2026-07-25-softwareco-recurring-portfolio-cto-recurrence-evidence.md" || fail "Decision 77 recurrence evidence projection missing objective evidence ID"
   ak direction check --repo "$root" --json | jq -e '.ok==true and (.issues|length==0)' >/dev/null || fail "Decision 77 objective direction topology invalid"
   printf 'cto-operator-surface: PASS (Decision 77 recurrence objective complete; evidence=%s; framework remains nonterminal)\n' "$objective_evidence_id"

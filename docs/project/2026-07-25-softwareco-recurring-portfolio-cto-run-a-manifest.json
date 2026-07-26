@@ -1,0 +1,87 @@
+{
+  "schema": "softwareco.portfolio-cto-worker-manifest.v1",
+  "decision_id": 77,
+  "run": "A-epoch3",
+  "epoch_id": "d77-e3-20260726",
+  "fresh_process": true,
+  "no_session": true,
+  "session_persistence": false,
+  "prior_session_id": null,
+  "prior_transcript_supplied": false,
+  "prior_thesis_content_supplied": false,
+  "read_only": true,
+  "process": {
+    "pid": 3377969,
+    "started_at_utc": "2026-07-26T08:32:15.471831824Z",
+    "argv": [
+      "pi",
+      "--mode",
+      "rpc",
+      "--no-session",
+      "--approve",
+      "--offline",
+      "--no-skills",
+      "--no-tools",
+      "--thinking",
+      "low"
+    ],
+    "cwd": "/home/tryinget/ai-society/softwareco",
+    "repo_head": "3dcc804483a73839439c9c9be93f6dd2b3988229"
+  },
+  "rpc_input_manifest": [
+    {
+      "id": "mode",
+      "type": "prompt",
+      "purpose": "activate the accepted softwareco-cto mode"
+    },
+    {
+      "id": "pre",
+      "type": "bash",
+      "purpose": "bounded readback of Decision 77, epoch 3, direction, controller/objective evidence with prior thesis content filtered, task 4225, and owner-repo dirt"
+    },
+    {
+      "id": "ask",
+      "type": "prompt",
+      "purpose": "fresh sensing-only candidate thesis; rank task 4225 proposal-only; prohibit mutation and prior-thesis use"
+    },
+    {
+      "id": "last",
+      "type": "get_last_assistant_text",
+      "purpose": "capture candidate response"
+    }
+  ],
+  "artifact_manifest": {
+    "runner_source": {
+      "retained_path": "/home/tryinget/.cache/d77-run-a4.py",
+      "sha256": "bb9670c515aff9e6215a7eb60dfcd4db41d713f5c8f48cde268e80544329e9cc"
+    },
+    "rpc_event_output": {
+      "retained_path": "/home/tryinget/.cache/d77-run-a4/stdout.jsonl",
+      "sha256": "8735224fcec27cef481de82200804f21a356d3abb9a59e55f88afacc1764dae0",
+      "event_counts": {
+        "agent_start": 1,
+        "agent_end": 1,
+        "agent_settled": 1,
+        "turn_start": 1,
+        "turn_end": 1,
+        "response": 4,
+        "extension_error": 1
+      }
+    },
+    "process_stderr": {
+      "retained_path": "/home/tryinget/.cache/d77-run-a4/stderr.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "bounded_readback_output": {
+      "retained_path": "/home/tryinget/.cache/pi-cto-check-tmp/pi-bash-2d0a7a92fec1acfb.log",
+      "sha256": "e672de9b52182c3bc42b6ee441b789e8db52c004de5d3754407b37105863d062"
+    },
+    "candidate_response": {
+      "sha256": "e8f61efb144ddd80da25929e03802df45a6a5d90cc652d5a33390bc7591df87a"
+    }
+  },
+  "mode_sha256": "8eb0bbba7d0039617af2b2a5124ec7eb45917a03dda707fbcbec8fc425131011",
+  "prompt_sha256": "ba79f1159269daf6d30a7024d5bccd3def384483f9cbf9f04c4dcb82fcbfa0da",
+  "extension_error_disposition": "The optional pi-snapshot-edit session-start override refused owner identification; --no-tools remained effective and the worker performed no mutation.",
+  "controller_thesis_evidence_id": 5378
+}
