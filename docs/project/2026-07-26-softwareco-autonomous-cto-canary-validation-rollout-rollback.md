@@ -61,7 +61,7 @@ Prove refusal for:
 - 24 existing run directories;
 - failed/oversized/incomplete portfolio probes;
 - mode diagnostics, extension errors, UI, or tool execution;
-- wrong provider/model, missing normalized usage/cost, per-cycle budget breach, malformed prior cost history, or cumulative budget exhaustion;
+- wrong provider/model, missing normalized usage/cost, per-cycle stop-threshold breach, malformed/non-finite prior cost history, or inability to reserve the next cycle under the cumulative threshold;
 - runtime-package symlink escape or isolated package-copy digest drift;
 - malformed, unresolvable, or coverage-divergent proposal output;
 - watched AK DB or repository state change during a cycle.

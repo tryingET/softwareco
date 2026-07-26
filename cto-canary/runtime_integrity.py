@@ -42,12 +42,16 @@ def directory_digest(root: Path) -> str:
     return h.hexdigest()
 
 
-def runtime_packages() -> tuple[Path, Path, Path]:
-    bundle_root = HERE.parent
+def runtime_packages(bundle_root: Path | None = None) -> tuple[Path, Path, Path]:
+    bundle_root = bundle_root or HERE.parent
     installed_pi = bundle_root / CONFIG["runtime_pi_package_relative"]
     installed_modes = bundle_root / CONFIG["runtime_pi_modes_package_relative"]
-    if installed_pi.is_dir() and installed_modes.is_dir():
-        return installed_pi, installed_modes, bundle_root / CONFIG["runtime_pi_entrypoint_relative"]
+    installed_entrypoint = bundle_root / CONFIG["runtime_pi_entrypoint_relative"]
+    if (bundle_root / "manifest.json").is_file():
+        if not installed_pi.is_dir() or not installed_modes.is_dir() or not installed_entrypoint.is_file():
+            raise RuntimeError("installed bundle is missing an isolated Pi/Pi-Modes runtime or entrypoint")
+        return installed_pi, installed_modes, installed_entrypoint
+    # Development-only path before installation; production bundles always contain manifest.json.
     return Path(CONFIG["pi_package"]), Path(CONFIG["pi_modes_package"]), Path(CONFIG["pi_entrypoint"])
 
 
@@ -64,7 +68,7 @@ def rendered_unit(commit: str, name: str, bundle: Path) -> bytes:
     return text.encode()
 
 
-def verify_bundle(activation: dict[str, Any], unit_dir: Path | None = None) -> list[str]:
+def verify_bundle(activation: dict[str, Any], unit_dir: Path | None = None, verify_runtime: bool = True) -> list[str]:
     """Bind bundle, manifest, project mode, and installed units to accepted Git objects."""
     errors: list[str] = []
     bundle = Path(activation["bundle_dir"])
@@ -91,6 +95,17 @@ def verify_bundle(activation: dict[str, Any], unit_dir: Path | None = None) -> l
     }
     if manifest.get("runtime_digests") != expected_runtime:
         errors.append("installed runtime manifest differs from accepted Git config")
+    if verify_runtime:
+        try:
+            pi_package, modes_package, entrypoint = runtime_packages(bundle)
+            if directory_digest(pi_package) != accepted_config["pi_package_digest"]:
+                errors.append("isolated Pi runtime differs from accepted digest")
+            if directory_digest(modes_package) != accepted_config["pi_modes_package_digest"]:
+                errors.append("isolated Pi Modes runtime differs from accepted digest")
+            if not entrypoint.is_file() or not entrypoint.resolve().is_relative_to(pi_package.resolve()):
+                errors.append("isolated Pi entrypoint is missing or escapes its runtime tree")
+        except (OSError, RuntimeError) as exc:
+            errors.append(f"isolated runtime verification failed closed: {exc}")
     for relative in expected_files:
         try:
             accepted = git_blob(commit, relative)

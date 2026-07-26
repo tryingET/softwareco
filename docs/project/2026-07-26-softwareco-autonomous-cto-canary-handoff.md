@@ -25,7 +25,7 @@ Require all of the following:
 - candidate ADR and implementation/validation plans are committed;
 - exact candidate commit passes code, mode, systemd, docs, decision, and independent-review gates;
 - Decisions 74 and 77 remain unchanged;
-- direct human reviews the external effects: up to 24 `openai-codex/gpt-5.6-sol` calls, USD 2 per-cycle and USD 25 cumulative fail-closed budgets, plus private local state.
+- direct human reviews the external effects: up to 24 `openai-codex/gpt-5.6-sol` calls, a USD 2 post-call stop threshold and USD 25 cumulative preflight threshold (not provider-side hard caps; one call may overrun), plus private local state.
 
 The controller prepares one exact acceptance script with concrete `<DECISION_ID>`, `<TASK_ID>`, `<COMMIT>`, and review references, then pauses. The human executes it directly. Fresh-read the resulting receipt and decision; pasted output is not authority.
 

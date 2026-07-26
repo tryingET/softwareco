@@ -6,6 +6,7 @@ import argparse
 from datetime import datetime, timezone
 import fcntl
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -59,7 +60,6 @@ def payload(value: Any) -> Any:
             raise RuntimeError("AK machine envelope reported failure")
         return value["payload"]
     return value
-
 
 def read_activation(path: Path, state_dir: Path, current_run_reserved: bool = False) -> tuple[dict[str, Any] | None, list[str]]:
     errors: list[str] = []
@@ -139,7 +139,6 @@ def read_activation(path: Path, state_dir: Path, current_run_reserved: bool = Fa
         errors.append(f"Pi version drift: expected {CONFIG['pi_version']}, observed {version}")
     return value, errors
 
-
 def watched_state(packet: dict[str, Any], db_path: Path) -> list[str]:
     drift: list[str] = []
     if packet.get("authority_db_before", {}).get("sha256") != sha256(db_path):
@@ -157,13 +156,11 @@ def watched_state(packet: dict[str, Any], db_path: Path) -> list[str]:
                 drift.append(f"watched repository {name} changed during cycle: {path}")
     return drift
 
-
 def worker_argv() -> list[str]:
     _, modes_package, pi_entrypoint = runtime_packages()
     extension = str(modes_package / "extensions/mode.ts")
     return ["/usr/bin/node", str(pi_entrypoint), *CONFIG["worker_arguments"],
             "--provider", CONFIG["model_provider"], "--model", CONFIG["model_id"], "--extension", extension]
-
 
 def read_event(proc: subprocess.Popen[str], selector: selectors.BaseSelector, deadline: float) -> dict[str, Any]:
     while True:
@@ -223,6 +220,18 @@ def mode_proof_errors(records: list[dict[str, Any]]) -> list[str]:
     return ["mode preview did not exactly match accepted source, fingerprint, base, append, context files, date, and cwd"]
 
 
+def read_mode_records(stderr_path: Path) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for line in stderr_path.read_text(errors="replace").splitlines():
+        try:
+            value = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict) and "selection" in value:
+            records.append(value)
+    return records
+
+
 def rpc_cycle(packet: dict[str, Any], stderr_path: Path, timeout: int) -> tuple[object, dict[str, Any]]:
     env = {key: os.environ[key] for key in ("HOME", "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS") if key in os.environ}
     env.update({"PATH": "/usr/bin:/bin", "PI_MODES": json.dumps({"baseKey": CONFIG["mode_base_key"], "overlayKeys": []}, separators=(",", ":")),
@@ -249,6 +258,10 @@ def rpc_cycle(packet: dict[str, Any], stderr_path: Path, timeout: int) -> tuple[
                     if event.get("success") is not True:
                         raise RuntimeError("mode preview command failed")
                     break
+            status_records = read_mode_records(stderr_path)
+            preview_errors = mode_proof_errors(status_records)
+            if violations or preview_errors:
+                raise RuntimeError("pre-model mode/extension gate failed: " + "; ".join(violations + preview_errors))
             send(proc, {"id": "cycle-state", "type": "get_state"})
             while True:
                 event = read_event(proc, selector, deadline); events.append(event)
@@ -258,7 +271,7 @@ def rpc_cycle(packet: dict[str, Any], stderr_path: Path, timeout: int) -> tuple[
                     model = event.get("data", {}).get("model") or {}
                     break
             if model.get("provider") != CONFIG["model_provider"] or model.get("id") != CONFIG["model_id"]:
-                violations.append(f"worker model mismatch: {model.get('provider')}/{model.get('id')}")
+                raise RuntimeError(f"pre-model provider/model gate failed: {model.get('provider')}/{model.get('id')}")
             prompt = (
                 "Produce exactly one JSON object matching the CTO canary output schema below. "
                 "Use only the supplied snapshot. Every factual reference must resolve as "
@@ -309,8 +322,10 @@ def rpc_cycle(packet: dict[str, Any], stderr_path: Path, timeout: int) -> tuple[
                     usage = event.get("data") or {}
                     break
             cost = usage.get("cost")
-            if not isinstance(cost, (int, float)) or isinstance(cost, bool) or cost < 0:
-                violations.append("worker did not report a valid normalized cycle cost")
+            if (not isinstance(cost, (int, float)) or isinstance(cost, bool) or
+                    not math.isfinite(float(cost)) or cost < 0):
+                violations.append("worker did not report a valid finite normalized cycle cost")
+                usage["cost"] = None
             elif cost > CONFIG["max_cost_usd_per_cycle"]:
                 violations.append(f"cycle cost limit exceeded: {cost}")
         finally:
@@ -326,15 +341,7 @@ def rpc_cycle(packet: dict[str, Any], stderr_path: Path, timeout: int) -> tuple[
                         proc.wait(timeout=5)
                     except subprocess.TimeoutExpired:
                         os.killpg(proc.pid, signal.SIGKILL); proc.wait(timeout=5)
-    status_records: list[dict[str, Any]] = []
-    for line in stderr_path.read_text(errors="replace").splitlines():
-        try:
-            value = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(value, dict) and "selection" in value:
-            status_records.append(value)
-    violations.extend(mode_proof_errors(status_records))
+    status_records = read_mode_records(stderr_path)
     return proposal, {"pid": proc.pid, "argv": argv, "events": events, "violations": violations,
                       "mode_status_records": status_records, "model": model, "usage": usage}
 
@@ -365,8 +372,9 @@ def prior_cost(state: Path, current_run: Path) -> tuple[float, list[str]]:
         try:
             value = json.loads(result_path.read_text())
             cost = value["usage"]["cost"]
-            if not isinstance(cost, (int, float)) or isinstance(cost, bool) or cost < 0:
-                raise ValueError("cost is not nonnegative numeric")
+            if (not isinstance(cost, (int, float)) or isinstance(cost, bool) or
+                    not math.isfinite(float(cost)) or cost < 0):
+                raise ValueError("cost is not finite nonnegative numeric")
             total += float(cost)
         except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
             errors.append(f"prior cycle cost is unverifiable: {run_dir.name}: {exc}")
@@ -428,8 +436,9 @@ def main() -> int:
             return cp.returncode
         packet = json.loads(packet_path.read_text())
         spent_before, cost_errors = prior_cost(state, run_dir)
-        if cost_errors or spent_before >= CONFIG["max_cost_usd_total"]:
-            reasons = cost_errors or [f"total cost budget already exhausted: {spent_before}"]
+        reserved_total = spent_before + CONFIG["max_cost_usd_per_cycle"]
+        if cost_errors or reserved_total > CONFIG["max_cost_usd_total"]:
+            reasons = cost_errors or [f"remaining total threshold cannot reserve one cycle: spent={spent_before}, reserve={reserved_total}"]
             (run_dir / "failure.txt").write_text("; ".join(reasons) + "\n")
             print("REFUSED: " + "; ".join(reasons), file=sys.stderr)
             return 3

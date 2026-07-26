@@ -55,6 +55,7 @@ Positive:
 Costs and risks:
 
 - up to 24 model calls and bounded local operational state;
+- USD 2 per-cycle and USD 25 cumulative thresholds are supervisory stop thresholds, not provider-side billing caps; one call can overrun and that residual risk requires direct-human acceptance;
 - current AGENTS policy enters each dynamic prompt and can affect output;
 - portfolio snapshots may be incomplete or too large and must fail visibly;
 - provider failure, proposal noise, and timer/service faults may make the canary useless;

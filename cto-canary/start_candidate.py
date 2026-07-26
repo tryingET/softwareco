@@ -144,7 +144,7 @@ def main() -> int:
         run(["systemctl", "--user", "enable", "--now", "softwareco-cto-canary.timer", "softwareco-cto-canary-stop.timer"])
     except RuntimeError as exc:
         print(f"ACTIVATION RECORDED BUT START FAILED: {exc}", file=sys.stderr)
-        print(f"Run {HERE / 'stop_candidate.py'} --human-stop to reconcile.", file=sys.stderr)
+        print(f"Run python3 {HERE / 'stop_candidate.py'} --human-stop to reconcile.", file=sys.stderr)
         return 2
     print(json.dumps({"active": True, "activation_receipt_id": activation_id,
                       "started_at_utc": started_text, "expires_at_utc": expires_text,

@@ -16,7 +16,7 @@ from validate_output import validate
 from fixture_rpc_worker import PROPOSAL
 from collect_snapshot import registered_under_owned, run as collector_run
 from run_cycle import CONFIG, expected_composed_prompt, mode_proof_errors, prior_cost, read_activation
-from runtime_integrity import UNIT_NAMES, directory_digest, rendered_unit, verify_bundle
+from runtime_integrity import UNIT_NAMES, directory_digest, rendered_unit, runtime_packages, verify_bundle
 from start_candidate import acceptance_errors
 
 
@@ -179,9 +179,9 @@ class CanaryContractTests(unittest.TestCase):
             home = Path(tmp); state = home / ".local/state/softwareco-cto-canary"; state.mkdir(parents=True)
             (state / "activation.json").write_text(json.dumps(activation))
             bindir = home / "bin"; bindir.mkdir(); fake = bindir / "systemctl"
-            fake.write_text("#!/bin/sh\ncase \"$*\" in\n  *\"is-active --quiet softwareco-cto-canary.service\"*) [ \"$FAKE_ACTIVE\" = 1 ] && exit 0 || exit 3;;\n  *\"is-active --quiet\"*|*\"is-enabled --quiet\"*) exit 3;;\n  *) exit 0;;\nesac\n")
+            fake.write_text("#!/bin/sh\ncase \"$*\" in\n  *\"stop softwareco-cto-canary.service\"*) [ \"$FAKE_STOP_FAIL\" = 1 ] && exit 1 || exit 0;;\n  *\"show softwareco-cto-canary.service --property=ActiveState\"*) [ \"$FAKE_ACTIVE\" = 1 ] && echo active || echo inactive; exit 0;;\n  *\"show softwareco-cto-canary.service --property=ControlGroup\"*) echo ''; exit 0;;\n  *\"show softwareco-cto-canary.timer --property=ActiveState\"*|*\"show softwareco-cto-canary-stop.timer --property=ActiveState\"*) echo inactive; exit 0;;\n  *\"is-enabled\"*) echo disabled; exit 1;;\n  *\"disable --now\"*) exit 0;;\n  *) exit 0;;\nesac\n")
             fake.chmod(0o755)
-            env = os.environ.copy(); env.update({"HOME": str(home), "PATH": str(bindir) + ":/usr/bin", "FAKE_ACTIVE": "1"})
+            env = os.environ.copy(); env.update({"HOME": str(home), "PATH": str(bindir) + ":/usr/bin", "FAKE_ACTIVE": "1", "FAKE_STOP_FAIL": "0"})
             failed = subprocess.run([sys.executable, str(ROOT / "cto-canary/stop_candidate.py"), "--expiry"],
                                     cwd=ROOT, env=env, text=True, capture_output=True)
             self.assertEqual(failed.returncode, 2)
@@ -199,6 +199,11 @@ class CanaryContractTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 directory_digest(root)
 
+    def test_installed_runtime_never_falls_back_to_shared_source(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = Path(tmp); (bundle / "manifest.json").write_text("{}")
+            with self.assertRaisesRegex(RuntimeError, "missing an isolated"):
+                runtime_packages(bundle)
     def test_collector_output_limit_is_enforced_by_bounded_pipe_capture(self):
         with tempfile.TemporaryDirectory() as tmp:
             result = collector_run([sys.executable, "-c", "import os; os.write(1, b'x'*2100000)"], Path(tmp), 20)
@@ -212,12 +217,16 @@ class CanaryContractTests(unittest.TestCase):
             self.assertEqual(prior_cost(state, current), (1.25, []))
             (prior / "result.json").write_text("{}")
             self.assertTrue(prior_cost(state, current)[1])
+            (prior / "result.json").write_text(json.dumps({"usage": {"cost": float("nan")}}))
+            self.assertTrue(prior_cost(state, current)[1])
 
     def test_installer_clean_scope_includes_decision_and_plans(self):
         source = (ROOT / "cto-canary/activate_candidate.py").read_text()
         self.assertIn("docs/decisions/2026-07-26-softwareco-autonomous-cto-canary.md", source)
         self.assertIn("docs/project/2026-07-26-softwareco-autonomous-cto-canary-rfc.md", source)
         self.assertIn("tests/test_cto_canary.py", source)
+        start_source = (ROOT / "cto-canary/start_candidate.py").read_text()
+        self.assertIn("Run python3", start_source)
 
     def test_bundle_and_units_bind_to_git_not_rewritten_manifest(self):
         commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
@@ -245,15 +254,15 @@ class CanaryContractTests(unittest.TestCase):
             activation = {"bundle_dir": str(bundle), "accepted_commit": commit, "decision_id": 83,
                           "acceptance_receipt_id": 999,
                           "bundle_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest()}
-            self.assertEqual(verify_bundle(activation, units), [])
+            self.assertEqual(verify_bundle(activation, units, verify_runtime=False), [])
             unit = units / "softwareco-cto-canary.service"; original_unit = unit.read_bytes(); unit.write_text("tampered\n")
-            self.assertTrue(any("systemd unit" in error for error in verify_bundle(activation, units)))
+            self.assertTrue(any("systemd unit" in error for error in verify_bundle(activation, units, verify_runtime=False)))
             unit.write_bytes(original_unit)
             target = bundle / "cto-canary/run_cycle.py"; target.write_text("tampered\n")
             manifest["files"]["cto-canary/run_cycle.py"] = hashlib.sha256(target.read_bytes()).hexdigest()
             manifest_path.write_text(json.dumps(manifest, sort_keys=True))
             activation["bundle_manifest_sha256"] = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
-            self.assertTrue(any("accepted Git blob" in error for error in verify_bundle(activation, units)))
+            self.assertTrue(any("accepted Git blob" in error for error in verify_bundle(activation, units, verify_runtime=False)))
 
     def test_activation_authority_contract_rejects_state_actor_and_commit_drift(self):
         decision_id, receipt_id, commit = 83, 999, "a" * 40

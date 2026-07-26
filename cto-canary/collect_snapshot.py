@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import hashlib
+import itertools
 import json
 import os
 from pathlib import Path
@@ -127,9 +128,10 @@ def digest(path: Path) -> dict[str, Any]:
 def discover_git_roots(owned: Path) -> tuple[list[str], list[str]]:
     """Bounded supplemental top-level census; AK registration remains portfolio authority."""
     roots: set[str] = set()
-    entries = sorted(owned.iterdir())
+    entries = list(itertools.islice(owned.iterdir(), MAX_TOP_LEVEL_ENTRIES + 1))
     if len(entries) > MAX_TOP_LEVEL_ENTRIES:
         return [], [f"top-level filesystem census exceeded {MAX_TOP_LEVEL_ENTRIES} entries"]
+    entries.sort()
     for child in entries:
         if not child.is_dir() or child.is_symlink():
             continue
