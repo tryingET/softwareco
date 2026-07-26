@@ -3,7 +3,7 @@ summary: "Observed evidence for malformed Decision 77 epoch receipt 8967 and its
 read_when:
   - "Reviewing the Decision 77 epoch recovery amendment."
 type: "evidence"
-status: "proposed"
+status: "accepted"
 date: "2026-07-26"
 decision_id: 79
 amends_decision_id: 77

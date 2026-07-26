@@ -3,7 +3,7 @@ summary: "Post-acceptance implementation plan for Decision 79's one-time invalid
 read_when:
   - "Implementing accepted Decision 79."
 type: "plan"
-status: "candidate"
+status: "active"
 date: "2026-07-26"
 decision_id: 79
 amends_decision_id: 77
@@ -14,7 +14,7 @@ governance_task_id: 4226
 
 ## Preconditions
 
-Require direct-human Decision-79 acceptance, exact accepted RFC/review/ADR commits, AK lifecycle reconciliation, task `4226` re-evaluation, controller deferral `182`, task `4220` at entity version `1`, and unchanged Decision 74 terminal proof. Until then, do not edit the checker or record invalidation.
+Direct-human receipt `8973` accepted Decision 79; AK is `unblocked`; task `4226` is re-evaluated `still_valid`; controller deferral `182`, task `4220` entity version `1`, and Decision 74 terminal proof remain required. Checker implementation is authorized. Invalidation still requires its separate exact human receipt.
 
 ## Slice 1 — Immutable zero-operation evidence
 

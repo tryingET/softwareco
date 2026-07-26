@@ -3,7 +3,7 @@ summary: "Problem and intent for append-only recovery from malformed Decision 77
 read_when:
   - "Reviewing or recovering the first Decision 77 epoch authorization."
 type: "problem"
-status: "proposed"
+status: "accepted"
 date: "2026-07-26"
 decision_id: 79
 amends_decision_id: 77

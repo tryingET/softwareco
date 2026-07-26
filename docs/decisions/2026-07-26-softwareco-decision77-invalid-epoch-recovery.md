@@ -1,9 +1,9 @@
 ---
-summary: "ADR candidate for Decision 79's one-time quarantine of malformed Decision 77 epoch receipt 8967."
+summary: "Accepted Decision 79 amendment for one-time quarantine of malformed Decision 77 epoch receipt 8967."
 read_when:
   - "Accepting, implementing, or validating Decision 79."
 type: "adr"
-status: "proposed"
+status: "accepted"
 date: "2026-07-26"
 decision_id: 79
 amends_decision_id: 77
@@ -29,7 +29,7 @@ system4d:
 
 ## Status
 
-Proposed. Direct accountable-human acceptance is required. This document grants no invalidation or epoch authority.
+Accepted by direct accountable-human governance receipt `8973` at `2026-07-26T03:12:10.430629943Z`, then reconciled through AK to `unblocked`. Acceptance authorizes the bounded implementation and preparation of one invalidation; it grants no invalidation or epoch authority by itself.
 
 ## Decision
 

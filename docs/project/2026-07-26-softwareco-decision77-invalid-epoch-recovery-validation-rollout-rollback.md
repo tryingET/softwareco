@@ -3,7 +3,7 @@ summary: "Validation, rollout, and rollback contract for Decision 79's one-time 
 read_when:
   - "Validating or rolling back Decision 79."
 type: "plan"
-status: "candidate"
+status: "active"
 date: "2026-07-26"
 decision_id: 79
 amends_decision_id: 77

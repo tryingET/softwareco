@@ -3,7 +3,7 @@ summary: "RFC for one-time append-only invalidation of malformed Decision 77 epo
 read_when:
   - "Reviewing or implementing recovery of Decision 77 epoch receipt 8967."
 type: "rfc"
-status: "proposed"
+status: "accepted"
 date: "2026-07-26"
 decision_id: 79
 amends_decision_id: 77
