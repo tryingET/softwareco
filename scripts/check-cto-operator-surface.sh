@@ -738,38 +738,55 @@ elif [[ "$mode_arg" == --require-77-objective-complete ]]; then
 
   ak governance show 9063 --json | jq -e '
    .status=="applied" and .source_authority=="human-operator" and .actor=="human-operator" and .agreement_ref=="decision:77" and
-   .from_state=="proposed" and .to_state=="envelope_accepted" and .task_id==4225 and .repo_scope=="/home/tryinget/ai-society/softwareco/owned/agent-kernel" and
+   .consent_mode=="explicit" and .from_state=="proposed" and .to_state=="envelope_accepted" and .task_id==4225 and
+   .repo_scope=="/home/tryinget/ai-society/softwareco/owned/agent-kernel" and
    .details.schema=="softwareco.portfolio-owner-envelope-acceptance.v2" and .details.decision_id==77 and
    .details.wave_key=="IW-SF3-CTO77-AK-SCHEMA-STATUS" and .details.role=="product-domain" and .details.owner_id=="human-operator" and
-   .details.scope_id=="task-4225" and .details.epoch_id=="d77-e3-20260726" and .details.external_effects==0
+   .details.scope_id=="task-4225" and .details.epoch_id=="d77-e3-20260726" and .details.prior_receipt_id==null and
+   .details.owner_evidence_refs==["evidence:5378","task:4225","git:agent-kernel:8b449ee"] and
+   .details.observed_at_utc=="2026-07-26T08:45:25.248593859Z" and .details.external_effects==0
   ' >/dev/null || fail "Decision 77 product acceptance receipt invalid"
   ak governance show 9064 --json | jq -e '
    .status=="applied" and .source_authority=="human-operator" and .actor=="human-operator" and .agreement_ref=="decision:77" and
-   .from_state=="proposed" and .to_state=="task_scope_accepted" and .task_id==4225 and
+   .consent_mode=="explicit" and .from_state=="proposed" and .to_state=="task_scope_accepted" and .task_id==4225 and
+   .repo_scope=="/home/tryinget/ai-society/softwareco/owned/agent-kernel" and
    .details.schema=="softwareco.portfolio-owner-task-scope-acceptance.v2" and .details.decision_id==77 and
-   .details.wave_key=="IW-SF3-CTO77-AK-SCHEMA-STATUS" and .details.role=="project-source" and .details.owner_task_ids==[4225] and
-   .details.epoch_id=="d77-e3-20260726" and .details.external_effects==0
+   .details.wave_key=="IW-SF3-CTO77-AK-SCHEMA-STATUS" and .details.role=="project-source" and .details.owner_id=="human-operator" and
+   .details.scope_id=="task-4225" and .details.owner_task_ids==[4225] and .details.epoch_id=="d77-e3-20260726" and .details.prior_receipt_id==null and
+   .details.owner_evidence_refs==["evidence:5378","task:4225","governance:9063","git:agent-kernel:8b449ee"] and
+   .details.observed_at_utc=="2026-07-26T08:45:25.248593859Z" and .details.external_effects==0
   ' >/dev/null || fail "Decision 77 project acceptance receipt invalid"
   ak governance show 9087 --json | jq -e '
    .status=="applied" and .source_authority=="human-operator" and .actor=="human-operator" and .agreement_ref=="decision:77" and
-   .from_state=="admitted" and .to_state=="terminal_accepted" and .task_id==4225 and
-   .details.schema=="softwareco.portfolio-terminal-acceptance.v2" and .details.role=="product-domain" and
-   .details.wave_key=="IW-SF3-CTO77-AK-SCHEMA-STATUS" and .details.owner_task_ids==[4225] and .details.acceptance_receipt_id==9063 and .details.external_effects==0
+   .consent_mode=="explicit" and .from_state=="admitted" and .to_state=="terminal_accepted" and .task_id==4225 and
+   .repo_scope=="/home/tryinget/ai-society/softwareco/owned/agent-kernel" and
+   .details.schema=="softwareco.portfolio-terminal-acceptance.v2" and .details.decision_id==77 and .details.epoch_id=="d77-e3-20260726" and
+   .details.role=="product-domain" and .details.owner_id=="human-operator" and .details.scope_id=="task-4225" and .details.prior_receipt_id==null and
+   .details.wave_key=="IW-SF3-CTO77-AK-SCHEMA-STATUS" and .details.owner_task_ids==[4225] and .details.acceptance_receipt_id==9063 and
+   .details.owner_evidence_refs==["task:4225","evidence:5400","evidence:5401","evidence:5402","evidence:5403","evidence:5397","git:agent-kernel:b2548196cb8994f5388293b26918d454c41a4138","git:agent-kernel:8c84ba5b5dfbaf6102f4f0f8e0804ee067a5aaa8"] and
+   .details.observed_at_utc=="2026-07-26T09:47:35.009747233Z" and .details.external_effects==0
   ' >/dev/null || fail "Decision 77 product terminal receipt invalid"
   ak governance show 9088 --json | jq -e '
    .status=="applied" and .source_authority=="human-operator" and .actor=="human-operator" and .agreement_ref=="decision:77" and
-   .from_state=="admitted" and .to_state=="terminal_accepted" and .task_id==4225 and
-   .details.schema=="softwareco.portfolio-terminal-acceptance.v2" and .details.role=="project-source" and
+   .consent_mode=="explicit" and .from_state=="admitted" and .to_state=="terminal_accepted" and .task_id==4225 and
+   .repo_scope=="/home/tryinget/ai-society/softwareco/owned/agent-kernel" and
+   .details.schema=="softwareco.portfolio-terminal-acceptance.v2" and .details.decision_id==77 and .details.epoch_id=="d77-e3-20260726" and
+   .details.role=="project-source" and .details.owner_id=="human-operator" and .details.scope_id=="task-4225" and .details.prior_receipt_id==null and
    .details.wave_key=="IW-SF3-CTO77-AK-SCHEMA-STATUS" and .details.owner_task_ids==[4225] and .details.acceptance_receipt_id==9064 and
-   .details.product_terminal_acceptance_receipt_id==9087 and .details.external_effects==0
+   .details.product_terminal_acceptance_receipt_id==9087 and
+   .details.owner_evidence_refs==["task:4225","evidence:5400","evidence:5401","evidence:5402","evidence:5403","evidence:5397","git:agent-kernel:b2548196cb8994f5388293b26918d454c41a4138","git:agent-kernel:8c84ba5b5dfbaf6102f4f0f8e0804ee067a5aaa8"] and
+   .details.observed_at_utc=="2026-07-26T09:47:35.009747233Z" and .details.external_effects==0
   ' >/dev/null || fail "Decision 77 project terminal receipt invalid"
   ak governance show 9089 --json | jq -e '
    .status=="applied" and .source_authority=="human-operator" and .actor=="human-operator" and .agreement_ref=="decision:77" and
-   .from_state=="admitted" and .to_state=="released_terminal" and .task_id==4225 and
-   .details.schema=="softwareco.portfolio-owner-release.v2" and .details.role=="project-source" and
+   .consent_mode=="explicit" and .from_state=="admitted" and .to_state=="released_terminal" and .task_id==4225 and
+   .repo_scope=="/home/tryinget/ai-society/softwareco/owned/agent-kernel" and
+   .details.schema=="softwareco.portfolio-owner-release.v2" and .details.decision_id==77 and .details.epoch_id=="d77-e3-20260726" and
+   .details.role=="project-source" and .details.owner_id=="human-operator" and .details.scope_id=="task-4225" and .details.prior_receipt_id==null and
    .details.wave_key=="IW-SF3-CTO77-AK-SCHEMA-STATUS" and .details.owner_task_ids==[4225] and
-   .details.terminal_acceptance_receipt_ids==[9087,9088] and .details.disposition=="released_terminal" and
-   .details.continuing_owner_lifecycle==false and .details.external_effects==0
+   .details.owner_evidence_refs==["task:4225:done","evidence:5400","evidence:5401"] and
+   .details.observed_at_utc=="2026-07-26T09:47:35.009747233Z" and .details.terminal_acceptance_receipt_ids==[9087,9088] and
+   .details.disposition=="released_terminal" and .details.continuing_owner_lifecycle==false and .details.external_effects==0
   ' >/dev/null || fail "Decision 77 owner release receipt invalid"
 
   manifest_task="$(ak task show 4273 --machine)"
