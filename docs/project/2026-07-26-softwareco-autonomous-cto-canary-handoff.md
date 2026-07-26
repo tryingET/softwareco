@@ -3,7 +3,7 @@ summary: "Human acceptance, install, activation, observation, and stop handoff f
 read_when:
   - "Preparing to accept or run the 24-hour autonomous CTO canary."
 type: "runbook"
-status: "blocked_pending_review_and_acceptance"
+status: "blocked_pending_direct_human_acceptance"
 date: "2026-07-26"
 task_id: 4284
 decision_id: 83
@@ -13,7 +13,7 @@ decision_id: 83
 
 ## Current legal state
 
-The candidate is inactive. No service has been installed, enabled, or started. No production model cycle is authorized. The exact decision ID, accepted commit, review closure, ADR, and architecture-acceptance receipt must be filled from fresh AK/Git readback after review.
+The candidate is inactive. Decision `83` is `decision_pending` with controlling `ready_for_adr` closure; both final required tracks reviewed source `f36547935826bbf8f4597f928b545127cff10003` as `READY`. No architecture-acceptance receipt exists. No service has been installed, enabled, or started, and no production model cycle is authorized. The acceptance command must bind the fresh final candidate `HEAD`, not merely the earlier reviewed source commit.
 
 Do not substitute Decision `74` or `77`.
 

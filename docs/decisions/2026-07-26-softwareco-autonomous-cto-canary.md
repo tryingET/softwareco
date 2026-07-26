@@ -3,7 +3,7 @@ summary: "ADR candidate for Decision 83's one-time 24-hour autonomous CTO observ
 read_when:
   - "Accepting, operating, reviewing, or stopping the autonomous CTO canary."
 type: "decision"
-status: "candidate_pending_review"
+status: "candidate_pending_human_acceptance"
 date: "2026-07-26"
 decision_id: 83
 task_id: 4284
@@ -18,7 +18,7 @@ system4d:
 
 ## Status
 
-Candidate only. Decision `83` remains `review_pending`. This document grants no installation, activation, service, model-call, or autonomous authority.
+Candidate only. Decision `83` is `decision_pending` with controlling `ready_for_adr` closure. Authority review `dispatch-1785093118453` and runtime review `dispatch-1785093118453-1` both returned `READY` for source commit `f36547935826bbf8f4597f928b545127cff10003`. No direct-human architecture acceptance exists, so this document grants no installation, activation, service, model-call, or autonomous authority.
 
 ## Context
 

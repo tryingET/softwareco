@@ -3,7 +3,7 @@ summary: "RFC candidate for a separately authorized 24-hour autonomous CTO obser
 read_when:
   - "Reviewing, accepting, installing, or operating the autonomous CTO canary."
 type: "rfc"
-status: "candidate_for_multi_lane_review"
+status: "ready_for_direct_human_adr_decision"
 date: "2026-07-26"
 task_id: 4284
 decision_id: 83

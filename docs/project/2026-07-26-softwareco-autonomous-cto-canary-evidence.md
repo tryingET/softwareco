@@ -40,14 +40,16 @@ Attempt-3 authority and runtime reviews of `a53427a` again returned `REVISE`. Th
 
 Attempt-4 authority/runtime reviews of `f73a351` found an absent-manifest fallback, missing prior-cycle threshold stop, incomplete negative paths, and a timer-retrigger race during stop. The latest correction requires isolated runtime at every non-canonical location, verifies runtime copies, fails on prior threshold breach, disables/verifies triggers before main-service/cgroup stop, and adds 24 total executable controls. It requires closure review.
 
+Final authority review `dispatch-1785093118453` and runtime review `dispatch-1785093118453-1` both returned `READY` for `f36547935826bbf8f4597f928b545127cff10003`. Controlling synthesis is tracked at `cc6c029`; AK reports Decision `83` `ready_for_adr` and ADR-recorded readiness.
+
 ## Not yet proved
 
-- AK Decision `83` exists but remains `review_pending`; it grants no operational authority;
+- AK Decision `83` is `decision_pending` with `ready_for_adr` review closure but no accepted outcome; it grants no operational authority;
 - no direct-human acceptance or activation receipt exists;
 - no bundle or user unit has been installed;
 - no service/timer has been enabled or started;
 - no production model cycle or 24-hour canary has run;
 - no canary output usefulness, cost, reliability, or complete-window behavior has been observed;
-- four authority/security attempts and three runtime/operator attempts required revision; no review of the latest correction commit has closed.
+- four authority/security and three runtime/operator revision attempts remain immutable lineage; both final required tracks and controlling synthesis are `ready_for_adr`.
 
 Passing fixtures and prompt preview are implementation proofs only, not operational canary proof.
