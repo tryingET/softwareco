@@ -25,8 +25,8 @@ Coordinate Software Company work across explicit lanes:
 - Use repo-local `diary/` capture in descendant repos; do not invent a company-wide diary authority.
 
 ## Shared tooling
-- Docs discovery/scoping: `./scripts/docs-list.sh --task "<task>" --top 8`
-- Prompt read-scope allowlist: `./scripts/docs-list.sh --from-prompt <prompt-file> --paths-only --wikilink`
+- Docs discovery/scoping: use target-repo `./scripts/docs-list.sh --task "<task>" --top 8` when that wrapper exists; otherwise run `~/ai-society/softwareco/scripts/docs-list.sh --task "<task>" --top 8` from the target repo.
+- Prompt read-scope allowlist: use the same wrapper selection with `--from-prompt <prompt-file> --paths-only --wikilink`.
 - Repo census preflight: `./scripts/preflight-repo-census.sh [scope]`
 - Deterministic ROCS launcher: `./scripts/rocs.sh <rocs args...>`
 - New L2 repo from template: `./scripts/new-repo-from-copier.sh <template> <dest> -d repo_slug=<slug> --defaults`
