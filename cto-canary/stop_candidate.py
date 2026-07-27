@@ -48,6 +48,8 @@ def main() -> int:
     except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
         print(f"REFUSED: activation state unreadable: {exc}", file=sys.stderr); return 3
     now = datetime.now(timezone.utc)
+    if state.get("state") != "active":
+        print("REFUSED: activation is not active; repeated or stale stop is forbidden", file=sys.stderr); return 3
     if args.expiry and now < expiry:
         print("REFUSED: expiry service fired before the exact authority deadline", file=sys.stderr); return 3
     # Remove every trigger before stopping the main service so it cannot race/retrigger during reconciliation.
@@ -62,21 +64,27 @@ def main() -> int:
     if disable.returncode or residual:
         print(f"REFUSED: trigger cleanup failed before service stop (rc={disable.returncode}): {residual}", file=sys.stderr)
         return 2
-    # Kill any in-flight model process through the main service cgroup before recording stopped state.
-    service = "softwareco-cto-canary.service"
-    stop_result = run(["systemctl", "--user", "stop", service], check=False)
-    reset_result = run(["systemctl", "--user", "reset-failed", service], check=False)
-    active_state, state_error = unit_property(service, "ActiveState")
-    control_group, cgroup_error = unit_property(service, "ControlGroup")
-    cgroup_processes = cgroup_members(control_group)
-    if stop_result.returncode or reset_result.returncode or state_error or cgroup_error or active_state != "inactive" or cgroup_processes:
-        print(f"REFUSED: main service termination unverified: stop_rc={stop_result.returncode} reset_rc={reset_result.returncode} "
-              f"state={active_state} state_error={state_error} cgroup_error={cgroup_error} "
-              f"cgroup_processes={cgroup_processes!r}", file=sys.stderr)
+    # Kill the model service and any authority-snapshot helper before recording stopped state.
+    services = ["softwareco-cto-canary.service", "softwareco-cto-canary-snapshot.service"]
+    stop_result = run(["systemctl", "--user", "stop", *services], check=False)
+    reset_result = run(["systemctl", "--user", "reset-failed", *services], check=False)
+    service_residual: list[str] = []
+    for service in services:
+        active_state, state_error = unit_property(service, "ActiveState")
+        control_group, cgroup_error = unit_property(service, "ControlGroup")
+        cgroup_processes = cgroup_members(control_group)
+        if state_error or cgroup_error or active_state != "inactive" or cgroup_processes:
+            service_residual.append(
+                f"{service}(state={active_state},state_error={state_error},"
+                f"cgroup_error={cgroup_error},cgroup_processes={cgroup_processes!r})"
+            )
+    if stop_result.returncode or reset_result.returncode or service_residual:
+        print(f"REFUSED: service termination unverified: stop_rc={stop_result.returncode} "
+              f"reset_rc={reset_result.returncode} residual={service_residual}", file=sys.stderr)
         return 2
     if args.human_stop:
         chain = json.loads(run(["ak", "governance", "list", "--concern", state["control_concern"], "--limit", "100", "--json"]).stdout)
-        if not chain or chain[-1].get("id") != state["activation_receipt_id"]:
+        if not chain or chain[0].get("id") != state["activation_receipt_id"]:
             print("REFUSED: activation is not the live control-chain head", file=sys.stderr); return 3
         details = {"schema": "softwareco.autonomous-cto-canary-stop.v1",
                    "decision_id": state["decision_id"], "activation_receipt_id": state["activation_receipt_id"],
@@ -84,10 +92,19 @@ def main() -> int:
         run(["ak", "governance", "record", "--concern", state["control_concern"],
              "--source-authority", "human-operator", "--mito-layer", "Operations & Evaluation",
              "--s3-domain-ref", "softwareco", "--agreement-ref", f"decision:{state['decision_id']}",
-             "--from-state", chain[-1]["to_state"], "--to-state", "stopped",
+             "--from-state", chain[0]["to_state"], "--to-state", "stopped",
              "--consent-mode", "explicit", "--evidence-ref", f"governance:{state['activation_receipt_id']}",
              "--rollback-ref", ROLLBACK, "--repo-scope", str(ROOT), "--actor", "human-operator",
              "--details", json.dumps(details, separators=(",", ":"))])
+        fresh_chain = json.loads(run(["ak", "governance", "list", "--concern", state["control_concern"],
+                                      "--limit", "100", "--json"]).stdout)
+        if (not fresh_chain or fresh_chain[0].get("to_state") != "stopped" or
+                fresh_chain[0].get("source_authority") != "human-operator" or
+                fresh_chain[0].get("actor") != "human-operator" or
+                fresh_chain[0].get("status") != "applied" or
+                fresh_chain[0].get("evidence_ref") != f"governance:{state['activation_receipt_id']}" or
+                fresh_chain[0].get("details") != details):
+            print("REFUSED: stop receipt fresh-read did not match", file=sys.stderr); return 3
         state["state"] = "human_stopped"
     else:
         # The accepted activation receipt contains the exact deadline; authority ends by time.

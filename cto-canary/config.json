@@ -4,6 +4,11 @@
   "cwd": "/home/tryinget/ai-society/softwareco",
   "portfolio_root": "/home/tryinget/ai-society/softwareco/owned",
   "authority_db": "/home/tryinget/ai-society/society.v2.db",
+  "required_predecessor": {
+    "decision_id": 83,
+    "activation_receipt_id": 9189,
+    "stop_receipt_id": 9201
+  },
   "interval_seconds": 3600,
   "window_seconds": 86400,
   "max_cycles": 24,
@@ -46,10 +51,12 @@
     "cto-canary/validate_output.py",
     "cto-canary/fixture_rpc_worker.py",
     "cto-canary/run_cycle.py",
+    "cto-canary/snapshot_authority.py",
     "cto-canary/runtime_integrity.py",
     "cto-canary/start_candidate.py",
     "cto-canary/stop_candidate.py",
     "cto-canary/systemd/softwareco-cto-canary.service",
+    "cto-canary/systemd/softwareco-cto-canary-snapshot.service",
     "cto-canary/systemd/softwareco-cto-canary.timer",
     "cto-canary/systemd/softwareco-cto-canary-stop.service",
     "cto-canary/systemd/softwareco-cto-canary-stop.timer"

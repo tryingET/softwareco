@@ -45,6 +45,34 @@ def acceptance_errors(decision: dict, receipt: dict, decision_id: int, acceptanc
     return [label for label, passed in checks.items() if not passed]
 
 
+def predecessor_errors(prior: dict, activation: dict, stop: dict, chain: list[dict], required: dict) -> list[str]:
+    decision_id = required["decision_id"]
+    activation_id = required["activation_receipt_id"]
+    stop_id = required["stop_receipt_id"]
+    concern = f"softwareco-autonomous-cto-canary:decision-{decision_id}:control"
+    checks = {
+        "local predecessor state": prior.get("state") == "human_stopped",
+        "local predecessor decision": prior.get("decision_id") == decision_id,
+        "local predecessor activation": prior.get("activation_receipt_id") == activation_id,
+        "local predecessor concern": prior.get("control_concern") == concern,
+        "activation id": activation.get("id") == activation_id,
+        "activation human source": activation.get("source_authority") == "human-operator",
+        "activation human actor": activation.get("actor") == "human-operator",
+        "activation applied": activation.get("status") == "applied",
+        "activation agreement": activation.get("agreement_ref") == f"decision:{decision_id}",
+        "stop id": stop.get("id") == stop_id,
+        "stop human source": stop.get("source_authority") == "human-operator",
+        "stop human actor": stop.get("actor") == "human-operator",
+        "stop applied": stop.get("status") == "applied",
+        "stop agreement": stop.get("agreement_ref") == f"decision:{decision_id}",
+        "stop transition": stop.get("from_state") == activation.get("to_state") and stop.get("to_state") == "stopped",
+        "stop evidence": stop.get("evidence_ref") == f"governance:{activation_id}",
+        "stop activation detail": stop.get("details", {}).get("activation_receipt_id") == activation_id,
+        "newest control head": bool(chain) and chain[0].get("id") == stop_id,
+    }
+    return [label for label, passed in checks.items() if not passed]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Record direct-human activation and start the exact 24-hour canary")
     parser.add_argument("--decision-id", required=True, type=int)
@@ -97,27 +125,30 @@ def main() -> int:
     existing = json.loads(run(["ak", "governance", "list", "--concern", concern, "--limit", "100", "--json"]).stdout)
     if existing:
         print("REFUSED: this accepted canary decision already has a control history", file=sys.stderr); return 3
+    required = CONFIG["required_predecessor"]
+    history = state_dir / "history"
+    archived = history / (f"activation-decision-{required['decision_id']}-"
+                          f"receipt-{required['activation_receipt_id']}.json")
+    if activation_path.exists() and archived.exists():
+        print("REFUSED: predecessor activation exists in both live and archive locations", file=sys.stderr); return 3
+    predecessor_path = activation_path if activation_path.exists() else archived
+    try:
+        prior = json.loads(predecessor_path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"REFUSED: exact stopped predecessor state is unavailable: {exc}", file=sys.stderr); return 3
+    expected_concern = f"softwareco-autonomous-cto-canary:decision-{required['decision_id']}:control"
+    prior_activation = json.loads(run(["ak", "governance", "show", str(required["activation_receipt_id"]),
+                                       "--format", "json"]).stdout)
+    prior_stop = json.loads(run(["ak", "governance", "show", str(required["stop_receipt_id"]),
+                                 "--format", "json"]).stdout)
+    prior_chain = json.loads(run(["ak", "governance", "list", "--concern", expected_concern,
+                                  "--limit", "100", "--json"]).stdout)
+    prior_errors = predecessor_errors(prior, prior_activation, prior_stop, prior_chain, required)
+    if prior_errors:
+        print("REFUSED: exact predecessor activation/stop receipt chain is invalid: " +
+              ", ".join(prior_errors), file=sys.stderr); return 3
     if activation_path.exists():
-        try:
-            prior = json.loads(activation_path.read_text())
-            prior_state = prior["state"]
-            prior_decision = prior["decision_id"]
-            prior_activation = prior["activation_receipt_id"]
-        except (OSError, KeyError, json.JSONDecodeError) as exc:
-            print(f"REFUSED: prior activation state is not archivable: {exc}", file=sys.stderr); return 3
-        if prior_state not in ("human_stopped", "expired_by_time") or prior_decision == decision_id:
-            print("REFUSED: activation state already exists and is not a stopped predecessor", file=sys.stderr); return 3
-        if prior_state == "human_stopped":
-            prior_chain = json.loads(run(["ak", "governance", "list", "--concern", prior["control_concern"],
-                                          "--limit", "100", "--json"]).stdout)
-            if (not prior_chain or prior_chain[0].get("to_state") != "stopped" or
-                    prior_chain[0].get("details", {}).get("activation_receipt_id") != prior_activation):
-                print("REFUSED: prior human stop is not the live control-chain head", file=sys.stderr); return 3
-        history = state_dir / "history"
         history.mkdir(parents=True, exist_ok=True)
-        archived = history / f"activation-decision-{prior_decision}-receipt-{prior_activation}.json"
-        if archived.exists():
-            print(f"REFUSED: prior activation archive already exists: {archived}", file=sys.stderr); return 3
         activation_path.replace(archived)
 
     started = datetime.now(timezone.utc)

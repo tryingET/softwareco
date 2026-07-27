@@ -13,8 +13,9 @@ HERE = Path(__file__).resolve().parent
 CONFIG = json.loads((HERE / "config.json").read_text())
 ROOT = Path(CONFIG["cwd"])
 UNIT_NAMES = (
-    "softwareco-cto-canary.service", "softwareco-cto-canary.timer",
-    "softwareco-cto-canary-stop.service", "softwareco-cto-canary-stop.timer",
+    "softwareco-cto-canary.service", "softwareco-cto-canary-snapshot.service",
+    "softwareco-cto-canary.timer", "softwareco-cto-canary-stop.service",
+    "softwareco-cto-canary-stop.timer",
 )
 
 

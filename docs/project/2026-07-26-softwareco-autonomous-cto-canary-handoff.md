@@ -70,7 +70,7 @@ find ~/.local/state/softwareco-cto-canary/runs -mindepth 1 -maxdepth 1 -type d |
 
 For each cycle inspect `result.json`, `mode-preview.json`, and errors. Treat all content as proposal-only. Human/AK/owner workflows remain separate.
 
-The first corrected cycle must additionally prove: a private `ak-snapshot/` exists in state, AK live-gate reads succeed inside the sandbox, the packet hashes the source authority DB rather than the private snapshot, and no source DB/Git change occurred across the call.
+The first corrected cycle must additionally prove: the narrow snapshot helper stages a private `ak-snapshot/`; the model service has no source-DB or broad-workspace bind; AK live-gate reads succeed through the snapshot; the packet fingerprints both source DB and WAL; and no DB, WAL, or watched Git change occurred from collection through immediate pre-dispatch and post-call checks.
 
 ## Early stop
 

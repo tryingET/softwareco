@@ -21,9 +21,9 @@ npm --prefix owned/pi-extensions/packages/pi-modes run mode:lint -- \
   "$PWD/.pi/mode-presets/softwareco-cto-canary.json"
 ```
 
-Render `@ROOT@` and `@BUNDLE_DIR@` into a temporary directory and run `systemd-analyze --user verify` on all four units. The unrelated workstation `school-asr-recorder.service` warning is outside this candidate.
+Render `@ROOT@` and `@BUNDLE_DIR@` into a temporary directory and run `systemd-analyze --user verify` on all five units, including the narrow snapshot helper. The unrelated workstation `school-asr-recorder.service` warning is outside this candidate.
 
-Run a real transient-user-service probe with `ProtectSystem=strict`, `ProtectHome=tmpfs`, the read-only authority bind, and private writable runtime state. Require `prepare_ak_snapshot` to copy the current DB+WAL pair and require installed AK to read a known decision from that snapshot. A source read-only-filesystem error or direct AK access to the source DB fails the correction.
+Run a real transient snapshot-service probe with `ProtectSystem=strict`, `ProtectHome=tmpfs`, read-only binds for only the authority DB and optional WAL, no network address family, and private writable state. Require it to stage the current stable pair, then require installed AK in a separate model-service-equivalent sandbox without source-DB/workspace access to read a known decision from that snapshot. A source read-only-filesystem error, broad workspace bind, or direct AK/model-service access to the source DB fails the correction.
 
 Run two `--fixture` cycles in a temporary state directory and require distinct process IDs, `canonical=false`, empty validation/runtime violations, and `verified_behavior=true`. Run production without an activation file and require exit `3` plus `REFUSED`.
 

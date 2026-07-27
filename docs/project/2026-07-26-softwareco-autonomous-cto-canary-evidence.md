@@ -18,10 +18,10 @@ decision_id: 86
 - Candidate mode and preset lint successfully.
 - A fresh trusted-root no-session RPC process, with all extensions disabled except the pinned Pi Modes entrypoint, selected `softwareco-cto-canary` as role `base`, strategy `replace_base`, with no overlay and no diagnostics.
 - `/mode-preview --json` contained the exact canary prompt plus global/workspace/Softwareco AGENTS context, current date, and cwd.
-- The original candidate passed twenty-four deterministic tests before Decision 83 acceptance. The corrective candidate passes twenty-six tests, adding coherent WAL-snapshot and canonical governance-token/reset controls.
+- The original candidate passed twenty-four deterministic tests before Decision 83 acceptance. The corrective candidate passes twenty-eight tests, adding DB+WAL drift, exact predecessor/newest-head, coherent snapshot, canonical governance-token, and failed-service reset controls.
 - Two fixture cycles used distinct process IDs, produced noncanonical proposal-only outputs, and passed strict validation.
 - Production cycle invocation without activation refused with exit `3`.
-- Rendered service, hourly timer, expiry service, and 24-hour timer passed `systemd-analyze --user verify`. The command also reported an unrelated pre-existing warning from `school-asr-recorder.service`.
+- The original four rendered units passed verification; the corrective five-unit set, including the narrow snapshot helper, passes `systemd-analyze --user verify`. The command also reports an unrelated pre-existing warning from `school-asr-recorder.service`.
 - A real read-only collector run enumerated all 41 registered owned child repositories and produced a compact bounded 742 KB packet. It truthfully reported two missing registered repositories (`fcos-proving-lane` and `voice-dictation`) as coverage gaps rather than inferring completeness.
 
 ## Review correction
@@ -53,10 +53,12 @@ The inactive Decision `86` correction:
 - uses canonical `Operations & Evaluation` directly in start and stop receipts;
 - resets historical failed service state before verifying an empty cgroup and inactive service;
 - preserves and archives the stopped predecessor activation before a separately accepted successor starts;
+- uses a separate non-networked snapshot service with read-only binds for only the source DB and optional WAL; the model service cannot see the source DB or unrelated owner surfaces;
 - byte-copies a hash-stable source DB+WAL pair into private writable `StateDirectory`, validates its SQLite catalog, and points AK only at that snapshot;
-- continues hashing the live source DB and checking all watched Git state before the model call and after it;
-- refreshes the private AK snapshot immediately before the pre-model authority gate and after the worker;
-- passed a real transient-systemd `ProtectSystem=strict`/`ProtectHome=tmpfs` probe in which AK read Decision `83` successfully from the private snapshot.
+- fingerprints both source DB and WAL and checks all watched Git state after collection, immediately before model dispatch, and after the worker;
+- uses AK's canonical newest-first governance-chain head and rejects repeated/stale stop;
+- requires exact predecessor activation `9189` and human stop `9201` before archiving Decision 83 local state;
+- passed a real split-service sandbox proof: the narrow non-networked helper staged the live DB+WAL pair, then installed AK read Decision `83` from the private snapshot in a separate `ProtectSystem=strict`/`ProtectHome=tmpfs` service with no source-DB bind.
 
 Decision `86` is separate corrective authority. It does not reopen, rewrite, or continue Decision `83`'s stopped activation window.
 

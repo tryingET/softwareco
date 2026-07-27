@@ -1,0 +1,21 @@
+[Unit]
+Description=Stage a coherent read-only AK authority snapshot for the Softwareco CTO canary
+PartOf=softwareco-cto-canary.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 @BUNDLE_DIR@/snapshot_authority.py --source %h/ai-society/society.v2.db --state-dir %S/softwareco-cto-canary
+StateDirectory=softwareco-cto-canary
+UMask=0077
+NoNewPrivileges=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=tmpfs
+BindReadOnlyPaths=@BUNDLE_DIR@
+BindReadOnlyPaths=%h/ai-society/society.v2.db
+BindReadOnlyPaths=-%h/ai-society/society.v2.db-wal
+ReadWritePaths=%S/softwareco-cto-canary
+LockPersonality=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_UNIX
+TimeoutStartSec=2min

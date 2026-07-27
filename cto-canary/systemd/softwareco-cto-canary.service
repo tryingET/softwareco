@@ -2,6 +2,8 @@
 Description=Softwareco observational CTO canary (one fresh proposal-only cycle)
 Documentation=file://@ROOT@/docs/project/2026-07-26-softwareco-autonomous-cto-canary-handoff.md
 ConditionPathExists=%S/softwareco-cto-canary/activation.json
+Requires=softwareco-cto-canary-snapshot.service
+After=softwareco-cto-canary-snapshot.service
 
 [Service]
 Type=oneshot
@@ -17,9 +19,8 @@ ProtectSystem=strict
 ProtectHome=tmpfs
 BindReadOnlyPaths=@ROOT@
 BindReadOnlyPaths=@BUNDLE_DIR@
-# Expose the authority DB and WAL as read-only source bytes. The cycle copies a
-# stable pair into StateDirectory; AK opens only that private writable snapshot.
-BindReadOnlyPaths=%h/ai-society
+# The separate snapshot service exposes only the DB and optional WAL. This
+# model-worker service can read only the resulting private StateDirectory copy.
 BindReadOnlyPaths=%h/.pi/agent/auth.json
 BindReadOnlyPaths=%h/.pi/agent/settings.json
 BindReadOnlyPaths=%h/.pi/agent/models.json

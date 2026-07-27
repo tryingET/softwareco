@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
-import hashlib
 import itertools
 import json
 import os
@@ -117,14 +116,6 @@ def compact_direction(value: Any) -> Any:
             "projection_note": "completed task-link edges and vnext compatibility expansion omitted; current nodes and nonterminal task links retained"}
 
 
-def digest(path: Path) -> dict[str, Any]:
-    if not path.exists() or not path.is_file():
-        return {"exists": False}
-    stat = path.stat()
-    return {"exists": True, "size": stat.st_size,
-            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "mtime_ns": stat.st_mtime_ns}
-
-
 def discover_git_roots(owned: Path) -> tuple[list[str], list[str]]:
     """Bounded supplemental top-level census; AK registration remains portfolio authority."""
     roots: set[str] = set()
@@ -218,9 +209,15 @@ def main() -> int:
     unregistered = sorted(set(filesystem) - set(registered_paths))
     missing_on_disk = sorted(set(registered_paths) - set(filesystem))
     # AK registration defines portfolio membership; filesystem extras are surfaced, not silently admitted.
-    authority_db = Path(os.path.expanduser(os.environ.get(
-        "CTO_CANARY_SOURCE_AK_DB", os.environ.get("AK_DB", "~/ai-society/society.v2.db")
-    )))
+    raw_fingerprint = os.environ.get("CTO_CANARY_SOURCE_FINGERPRINT")
+    try:
+        authority_fingerprint = json.loads(raw_fingerprint) if raw_fingerprint else None
+    except json.JSONDecodeError:
+        authority_fingerprint = None
+    if (not isinstance(authority_fingerprint, dict) or set(authority_fingerprint) != {"db", "wal"} or
+            not all(value is None or isinstance(value, str) for value in authority_fingerprint.values())):
+        print("source authority DB+WAL fingerprint is missing or invalid", file=sys.stderr)
+        return 2
     packet = {
         "schema_version": 2,
         "captured_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -234,7 +231,7 @@ def main() -> int:
             "filesystem_git_roots_not_registered": unregistered,
             "registered_paths_without_git_marker": missing_on_disk,
         },
-        "authority_db_before": digest(authority_db),
+        "authority_db_before": {"fingerprint": authority_fingerprint},
         "repo_inventory_probe": {"argv": repo_probe["argv"], "exit_code": repo_probe["exit_code"]},
         "repositories": records,
     }

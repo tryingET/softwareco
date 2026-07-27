@@ -109,8 +109,9 @@ def main() -> int:
     unit_dir = Path.home() / ".config/systemd/user"
     unit_dir.mkdir(parents=True, exist_ok=True)
     replacements = {"@BUNDLE_DIR@": str(bundle / "cto-canary"), "@ROOT@": str(ROOT)}
-    for name in ("softwareco-cto-canary.service", "softwareco-cto-canary.timer",
-                 "softwareco-cto-canary-stop.service", "softwareco-cto-canary-stop.timer"):
+    for name in ("softwareco-cto-canary.service", "softwareco-cto-canary-snapshot.service",
+                 "softwareco-cto-canary.timer", "softwareco-cto-canary-stop.service",
+                 "softwareco-cto-canary-stop.timer"):
         text = (bundle / "cto-canary/systemd" / name).read_text()
         for old, new in replacements.items():
             text = text.replace(old, new)

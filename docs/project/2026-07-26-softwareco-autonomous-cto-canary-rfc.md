@@ -44,8 +44,9 @@ The production worker intentionally selects no tools, skills, prompt templates, 
 
 ```text
 systemd hourly timer
--> commit-addressed accepted bundle/run_cycle.py
+-> narrow non-networked snapshot service sees only source DB and optional WAL
 -> hash-stable source DB+WAL copy into private writable StateDirectory
+-> commit-addressed accepted bundle/run_cycle.py (no source DB/workspace bind)
 -> AK decision, acceptance, and activation-chain reads only through that private snapshot
 -> source authority DB/Git pre-model stability check
 -> bounded read-only AK/Git portfolio snapshot
@@ -59,7 +60,7 @@ systemd hourly timer
 
 A separate 24-hour stop timer disables future triggers. Runtime independently rejects execution after the exact activation deadline or after 24 run directories, even if timer shutdown is delayed. A worker timeout is capped to the remaining authorized interval with a guard margin. Expiry or direct-human stop terminates the main service cgroup, so an in-flight worker is not allowed to continue model effects after authority ends.
 
-The service exposes the live authority tree only as read-only source bytes. For each authority gate it hashes and byte-copies a stable SQLite DB+WAL pair into private writable state, validates that snapshot's SQLite catalog, and points AK at the copy. It never grants AK a writable path to the source DB. Immediately before the model call it rejects any source DB or watched Git drift since collection, refreshes the snapshot, and rereads authority. After the worker it checks source bytes/Git again and refreshes authority once more. This accommodates SQLite's private `-shm` requirement without weakening source-owner mutation boundaries.
+A separate non-networked snapshot service exposes only the source DB and optional WAL as read-only file binds. It hashes and byte-copies a stable pair into private writable state, validates the snapshot's SQLite catalog, and exits. The model-worker service cannot see the source DB or unrelated workspace owners; AK opens only the private copy. Before the model call the supervisor refreshes the source fingerprint, rejects DB-or-WAL and watched Git drift since collection, performs the full authority/artifact gate, then refreshes and performs a lightweight authority plus watched-state gate immediately before dispatch. It repeats snapshot, authority, DB+WAL, and Git checks after the worker. This accommodates SQLite's private `-shm` requirement without granting AK or the model service a source-authority write path.
 
 ## Commit-addressed installation and activation
 
@@ -103,7 +104,7 @@ The worker and supervisor may not create, claim, update, close, or mutate AK tas
 
 Model API calls and private local canary state are explicit operational effects of activation. The verifier does not overclaim proof of all external effects: it proves prompt/runtime gates, disabled capabilities, output/reference contracts, and watched AK/Git before-after equality. The accepted model is pinned to `openai-codex/gpt-5.6-sol`. Every cycle records normalized provider/model/session statistics and cost. USD 2 per cycle is a post-call stop threshold, not a provider-side hard cap; the next cycle is refused after a breach. Before each call the supervisor reserves USD 2 under a USD 25 cumulative threshold, and refuses malformed cost history. A single provider charge may exceed the threshold; direct-human activation explicitly accepts that bounded-but-not-hard-capped billing risk.
 
-The service hides the general home directory and read-only binds the Softwareco tree, the authority workspace needed to observe the live DB+WAL pair, accepted bundle, required Pi authentication/configuration, and AK binary. Only accepted supervisor code reads the broader authority bind; the model worker receives a filtered environment, no tools, and only the pinned Pi Modes extension. Pi and Pi Modes package trees are digest-pinned. Provider networking remains necessary and is not destination-restricted; the canary does not defend against a malicious same-UID operator who can rewrite user services or Git. Its threat model is autonomous-process containment and fail-closed drift detection, not protection from the accountable workstation owner.
+The model service hides the general home directory and read-only binds only the Softwareco tree, accepted bundle, required Pi authentication/configuration, and AK binary; it has no source-authority DB or broader workspace bind. The separate snapshot helper has no network address family and binds only the DB, optional WAL, accepted helper code, and private state. The model worker receives a filtered environment, no tools, and only the pinned Pi Modes extension. Pi and Pi Modes package trees are digest-pinned. Provider networking remains necessary and is not destination-restricted; the canary does not defend against a malicious same-UID operator who can rewrite user services or Git. Its threat model is autonomous-process containment and fail-closed drift detection, not protection from the accountable workstation owner.
 
 ## Portfolio and proposal contract
 

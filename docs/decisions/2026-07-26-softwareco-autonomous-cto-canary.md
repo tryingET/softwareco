@@ -38,7 +38,7 @@ The worker and supervisor may not mutate AK, direction, evidence, governance, de
 
 Architecture acceptance does not start the canary. A direct human separately installs the exact accepted Git bundle and separately records an exact activation receipt before enabling timers. Runtime rereads authority and compares bundle, units, prompt source, and runtime packages against accepted Git/digest facts every cycle. Authority ends at the exact 24-hour deadline even if timer cleanup fails.
 
-The corrective amendment keeps that architecture but reads AK through a byte-stable private DB+WAL snapshot in writable service state while hashing the source DB before and after the model call. This permits SQLite private shared-memory behavior without granting any source-authority write path. It also uses canonical governance vocabulary, resets historical systemd failure state during stop verification, and archives only terminal predecessor activation state.
+The corrective amendment keeps that architecture but adds a separate non-networked helper with read-only access to only the source DB and optional WAL. It stages a byte-stable private DB+WAL snapshot in writable service state; the model service and AK never see the source DB. The supervisor fingerprints DB and WAL after collection, immediately before dispatch, and after the model call. It also uses canonical newest-first control-chain semantics and governance vocabulary, resets historical systemd failure state during stop verification, and archives only the exact terminal Decision 83 predecessor state.
 
 ## Relationship to existing decisions
 

@@ -17,9 +17,9 @@ from validate_output import validate
 from fixture_rpc_worker import PROPOSAL
 from collect_snapshot import registered_under_owned, run as collector_run
 from run_cycle import (CONFIG, expected_composed_prompt, mode_proof_errors, prepare_ak_snapshot,
-                       prior_cost, read_activation)
+                       prior_cost, read_activation, watched_state)
 from runtime_integrity import UNIT_NAMES, directory_digest, rendered_unit, runtime_packages, verify_bundle
-from start_candidate import acceptance_errors
+from start_candidate import acceptance_errors, predecessor_errors
 from stop_candidate import cgroup_members
 
 
@@ -175,11 +175,13 @@ class CanaryContractTests(unittest.TestCase):
         stop = (ROOT / "cto-canary/stop_candidate.py").read_text()
         self.assertIn("ProtectHome=tmpfs", service)
         self.assertIn("KillMode=control-group", service)
-        self.assertIn('["systemctl", "--user", "stop", service]', stop)
+        self.assertIn('["systemctl", "--user", "stop", *services]', stop)
         self.assertIn('unit_property(service, "ControlGroup")', stop)
-
-        self.assertIn("BindReadOnlyPaths=%h/ai-society", service)
-        self.assertIn("AK opens only that private writable snapshot", service)
+        self.assertNotIn("BindReadOnlyPaths=%h/ai-society\n", service)
+        snapshot = (ROOT / "cto-canary/systemd/softwareco-cto-canary-snapshot.service").read_text()
+        self.assertIn("BindReadOnlyPaths=%h/ai-society/society.v2.db", snapshot)
+        self.assertIn("BindReadOnlyPaths=-%h/ai-society/society.v2.db-wal", snapshot)
+        self.assertNotIn("RestrictAddressFamilies=AF_UNIX AF_INET", snapshot)
 
     def test_expiry_stop_verifies_inflight_service_termination(self):
         activation = {"state": "active", "expires_at_utc": (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat(),
@@ -188,7 +190,7 @@ class CanaryContractTests(unittest.TestCase):
             home = Path(tmp); state = home / ".local/state/softwareco-cto-canary"; state.mkdir(parents=True)
             (state / "activation.json").write_text(json.dumps(activation))
             bindir = home / "bin"; bindir.mkdir(); fake = bindir / "systemctl"
-            fake.write_text("#!/bin/sh\ncase \"$*\" in\n  *\"disable --now\"*) exit 0;;\n  *\"show softwareco-cto-canary.timer --property=ActiveState\"*|*\"show softwareco-cto-canary-stop.timer --property=ActiveState\"*) [ \"$FAKE_TIMER_FAIL\" = 1 ] && echo active || echo inactive; exit 0;;\n  *\"is-enabled\"*) [ \"$FAKE_TIMER_FAIL\" = 1 ] && { echo enabled; exit 0; } || { echo disabled; exit 1; };;\n  *\"stop softwareco-cto-canary.service\"*) [ \"$FAKE_STOP_FAIL\" = 1 ] && exit 1 || exit 0;;\n  *\"show softwareco-cto-canary.service --property=ActiveState\"*) [ \"$FAKE_QUERY_FAIL\" = 1 ] && exit 1; [ \"$FAKE_ACTIVE\" = 1 ] && echo active || echo inactive; exit 0;;\n  *\"show softwareco-cto-canary.service --property=ControlGroup\"*) [ \"$FAKE_QUERY_FAIL\" = 1 ] && exit 1; echo ''; exit 0;;\n  *) exit 0;;\nesac\n")
+            fake.write_text("#!/bin/sh\ncase \"$*\" in\n  *\"disable --now\"*) exit 0;;\n  *\"show softwareco-cto-canary.timer --property=ActiveState\"*|*\"show softwareco-cto-canary-stop.timer --property=ActiveState\"*) [ \"$FAKE_TIMER_FAIL\" = 1 ] && echo active || echo inactive; exit 0;;\n  *\"is-enabled\"*) [ \"$FAKE_TIMER_FAIL\" = 1 ] && { echo enabled; exit 0; } || { echo disabled; exit 1; };;\n  *\"stop softwareco-cto-canary.service\"*) [ \"$FAKE_STOP_FAIL\" = 1 ] && exit 1 || exit 0;;\n  *\"show softwareco-cto-canary.service --property=ActiveState\"*) [ \"$FAKE_QUERY_FAIL\" = 1 ] && exit 1; [ \"$FAKE_ACTIVE\" = 1 ] && echo active || echo inactive; exit 0;;\n  *\"show softwareco-cto-canary.service --property=ControlGroup\"*) [ \"$FAKE_QUERY_FAIL\" = 1 ] && exit 1; echo ''; exit 0;;\n  *\"show softwareco-cto-canary-snapshot.service --property=ActiveState\"*) echo inactive; exit 0;;\n  *\"show softwareco-cto-canary-snapshot.service --property=ControlGroup\"*) echo ''; exit 0;;\n  *) exit 0;;\nesac\n")
             fake.chmod(0o755)
             env = os.environ.copy(); env.update({"HOME": str(home), "PATH": str(bindir) + ":/usr/bin",
                                                  "FAKE_ACTIVE": "1", "FAKE_STOP_FAIL": "0",
@@ -248,7 +250,8 @@ class CanaryContractTests(unittest.TestCase):
                 connection.execute("INSERT INTO truth VALUES ('current')")
                 connection.commit()
                 self.assertTrue(Path(str(source) + "-wal").exists())
-                snapshot = prepare_ak_snapshot(source, state)
+                snapshot, fingerprint = prepare_ak_snapshot(source, state)
+                self.assertEqual(set(fingerprint), {"db", "wal"})
                 copied = sqlite3.connect(snapshot)
                 try:
                     self.assertEqual(copied.execute("SELECT value FROM truth").fetchone()[0], "current")
@@ -258,12 +261,22 @@ class CanaryContractTests(unittest.TestCase):
             finally:
                 connection.close()
 
+    def test_wal_only_change_is_detected_by_watched_state(self):
+        packet = {"authority_db_before": {"fingerprint": {"db": "same", "wal": "old"}},
+                  "repositories": []}
+        errors = watched_state(packet, {"db": "same", "wal": "new"})
+        self.assertTrue(any("WAL" in error for error in errors))
+
     def test_governance_cli_tokens_and_failed_service_reset_are_canonical(self):
         start = (ROOT / "cto-canary/start_candidate.py").read_text()
         stop = (ROOT / "cto-canary/stop_candidate.py").read_text()
         self.assertIn('"--mito-layer", "Operations & Evaluation"', start)
         self.assertIn('"--mito-layer", "Operations & Evaluation"', stop)
-        self.assertIn('["systemctl", "--user", "reset-failed", service]', stop)
+        self.assertIn('["systemctl", "--user", "reset-failed", *services]', stop)
+        self.assertIn('chain[0].get("id")', stop)
+        self.assertNotIn('chain[-1]', stop)
+        self.assertIn('CONFIG["required_predecessor"]', start)
+        self.assertIn('chain[0].get("id") == stop_id', start)
 
     def test_prior_cost_is_normalized_and_malformed_history_fails(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -324,7 +337,25 @@ class CanaryContractTests(unittest.TestCase):
             activation["bundle_manifest_sha256"] = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
             self.assertTrue(any("accepted Git blob" in error for error in verify_bundle(activation, units, verify_runtime=False)))
 
+    def test_predecessor_archive_requires_exact_newest_human_stop(self):
+        required = {"decision_id": 83, "activation_receipt_id": 9189, "stop_receipt_id": 9201}
+        prior = {"state": "human_stopped", "decision_id": 83, "activation_receipt_id": 9189,
+                 "control_concern": "softwareco-autonomous-cto-canary:decision-83:control"}
+        activation = {"id": 9189, "source_authority": "human-operator", "actor": "human-operator",
+                      "status": "applied", "agreement_ref": "decision:83", "to_state": "active:run"}
+        stop = {"id": 9201, "source_authority": "human-operator", "actor": "human-operator",
+                "status": "applied", "agreement_ref": "decision:83", "from_state": "active:run",
+                "to_state": "stopped", "evidence_ref": "governance:9189",
+                "details": {"activation_receipt_id": 9189}}
+        chain = [stop, activation]
+        self.assertEqual(predecessor_errors(prior, activation, stop, chain, required), [])
+        chain.reverse(); stop["actor"] = "agent"
+        errors = predecessor_errors(prior, activation, stop, chain, required)
+        self.assertIn("stop human actor", errors)
+        self.assertIn("newest control head", errors)
+
     def test_activation_authority_contract_rejects_state_actor_and_commit_drift(self):
+
         decision_id, receipt_id, commit = 83, 999, "a" * 40
         decision = {"outcome": "accepted", "state": "unblocked",
                     "rfc_ref": str(ROOT / "docs/project/2026-07-26-softwareco-autonomous-cto-canary-rfc.md"),

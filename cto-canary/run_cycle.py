@@ -11,13 +11,10 @@ import os
 from pathlib import Path
 import re
 import selectors
-import shutil
-import sqlite3
 import signal
 import subprocess
 import sys
 import time
-import tempfile
 from typing import Any
 
 HERE = Path(__file__).resolve().parent
@@ -26,6 +23,7 @@ ROOT = Path(CONFIG["cwd"])
 sys.path.insert(0, str(HERE))
 from validate_output import validate  # noqa: E402
 from runtime_integrity import directory_digest, runtime_packages, sha256, verify_bundle  # noqa: E402
+from snapshot_authority import prepare_ak_snapshot  # noqa: E402,F401
 
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
 ACTIVATION_KEYS = {
@@ -44,58 +42,32 @@ def parse_time(value: object) -> datetime | None:
         return None
 
 
-def authority_source_fingerprint(source: Path) -> dict[str, str | None]:
-    return {
-        "db": sha256(source),
-        "wal": sha256(Path(str(source) + "-wal")),
-    }
-
-
-def prepare_ak_snapshot(source: Path, state: Path, attempts: int = 4) -> Path:
-    """Copy a byte-stable SQLite DB+WAL pair into private writable cycle state."""
-    target_dir = state / "ak-snapshot"
-    for attempt in range(1, attempts + 1):
-        before = authority_source_fingerprint(source)
-        if before["db"] is None:
-            raise RuntimeError(f"authority DB is unavailable: {source}")
-        temporary = Path(tempfile.mkdtemp(prefix=".ak-snapshot-", dir=state))
-        try:
-            snapshot = temporary / source.name
-            shutil.copyfile(source, snapshot)
-            source_wal = Path(str(source) + "-wal")
-            snapshot_wal = Path(str(snapshot) + "-wal")
-            if before["wal"] is not None:
-                shutil.copyfile(source_wal, snapshot_wal)
-            after = authority_source_fingerprint(source)
-            copied = {"db": sha256(snapshot), "wal": sha256(snapshot_wal)}
-            if before != after or copied != before:
-                continue
-            connection = sqlite3.connect(snapshot)
-            try:
-                connection.execute("PRAGMA query_only=ON")
-                schema_version = connection.execute("PRAGMA schema_version").fetchone()
-                catalog_count = connection.execute("SELECT COUNT(*) FROM sqlite_master").fetchone()
-                if not schema_version or not catalog_count or catalog_count[0] < 1:
-                    raise RuntimeError("authority snapshot catalog validation failed")
-            finally:
-                connection.close()
-            if target_dir.exists():
-                shutil.rmtree(target_dir)
-            temporary.replace(target_dir)
-            return target_dir / source.name
-        except (OSError, sqlite3.Error) as exc:
-            if attempt == attempts:
-                raise RuntimeError(f"authority snapshot failed: {exc}") from exc
-        finally:
-            if temporary.exists():
-                shutil.rmtree(temporary)
-    raise RuntimeError(f"authority DB changed during {attempts} bounded snapshot attempts")
-
-
 def run(argv: list[str], cwd: Path = ROOT, timeout: int = 60) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env.update({"GIT_OPTIONAL_LOCKS": "0", "LC_ALL": "C", "TZ": "UTC"})
     return subprocess.run(argv, cwd=cwd, env=env, text=True, capture_output=True, timeout=timeout, check=False)
+
+
+def refresh_authority_snapshot(state: Path) -> tuple[Path, dict[str, str | None]]:
+    unit = "softwareco-cto-canary-snapshot.service"
+    cp = run(["systemctl", "--user", "start", unit], timeout=120)
+    if cp.returncode:
+        raise RuntimeError(f"authority snapshot service failed: {cp.stderr.strip()}")
+    manifest_path = state / "authority-snapshot.json"
+    try:
+        manifest = json.loads(manifest_path.read_text())
+        snapshot = Path(manifest["snapshot"])
+        fingerprint = manifest["source_fingerprint"]
+    except (OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"authority snapshot manifest is invalid: {exc}") from exc
+    expected = state / "ak-snapshot" / Path(CONFIG["authority_db"]).name
+    if (manifest.get("schema_version") != 1 or snapshot != expected or not snapshot.is_file() or
+            not isinstance(fingerprint, dict) or set(fingerprint) != {"db", "wal"} or
+            not all(value is None or isinstance(value, str) for value in fingerprint.values())):
+        raise RuntimeError("authority snapshot manifest identity is invalid")
+    os.environ["AK_DB"] = str(snapshot)
+    os.environ["CTO_CANARY_SOURCE_FINGERPRINT"] = json.dumps(fingerprint, separators=(",", ":"))
+    return snapshot, fingerprint
 
 
 def json_command(argv: list[str]) -> Any:
@@ -112,7 +84,8 @@ def payload(value: Any) -> Any:
         return value["payload"]
     return value
 
-def read_activation(path: Path, state_dir: Path, current_run_reserved: bool = False) -> tuple[dict[str, Any] | None, list[str]]:
+def read_activation(path: Path, state_dir: Path, current_run_reserved: bool = False,
+                    verify_artifacts: bool = True) -> tuple[dict[str, Any] | None, list[str]]:
     errors: list[str] = []
     try:
         value = json.loads(path.read_text())
@@ -174,26 +147,27 @@ def read_activation(path: Path, state_dir: Path, current_run_reserved: bool = Fa
             details.get("started_at_utc") == value["started_at_utc"] and details.get("expires_at_utc") == value["expires_at_utc"] and
             details.get("max_cycles") == CONFIG["max_cycles"] and details.get("interval_seconds") == CONFIG["interval_seconds"]):
         errors.append("direct-human canary activation receipt mismatch")
-    if not isinstance(chain, list) or not chain or chain[-1].get("id") != value["activation_receipt_id"]:
+    if not isinstance(chain, list) or not chain or chain[0].get("id") != value["activation_receipt_id"]:
         errors.append("canary control chain head is not the activation receipt")
-    errors.extend(verify_bundle(value))
-    try:
-        pi_package, modes_package, pi_entrypoint = runtime_packages()
-        if directory_digest(modes_package) != CONFIG["pi_modes_package_digest"]:
-            errors.append("installed pi-modes package differs from the reviewed pinned digest")
-        if directory_digest(pi_package) != CONFIG["pi_package_digest"]:
-            errors.append("installed Pi package differs from the reviewed pinned digest")
-        version = run(["/usr/bin/node", str(pi_entrypoint), "--version"]).stdout.strip()
-        if version != CONFIG["pi_version"]:
-            errors.append(f"Pi version drift: expected {CONFIG['pi_version']}, observed {version}")
-    except (OSError, RuntimeError) as exc:
-        errors.append(f"runtime package verification failed closed: {exc}")
+    if verify_artifacts:
+        errors.extend(verify_bundle(value))
+        try:
+            pi_package, modes_package, pi_entrypoint = runtime_packages()
+            if directory_digest(modes_package) != CONFIG["pi_modes_package_digest"]:
+                errors.append("installed pi-modes package differs from the reviewed pinned digest")
+            if directory_digest(pi_package) != CONFIG["pi_package_digest"]:
+                errors.append("installed Pi package differs from the reviewed pinned digest")
+            version = run(["/usr/bin/node", str(pi_entrypoint), "--version"]).stdout.strip()
+            if version != CONFIG["pi_version"]:
+                errors.append(f"Pi version drift: expected {CONFIG['pi_version']}, observed {version}")
+        except (OSError, RuntimeError) as exc:
+            errors.append(f"runtime package verification failed closed: {exc}")
     return value, errors
 
-def watched_state(packet: dict[str, Any], db_path: Path) -> list[str]:
+def watched_state(packet: dict[str, Any], authority_fingerprint: dict[str, str | None]) -> list[str]:
     drift: list[str] = []
-    if packet.get("authority_db_before", {}).get("sha256") != sha256(db_path):
-        drift.append("AK database bytes changed during cycle")
+    if packet.get("authority_db_before", {}).get("fingerprint") != authority_fingerprint:
+        drift.append("AK database or WAL bytes changed during cycle")
     for repo in packet.get("repositories", []):
         if not repo.get("exists"):
             continue
@@ -451,16 +425,14 @@ def main() -> int:
         return 4
 
     activation: dict[str, Any] | None = None
-    source_db = Path(CONFIG["authority_db"])
     db_path = Path(os.path.expanduser(os.environ.get("AK_DB", "~/ai-society/society.v2.db")))
+    authority_fingerprint: dict[str, str | None] = {"db": None, "wal": None}
     if not args.fixture:
         try:
-            db_path = prepare_ak_snapshot(source_db, state)
+            db_path, authority_fingerprint = refresh_authority_snapshot(state)
         except RuntimeError as exc:
             print(f"REFUSED: {exc}", file=sys.stderr)
             return 3
-        os.environ["AK_DB"] = str(db_path)
-        os.environ["CTO_CANARY_SOURCE_AK_DB"] = str(source_db)
         activation, gate_errors = read_activation(activation_file, state)
         if gate_errors:
             print("REFUSED: " + "; ".join(gate_errors), file=sys.stderr)
@@ -487,7 +459,7 @@ def main() -> int:
                   "coverage": {"registered_repos_expected": 2, "registered_repos_observed": 2,
                                "complete": True, "gaps": [], "filesystem_git_roots_not_registered": [],
                                "registered_paths_without_git_marker": []},
-                  "repositories": [], "authority_db_before": {"sha256": sha256(db_path)}}
+                  "repositories": [], "authority_db_before": {"fingerprint": authority_fingerprint}}
         packet_path.write_text(json.dumps(packet) + "\n")
         proposal, trace = fixture_cycle()
     else:
@@ -502,23 +474,37 @@ def main() -> int:
             (run_dir / "failure.txt").write_text("; ".join(reasons) + "\n")
             print("REFUSED: " + "; ".join(reasons), file=sys.stderr)
             return 3
-        pre_call_drift = watched_state(packet, source_db)
+        try:
+            db_path, authority_fingerprint = refresh_authority_snapshot(state)
+        except RuntimeError as exc:
+            (run_dir / "failure.txt").write_text(f"pre-worker authority snapshot failed: {exc}\n")
+            print(f"REFUSED: pre-worker authority snapshot failed: {exc}", file=sys.stderr)
+            return 3
+        pre_call_drift = watched_state(packet, authority_fingerprint)
         if pre_call_drift:
             reason = "authority or repository state changed before worker start: " + "; ".join(pre_call_drift)
             (run_dir / "failure.txt").write_text(reason + "\n")
             print("REFUSED: " + reason, file=sys.stderr)
             return 3
-        try:
-            db_path = prepare_ak_snapshot(source_db, state)
-            os.environ["AK_DB"] = str(db_path)
-        except RuntimeError as exc:
-            (run_dir / "failure.txt").write_text(f"pre-worker authority snapshot failed: {exc}\n")
-            print(f"REFUSED: pre-worker authority snapshot failed: {exc}", file=sys.stderr)
-            return 3
         activation, gate_errors = read_activation(activation_file, state, current_run_reserved=True)
         if gate_errors or activation is None:
             (run_dir / "failure.txt").write_text("authority changed before worker start: " + "; ".join(gate_errors) + "\n")
             print("REFUSED: authority changed before worker start: " + "; ".join(gate_errors), file=sys.stderr)
+            return 3
+        try:
+            db_path, authority_fingerprint = refresh_authority_snapshot(state)
+        except RuntimeError as exc:
+            (run_dir / "failure.txt").write_text(f"immediate pre-dispatch authority snapshot failed: {exc}\n")
+            print(f"REFUSED: immediate pre-dispatch authority snapshot failed: {exc}", file=sys.stderr)
+            return 3
+        activation, immediate_gate_errors = read_activation(
+            activation_file, state, current_run_reserved=True, verify_artifacts=False
+        )
+        immediate_drift = watched_state(packet, authority_fingerprint)
+        if immediate_gate_errors or activation is None or immediate_drift:
+            reasons = immediate_gate_errors + immediate_drift
+            (run_dir / "failure.txt").write_text("immediate pre-dispatch gate failed: " + "; ".join(reasons) + "\n")
+            print("REFUSED: immediate pre-dispatch gate failed: " + "; ".join(reasons), file=sys.stderr)
             return 3
         expiry = parse_time(activation["expires_at_utc"])
         assert expiry is not None
@@ -541,12 +527,14 @@ def main() -> int:
     for key in ("registered_repos_expected", "registered_repos_observed", "complete", "gaps"):
         if proposal_coverage.get(key) != packet_coverage.get(key):
             errors.append(f"coverage does not match snapshot: {key}")
-    drift = [] if args.fixture else watched_state(packet, source_db)
+    drift: list[str] = []
     if not args.fixture:
         try:
-            db_path = prepare_ak_snapshot(source_db, state)
-            os.environ["AK_DB"] = str(db_path)
-            _, final_gate_errors = read_activation(activation_file, state, current_run_reserved=True)
+            db_path, authority_fingerprint = refresh_authority_snapshot(state)
+            drift = watched_state(packet, authority_fingerprint)
+            _, final_gate_errors = read_activation(
+                activation_file, state, current_run_reserved=True, verify_artifacts=False
+            )
         except RuntimeError as exc:
             final_gate_errors = [f"post-cycle authority snapshot failed: {exc}"]
         trace["violations"].extend(f"post-cycle authority gate: {error}" for error in final_gate_errors)
