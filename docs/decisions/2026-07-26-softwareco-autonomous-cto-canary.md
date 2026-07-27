@@ -1,11 +1,11 @@
 ---
-summary: "ADR candidate for Decision 83's one-time 24-hour autonomous CTO observational canary."
+summary: "Accepted Decision 83 canary, stopped pre-model, with a separately governed Decision 86 corrective amendment candidate."
 read_when:
   - "Accepting, operating, reviewing, or stopping the autonomous CTO canary."
 type: "decision"
-status: "candidate_pending_human_acceptance"
+status: "decision83_accepted_and_stopped_decision86_corrective_pending"
 date: "2026-07-26"
-decision_id: 83
+decision_ids: [83, 86]
 task_id: 4284
 system4d:
   container: "One Softwareco observational service canary."
@@ -18,7 +18,9 @@ system4d:
 
 ## Status
 
-Candidate only. Decision `83` is `decision_pending` with controlling `ready_for_adr` closure. Authority review `dispatch-1785093118453` and runtime review `dispatch-1785093118453-1` both returned `READY` for source commit `f36547935826bbf8f4597f928b545127cff10003`. No direct-human architecture acceptance exists, so this document grants no installation, activation, service, model-call, or autonomous authority.
+Decision `83` was accepted through receipt `9173`, installed at commit `4af9ee03346de33f62ae95381a3c2900d9560c8a`, activated through receipt `9189`, and human-stopped through receipt `9201` after two fail-closed pre-model service attempts. It made no model call and created no run directory. Its activation cannot resume.
+
+Decision `86` is a separate corrective amendment candidate. Until its exact source receives controlling review and direct-human acceptance, it grants no installation, activation, service, model-call, or autonomous authority.
 
 ## Context
 
@@ -36,11 +38,14 @@ The worker and supervisor may not mutate AK, direction, evidence, governance, de
 
 Architecture acceptance does not start the canary. A direct human separately installs the exact accepted Git bundle and separately records an exact activation receipt before enabling timers. Runtime rereads authority and compares bundle, units, prompt source, and runtime packages against accepted Git/digest facts every cycle. Authority ends at the exact 24-hour deadline even if timer cleanup fails.
 
+The corrective amendment keeps that architecture but reads AK through a byte-stable private DB+WAL snapshot in writable service state while hashing the source DB before and after the model call. This permits SQLite private shared-memory behavior without granting any source-authority write path. It also uses canonical governance vocabulary, resets historical systemd failure state during stop verification, and archives only terminal predecessor activation state.
+
 ## Relationship to existing decisions
 
 - Decision 74 remains terminal under receipt `8870`.
 - Decision 77 remains accepted as a separate finite-epoch recurring framework.
 - Decision 83 neither amends nor supersedes either decision.
+- Decision 83 is accepted-and-stopped history; Decision 86 may authorize only a new commit, receipt chain, bundle, and 24-hour window.
 - Any autonomous execution beyond observation requires a later separately reviewed decision.
 
 ## Consequences

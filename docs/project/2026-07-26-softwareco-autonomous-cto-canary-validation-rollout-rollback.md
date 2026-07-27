@@ -3,10 +3,10 @@ summary: "Validation, rollout, stop, and rollback contract for the 24-hour auton
 read_when:
   - "Validating, installing, starting, observing, or stopping the autonomous CTO canary."
 type: "plan"
-status: "candidate"
+status: "decision86_corrective_candidate"
 date: "2026-07-26"
 task_id: 4284
-decision_id: 83
+decision_id: 86
 ---
 
 # Autonomous CTO canary validation, rollout, and rollback
@@ -22,6 +22,8 @@ npm --prefix owned/pi-extensions/packages/pi-modes run mode:lint -- \
 ```
 
 Render `@ROOT@` and `@BUNDLE_DIR@` into a temporary directory and run `systemd-analyze --user verify` on all four units. The unrelated workstation `school-asr-recorder.service` warning is outside this candidate.
+
+Run a real transient-user-service probe with `ProtectSystem=strict`, `ProtectHome=tmpfs`, the read-only authority bind, and private writable runtime state. Require `prepare_ak_snapshot` to copy the current DB+WAL pair and require installed AK to read a known decision from that snapshot. A source read-only-filesystem error or direct AK access to the source DB fails the correction.
 
 Run two `--fixture` cycles in a temporary state directory and require distinct process IDs, `canonical=false`, empty validation/runtime violations, and `verified_behavior=true`. Run production without an activation file and require exit `3` plus `REFUSED`.
 
@@ -65,10 +67,17 @@ Prove refusal for:
 - runtime-package symlink escape or isolated package-copy digest drift;
 - malformed, unresolvable, or coverage-divergent proposal output;
 - watched AK DB or repository state change during a cycle.
+- missing, unstable, incoherent, or catalog-invalid source DB+WAL snapshot;
+- AK configured to open the source authority DB instead of the private snapshot;
+- source authority DB or watched Git drift after collection but before the model call;
+- active/nonterminal predecessor activation, missing predecessor stop-chain head, or reused decision-specific control history;
+- noncanonical MITO governance token or a stopped empty-cgroup service retained as `failed` without reset and verification.
 
 ## Operational rollout
 
 The candidate is inactive until two separate human actions:
+
+Decision `83` is not restartable. Decision `86` requires a fresh acceptance receipt and commit-addressed bundle. Its start path may archive Decision 83's `human_stopped` activation only after verifying receipt `9201` as that predecessor control-chain head.
 
 1. `activate_candidate.py --install` installs exact accepted Git blobs and disabled units;
 2. installed `start_candidate.py` with repeated exact identity arguments plus `--start` records the activation receipt and enables the hourly and expiry timers.
@@ -97,7 +106,7 @@ Expiry is authority by time. The stop timer invokes `--expiry` to disable trigge
 
 ## Rollback
 
-Before acceptance, revert only candidate paths and preserve Decisions 74/77. After installation but before activation, disable/remove the four user units and commit-addressed bundle; no AK control receipt exists. After activation, use direct-human early stop, preserve receipts/results, then disable units. Never delete governance history to simulate rollback.
+Before corrective acceptance, revert only candidate paths and preserve Decisions 74/77 plus Decision 83 receipts `9173`, `9189`, and `9201`. After installation but before activation, disable/remove the four user units and the new commit-addressed bundle; no Decision 86 control receipt exists. After activation, use direct-human early stop, preserve receipts/results, then disable units. Never delete governance history or predecessor state to simulate rollback.
 
 Owner repositories need no compensation because the canary has no owner mutation authority. Any observed owner change is a stop-and-investigate event, not automatically attributed to the canary.
 

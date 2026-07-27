@@ -11,10 +11,13 @@ import os
 from pathlib import Path
 import re
 import selectors
+import shutil
+import sqlite3
 import signal
 import subprocess
 import sys
 import time
+import tempfile
 from typing import Any
 
 HERE = Path(__file__).resolve().parent
@@ -39,6 +42,54 @@ def parse_time(value: object) -> datetime | None:
         return parsed if parsed.tzinfo else None
     except ValueError:
         return None
+
+
+def authority_source_fingerprint(source: Path) -> dict[str, str | None]:
+    return {
+        "db": sha256(source),
+        "wal": sha256(Path(str(source) + "-wal")),
+    }
+
+
+def prepare_ak_snapshot(source: Path, state: Path, attempts: int = 4) -> Path:
+    """Copy a byte-stable SQLite DB+WAL pair into private writable cycle state."""
+    target_dir = state / "ak-snapshot"
+    for attempt in range(1, attempts + 1):
+        before = authority_source_fingerprint(source)
+        if before["db"] is None:
+            raise RuntimeError(f"authority DB is unavailable: {source}")
+        temporary = Path(tempfile.mkdtemp(prefix=".ak-snapshot-", dir=state))
+        try:
+            snapshot = temporary / source.name
+            shutil.copyfile(source, snapshot)
+            source_wal = Path(str(source) + "-wal")
+            snapshot_wal = Path(str(snapshot) + "-wal")
+            if before["wal"] is not None:
+                shutil.copyfile(source_wal, snapshot_wal)
+            after = authority_source_fingerprint(source)
+            copied = {"db": sha256(snapshot), "wal": sha256(snapshot_wal)}
+            if before != after or copied != before:
+                continue
+            connection = sqlite3.connect(snapshot)
+            try:
+                connection.execute("PRAGMA query_only=ON")
+                schema_version = connection.execute("PRAGMA schema_version").fetchone()
+                catalog_count = connection.execute("SELECT COUNT(*) FROM sqlite_master").fetchone()
+                if not schema_version or not catalog_count or catalog_count[0] < 1:
+                    raise RuntimeError("authority snapshot catalog validation failed")
+            finally:
+                connection.close()
+            if target_dir.exists():
+                shutil.rmtree(target_dir)
+            temporary.replace(target_dir)
+            return target_dir / source.name
+        except (OSError, sqlite3.Error) as exc:
+            if attempt == attempts:
+                raise RuntimeError(f"authority snapshot failed: {exc}") from exc
+        finally:
+            if temporary.exists():
+                shutil.rmtree(temporary)
+    raise RuntimeError(f"authority DB changed during {attempts} bounded snapshot attempts")
 
 
 def run(argv: list[str], cwd: Path = ROOT, timeout: int = 60) -> subprocess.CompletedProcess[str]:
@@ -392,8 +443,24 @@ def main() -> int:
     state.mkdir(parents=True, exist_ok=True)
     activation_file = args.activation_file or state / "activation.json"
 
+    lock_file = (state / "cycle.lock").open("w")
+    try:
+        fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        print("REFUSED: a cycle is already running", file=sys.stderr)
+        return 4
+
     activation: dict[str, Any] | None = None
+    source_db = Path(CONFIG["authority_db"])
+    db_path = Path(os.path.expanduser(os.environ.get("AK_DB", "~/ai-society/society.v2.db")))
     if not args.fixture:
+        try:
+            db_path = prepare_ak_snapshot(source_db, state)
+        except RuntimeError as exc:
+            print(f"REFUSED: {exc}", file=sys.stderr)
+            return 3
+        os.environ["AK_DB"] = str(db_path)
+        os.environ["CTO_CANARY_SOURCE_AK_DB"] = str(source_db)
         activation, gate_errors = read_activation(activation_file, state)
         if gate_errors:
             print("REFUSED: " + "; ".join(gate_errors), file=sys.stderr)
@@ -410,17 +477,10 @@ def main() -> int:
         signal.signal(signal.SIGALRM, authority_alarm)
         signal.setitimer(signal.ITIMER_REAL, process_budget)
 
-    lock_file = (state / "cycle.lock").open("w")
-    try:
-        fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except BlockingIOError:
-        print("REFUSED: a cycle is already running", file=sys.stderr)
-        return 4
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
     run_dir = state / "runs" / run_id
     run_dir.mkdir(parents=True)
     packet_path = run_dir / "portfolio.json"
-    db_path = Path(os.path.expanduser(os.environ.get("AK_DB", "~/ai-society/society.v2.db")))
 
     if args.fixture:
         packet = {"schema_version": 2, "authority": "fixture",
@@ -441,6 +501,19 @@ def main() -> int:
             reasons = cost_errors or [f"remaining total threshold cannot reserve one cycle: spent={spent_before}, reserve={reserved_total}"]
             (run_dir / "failure.txt").write_text("; ".join(reasons) + "\n")
             print("REFUSED: " + "; ".join(reasons), file=sys.stderr)
+            return 3
+        pre_call_drift = watched_state(packet, source_db)
+        if pre_call_drift:
+            reason = "authority or repository state changed before worker start: " + "; ".join(pre_call_drift)
+            (run_dir / "failure.txt").write_text(reason + "\n")
+            print("REFUSED: " + reason, file=sys.stderr)
+            return 3
+        try:
+            db_path = prepare_ak_snapshot(source_db, state)
+            os.environ["AK_DB"] = str(db_path)
+        except RuntimeError as exc:
+            (run_dir / "failure.txt").write_text(f"pre-worker authority snapshot failed: {exc}\n")
+            print(f"REFUSED: pre-worker authority snapshot failed: {exc}", file=sys.stderr)
             return 3
         activation, gate_errors = read_activation(activation_file, state, current_run_reserved=True)
         if gate_errors or activation is None:
@@ -468,9 +541,14 @@ def main() -> int:
     for key in ("registered_repos_expected", "registered_repos_observed", "complete", "gaps"):
         if proposal_coverage.get(key) != packet_coverage.get(key):
             errors.append(f"coverage does not match snapshot: {key}")
-    drift = [] if args.fixture else watched_state(packet, db_path)
+    drift = [] if args.fixture else watched_state(packet, source_db)
     if not args.fixture:
-        _, final_gate_errors = read_activation(activation_file, state, current_run_reserved=True)
+        try:
+            db_path = prepare_ak_snapshot(source_db, state)
+            os.environ["AK_DB"] = str(db_path)
+            _, final_gate_errors = read_activation(activation_file, state, current_run_reserved=True)
+        except RuntimeError as exc:
+            final_gate_errors = [f"post-cycle authority snapshot failed: {exc}"]
         trace["violations"].extend(f"post-cycle authority gate: {error}" for error in final_gate_errors)
     cycle_cost = trace["usage"].get("cost") if isinstance(trace.get("usage"), dict) else None
     spent_before = 0.0 if args.fixture else prior_cost(state, run_dir)[0]

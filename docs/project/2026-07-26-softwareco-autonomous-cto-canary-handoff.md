@@ -3,19 +3,21 @@ summary: "Human acceptance, install, activation, observation, and stop handoff f
 read_when:
   - "Preparing to accept or run the 24-hour autonomous CTO canary."
 type: "runbook"
-status: "blocked_pending_direct_human_acceptance"
+status: "decision83_stopped_decision86_corrective_review_pending"
 date: "2026-07-26"
 task_id: 4284
-decision_id: 83
+decision_id: 86
 ---
 
 # Autonomous CTO canary human handoff
 
 ## Current legal state
 
-The candidate is inactive. Decision `83` is `decision_pending` with controlling `ready_for_adr` closure; both final required tracks reviewed source `f36547935826bbf8f4597f928b545127cff10003` as `READY`. No architecture-acceptance receipt exists. No service has been installed, enabled, or started, and no production model cycle is authorized. The acceptance command must bind the fresh final candidate `HEAD`, not merely the earlier reviewed source commit.
+Decision `83` is accepted history but its activation was stopped before any model call. Acceptance receipt `9173`, activation receipt `9189`, and direct-human stop receipt `9201` are immutable. Its installed bundle remains for evidence; all units are inactive, both timers are disabled, its activation file is `human_stopped`, and it has zero run directories.
 
-Do not substitute Decision `74` or `77`.
+Decision `86` is the inactive corrective candidate. It has no acceptance, installation, activation, or model-call authority. It must receive fresh exact-source review and a new direct-human acceptance bound to a new commit. Do not reuse receipts `9173` or `9189`, the Decision 83 bundle, or the temporary MITO compatibility shim.
+
+Do not substitute Decisions `74`, `77`, or `83`.
 
 ## Gate A — review and architecture acceptance
 
@@ -49,7 +51,7 @@ From the installer-reported accepted bundle:
 
 ```bash
 python3 <ACCEPTED_BUNDLE>/cto-canary/start_candidate.py \
-  --decision-id 83 \
+  --decision-id <DECISION_ID> \
   --acceptance-receipt-id <ACCEPTANCE_RECEIPT_ID> \
   --accepted-commit <COMMIT> \
   --start
@@ -67,6 +69,8 @@ find ~/.local/state/softwareco-cto-canary/runs -mindepth 1 -maxdepth 1 -type d |
 ```
 
 For each cycle inspect `result.json`, `mode-preview.json`, and errors. Treat all content as proposal-only. Human/AK/owner workflows remain separate.
+
+The first corrected cycle must additionally prove: a private `ak-snapshot/` exists in state, AK live-gate reads succeed inside the sandbox, the packet hashes the source authority DB rather than the private snapshot, and no source DB/Git change occurred across the call.
 
 ## Early stop
 

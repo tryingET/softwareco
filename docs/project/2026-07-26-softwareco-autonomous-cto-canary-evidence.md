@@ -1,12 +1,12 @@
 ---
-summary: "Inactive implementation evidence for the autonomous CTO canary candidate."
+summary: "Stopped Decision 83 evidence and inactive corrective candidate evidence for Decision 86."
 read_when:
   - "Reviewing what has and has not been proved before canary acceptance."
 type: "evidence"
-status: "candidate_inactive_evidence"
+status: "decision83_stopped_pre_model_decision86_corrective_candidate"
 date: "2026-07-26"
 task_id: 4284
-decision_id: 83
+decision_id: 86
 ---
 
 # Autonomous CTO canary candidate evidence
@@ -18,7 +18,7 @@ decision_id: 83
 - Candidate mode and preset lint successfully.
 - A fresh trusted-root no-session RPC process, with all extensions disabled except the pinned Pi Modes entrypoint, selected `softwareco-cto-canary` as role `base`, strategy `replace_base`, with no overlay and no diagnostics.
 - `/mode-preview --json` contained the exact canary prompt plus global/workspace/Softwareco AGENTS context, current date, and cwd.
-- Python compilation and twenty-four deterministic unit tests passed, including path-escape, prompt-source/fingerprint, expiry, home-hiding, in-flight stop, and scoped-installer controls.
+- The original candidate passed twenty-four deterministic tests before Decision 83 acceptance. The corrective candidate passes twenty-six tests, adding coherent WAL-snapshot and canonical governance-token/reset controls.
 - Two fixture cycles used distinct process IDs, produced noncanonical proposal-only outputs, and passed strict validation.
 - Production cycle invocation without activation refused with exit `3`.
 - Rendered service, hourly timer, expiry service, and 24-hour timer passed `systemd-analyze --user verify`. The command also reported an unrelated pre-existing warning from `school-asr-recorder.service`.
@@ -42,14 +42,29 @@ Attempt-4 authority/runtime reviews of `f73a351` found an absent-manifest fallba
 
 Final authority review `dispatch-1785093118453` and runtime review `dispatch-1785093118453-1` both returned `READY` for `f36547935826bbf8f4597f928b545127cff10003`. Controlling synthesis is tracked at `cc6c029`; AK reports Decision `83` `ready_for_adr` and ADR-recorded readiness.
 
+## Decision 83 operational result and bounded correction
+
+The human accepted Decision `83` through receipt `9173`, installed commit `4af9ee03346de33f62ae95381a3c2900d9560c8a`, and activated it through receipt `9189`. Two hourly service invocations failed closed before creating a run directory or model worker because AK's SQLite WAL reader required writable private `-shm` state while the service exposed only the live DB file as read-only. No model API call occurred. The direct-human stop is receipt `9201`; the activation file is `human_stopped`, all four units are inactive, both timers are disabled, and zero run directories exist.
+
+The accepted start/stop scripts also used noncanonical MITO token `Operations`; activation and stop required a temporary direct-human compatibility shim to translate it to AK's canonical `Operations & Evaluation`. The stop path initially treated systemd's historical `failed` state as a live process even with an empty cgroup; the human reset that state and completed the governed stop.
+
+The inactive Decision `86` correction:
+
+- uses canonical `Operations & Evaluation` directly in start and stop receipts;
+- resets historical failed service state before verifying an empty cgroup and inactive service;
+- preserves and archives the stopped predecessor activation before a separately accepted successor starts;
+- byte-copies a hash-stable source DB+WAL pair into private writable `StateDirectory`, validates its SQLite catalog, and points AK only at that snapshot;
+- continues hashing the live source DB and checking all watched Git state before the model call and after it;
+- refreshes the private AK snapshot immediately before the pre-model authority gate and after the worker;
+- passed a real transient-systemd `ProtectSystem=strict`/`ProtectHome=tmpfs` probe in which AK read Decision `83` successfully from the private snapshot.
+
+Decision `86` is separate corrective authority. It does not reopen, rewrite, or continue Decision `83`'s stopped activation window.
+
 ## Not yet proved
 
-- AK Decision `83` is `decision_pending` with `ready_for_adr` review closure but no accepted outcome; it grants no operational authority;
-- no direct-human acceptance or activation receipt exists;
-- no bundle or user unit has been installed;
-- no service/timer has been enabled or started;
-- no production model cycle or 24-hour canary has run;
-- no canary output usefulness, cost, reliability, or complete-window behavior has been observed;
-- four authority/security and three runtime/operator revision attempts remain immutable lineage; both final required tracks and controlling synthesis are `ready_for_adr`.
+- Decision `86` has no corrective `ready_for_adr` review closure, acceptance receipt, installation, activation, or model-call authority yet;
+- the private WAL-snapshot path has real sandbox/AK read proof but not an accepted production canary cycle;
+- no canary output usefulness, provider cost, successful hourly recurrence, or complete 24-hour window has been observed;
+- Decision `83` remains immutable accepted-and-stopped history under receipts `9173`, `9189`, and `9201`.
 
-Passing fixtures and prompt preview are implementation proofs only, not operational canary proof.
+Passing tests, sandbox probes, fixtures, and prompt preview are implementation proofs only, not operational successor-canary proof.

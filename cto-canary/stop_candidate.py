@@ -65,11 +65,12 @@ def main() -> int:
     # Kill any in-flight model process through the main service cgroup before recording stopped state.
     service = "softwareco-cto-canary.service"
     stop_result = run(["systemctl", "--user", "stop", service], check=False)
+    reset_result = run(["systemctl", "--user", "reset-failed", service], check=False)
     active_state, state_error = unit_property(service, "ActiveState")
     control_group, cgroup_error = unit_property(service, "ControlGroup")
     cgroup_processes = cgroup_members(control_group)
-    if stop_result.returncode or state_error or cgroup_error or active_state != "inactive" or cgroup_processes:
-        print(f"REFUSED: main service termination unverified: stop_rc={stop_result.returncode} "
+    if stop_result.returncode or reset_result.returncode or state_error or cgroup_error or active_state != "inactive" or cgroup_processes:
+        print(f"REFUSED: main service termination unverified: stop_rc={stop_result.returncode} reset_rc={reset_result.returncode} "
               f"state={active_state} state_error={state_error} cgroup_error={cgroup_error} "
               f"cgroup_processes={cgroup_processes!r}", file=sys.stderr)
         return 2
@@ -81,7 +82,7 @@ def main() -> int:
                    "decision_id": state["decision_id"], "activation_receipt_id": state["activation_receipt_id"],
                    "stopped_at_utc": now.isoformat(), "reason": "direct_human_early_stop"}
         run(["ak", "governance", "record", "--concern", state["control_concern"],
-             "--source-authority", "human-operator", "--mito-layer", "Operations",
+             "--source-authority", "human-operator", "--mito-layer", "Operations & Evaluation",
              "--s3-domain-ref", "softwareco", "--agreement-ref", f"decision:{state['decision_id']}",
              "--from-state", chain[-1]["to_state"], "--to-state", "stopped",
              "--consent-mode", "explicit", "--evidence-ref", f"governance:{state['activation_receipt_id']}",

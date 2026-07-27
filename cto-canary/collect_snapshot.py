@@ -218,7 +218,9 @@ def main() -> int:
     unregistered = sorted(set(filesystem) - set(registered_paths))
     missing_on_disk = sorted(set(registered_paths) - set(filesystem))
     # AK registration defines portfolio membership; filesystem extras are surfaced, not silently admitted.
-    authority_db = Path(os.path.expanduser(os.environ.get("AK_DB", "~/ai-society/society.v2.db")))
+    authority_db = Path(os.path.expanduser(os.environ.get(
+        "CTO_CANARY_SOURCE_AK_DB", os.environ.get("AK_DB", "~/ai-society/society.v2.db")
+    )))
     packet = {
         "schema_version": 2,
         "captured_at_utc": datetime.now(timezone.utc).isoformat(),

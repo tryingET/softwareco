@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import os
+import sqlite3
 from pathlib import Path
 import subprocess
 import sys
@@ -15,7 +16,8 @@ sys.path.insert(0, str(ROOT / "cto-canary"))
 from validate_output import validate
 from fixture_rpc_worker import PROPOSAL
 from collect_snapshot import registered_under_owned, run as collector_run
-from run_cycle import CONFIG, expected_composed_prompt, mode_proof_errors, prior_cost, read_activation
+from run_cycle import (CONFIG, expected_composed_prompt, mode_proof_errors, prepare_ak_snapshot,
+                       prior_cost, read_activation)
 from runtime_integrity import UNIT_NAMES, directory_digest, rendered_unit, runtime_packages, verify_bundle
 from start_candidate import acceptance_errors
 from stop_candidate import cgroup_members
@@ -176,7 +178,8 @@ class CanaryContractTests(unittest.TestCase):
         self.assertIn('["systemctl", "--user", "stop", service]', stop)
         self.assertIn('unit_property(service, "ControlGroup")', stop)
 
-        self.assertIn("BindReadOnlyPaths=%h/ai-society/society.v2.db", service)
+        self.assertIn("BindReadOnlyPaths=%h/ai-society", service)
+        self.assertIn("AK opens only that private writable snapshot", service)
 
     def test_expiry_stop_verifies_inflight_service_termination(self):
         activation = {"state": "active", "expires_at_utc": (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat(),
@@ -234,6 +237,33 @@ class CanaryContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             result = collector_run([sys.executable, "-c", "import os; os.write(1, b'x'*2100000)"], Path(tmp), 20)
         self.assertTrue(result["oversized"] or result["exit_code"] != 0)
+
+    def test_wal_authority_db_is_copied_to_a_private_coherent_snapshot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); source = root / "authority.db"; state = root / "state"; state.mkdir()
+            connection = sqlite3.connect(source)
+            try:
+                self.assertEqual(connection.execute("PRAGMA journal_mode=WAL").fetchone()[0], "wal")
+                connection.execute("CREATE TABLE truth (value TEXT NOT NULL)")
+                connection.execute("INSERT INTO truth VALUES ('current')")
+                connection.commit()
+                self.assertTrue(Path(str(source) + "-wal").exists())
+                snapshot = prepare_ak_snapshot(source, state)
+                copied = sqlite3.connect(snapshot)
+                try:
+                    self.assertEqual(copied.execute("SELECT value FROM truth").fetchone()[0], "current")
+                    self.assertEqual(copied.execute("PRAGMA quick_check").fetchone()[0], "ok")
+                finally:
+                    copied.close()
+            finally:
+                connection.close()
+
+    def test_governance_cli_tokens_and_failed_service_reset_are_canonical(self):
+        start = (ROOT / "cto-canary/start_candidate.py").read_text()
+        stop = (ROOT / "cto-canary/stop_candidate.py").read_text()
+        self.assertIn('"--mito-layer", "Operations & Evaluation"', start)
+        self.assertIn('"--mito-layer", "Operations & Evaluation"', stop)
+        self.assertIn('["systemctl", "--user", "reset-failed", service]', stop)
 
     def test_prior_cost_is_normalized_and_malformed_history_fails(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -93,12 +93,32 @@ def main() -> int:
         print("REFUSED: " + "; ".join(artifact_errors), file=sys.stderr); return 3
     state_dir = Path.home() / ".local/state/softwareco-cto-canary"
     activation_path = state_dir / "activation.json"
-    if activation_path.exists():
-        print("REFUSED: activation state already exists; reconcile/stop it first", file=sys.stderr); return 3
     concern = f"softwareco-autonomous-cto-canary:decision-{decision_id}:control"
     existing = json.loads(run(["ak", "governance", "list", "--concern", concern, "--limit", "100", "--json"]).stdout)
     if existing:
         print("REFUSED: this accepted canary decision already has a control history", file=sys.stderr); return 3
+    if activation_path.exists():
+        try:
+            prior = json.loads(activation_path.read_text())
+            prior_state = prior["state"]
+            prior_decision = prior["decision_id"]
+            prior_activation = prior["activation_receipt_id"]
+        except (OSError, KeyError, json.JSONDecodeError) as exc:
+            print(f"REFUSED: prior activation state is not archivable: {exc}", file=sys.stderr); return 3
+        if prior_state not in ("human_stopped", "expired_by_time") or prior_decision == decision_id:
+            print("REFUSED: activation state already exists and is not a stopped predecessor", file=sys.stderr); return 3
+        if prior_state == "human_stopped":
+            prior_chain = json.loads(run(["ak", "governance", "list", "--concern", prior["control_concern"],
+                                          "--limit", "100", "--json"]).stdout)
+            if (not prior_chain or prior_chain[0].get("to_state") != "stopped" or
+                    prior_chain[0].get("details", {}).get("activation_receipt_id") != prior_activation):
+                print("REFUSED: prior human stop is not the live control-chain head", file=sys.stderr); return 3
+        history = state_dir / "history"
+        history.mkdir(parents=True, exist_ok=True)
+        archived = history / f"activation-decision-{prior_decision}-receipt-{prior_activation}.json"
+        if archived.exists():
+            print(f"REFUSED: prior activation archive already exists: {archived}", file=sys.stderr); return 3
+        activation_path.replace(archived)
 
     started = datetime.now(timezone.utc)
     expires = started + timedelta(seconds=CONFIG["window_seconds"])
@@ -116,7 +136,7 @@ def main() -> int:
     }
     run([
         "ak", "governance", "record", "--concern", concern,
-        "--source-authority", "human-operator", "--mito-layer", "Operations",
+        "--source-authority", "human-operator", "--mito-layer", "Operations & Evaluation",
         "--s3-domain-ref", "softwareco", "--agreement-ref", f"decision:{decision_id}",
         "--from-state", "inactive", "--to-state", f"active:{run_id}",
         "--consent-mode", "explicit", "--evidence-ref", f"git:{commit}",

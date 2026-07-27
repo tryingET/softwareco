@@ -3,13 +3,15 @@ summary: "Implementation sequence for the inactive autonomous CTO canary and lat
 read_when:
   - "Implementing or activating the autonomous CTO canary."
 type: "plan"
-status: "candidate"
+status: "decision86_corrective_candidate"
 date: "2026-07-26"
 task_id: 4284
-decision_id: 83
+decision_id: 86
 ---
 
 # Autonomous CTO canary implementation plan
+
+Decision `83` completed the original slices only through a stopped pre-model activation. Decision `86` repeats review, acceptance, installation, and activation for the corrected exact commit; it never resumes the old window.
 
 ## Slice 1 — inactive artifacts
 
@@ -32,6 +34,8 @@ Validate:
 - no AK, Git, direction, owner, service, or external mutation from fixture proof.
 
 A real model cycle is not legal before acceptance and activation.
+
+Corrective proof additionally requires a real sandboxed AK read through a hash-stable private DB+WAL snapshot, canonical governance vocabulary, automatic reset of historical failed service state during stop, and preservation/archive of the stopped predecessor activation.
 
 ## Slice 3 — architecture decision
 

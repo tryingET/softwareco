@@ -1,8 +1,9 @@
 {
   "schema_version": 3,
-  "candidate_state": "inactive_pending_direct_human_acceptance",
+  "candidate_state": "inactive_decision86_corrective_review_pending",
   "cwd": "/home/tryinget/ai-society/softwareco",
   "portfolio_root": "/home/tryinget/ai-society/softwareco/owned",
+  "authority_db": "/home/tryinget/ai-society/society.v2.db",
   "interval_seconds": 3600,
   "window_seconds": 86400,
   "max_cycles": 24,

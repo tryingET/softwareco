@@ -3,10 +3,10 @@ summary: "Problem and intent for a bounded always-on Softwareco CTO observationa
 read_when:
   - "Reviewing why Decision 77 does not provide an always-running CTO."
 type: "problem"
-status: "candidate"
+status: "decision83_stopped_decision86_corrective_candidate"
 date: "2026-07-26"
 task_id: 4284
-decision_id: 83
+decision_ids: [83, 86]
 ---
 
 # Autonomous CTO canary — problem and intent
@@ -16,6 +16,8 @@ decision_id: 83
 Decision 77 proved that fresh Pi workers can reconstruct portfolio state and drive a federally governed owner outcome inside finite human-authorized epochs. It intentionally forbids a scheduler and appoints no CTO between epochs. The tracked `softwareco-cto` mode is therefore an explicit operator workbench, not an always-running service.
 
 Softwareco now needs to test a different question: can an always-available CTO-shaped observer continuously sense the registered `softwareco/owned` portfolio, detect drift and blockers, rank evidence-backed theses, and prepare D2E-ready drafts without acquiring owner or runtime authority?
+
+Decision `83` did not answer that question: its two scheduled attempts failed closed before a model call because the SQLite WAL reader could not create private shared-memory state in the read-only sandbox. Decision `86` preserves the original intent while correcting that runtime boundary under a new authority chain.
 
 ## Intended test
 

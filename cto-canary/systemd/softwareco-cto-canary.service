@@ -17,7 +17,9 @@ ProtectSystem=strict
 ProtectHome=tmpfs
 BindReadOnlyPaths=@ROOT@
 BindReadOnlyPaths=@BUNDLE_DIR@
-BindReadOnlyPaths=%h/ai-society/society.v2.db
+# Expose the authority DB and WAL as read-only source bytes. The cycle copies a
+# stable pair into StateDirectory; AK opens only that private writable snapshot.
+BindReadOnlyPaths=%h/ai-society
 BindReadOnlyPaths=%h/.pi/agent/auth.json
 BindReadOnlyPaths=%h/.pi/agent/settings.json
 BindReadOnlyPaths=%h/.pi/agent/models.json
