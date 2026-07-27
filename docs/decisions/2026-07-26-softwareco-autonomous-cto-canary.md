@@ -3,7 +3,7 @@ summary: "Accepted Decision 83 canary, stopped pre-model, with a separately gove
 read_when:
   - "Accepting, operating, reviewing, or stopping the autonomous CTO canary."
 type: "decision"
-status: "decision83_accepted_and_stopped_decision86_corrective_pending"
+status: "decision83_accepted_and_stopped_decision86_pending_human_acceptance"
 date: "2026-07-26"
 decision_ids: [83, 86]
 task_id: 4284

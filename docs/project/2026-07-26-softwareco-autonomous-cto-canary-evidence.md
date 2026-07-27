@@ -3,7 +3,7 @@ summary: "Stopped Decision 83 evidence and inactive corrective candidate evidenc
 read_when:
   - "Reviewing what has and has not been proved before canary acceptance."
 type: "evidence"
-status: "decision83_stopped_pre_model_decision86_corrective_candidate"
+status: "decision83_stopped_decision86_ready_for_human_decision"
 date: "2026-07-26"
 task_id: 4284
 decision_id: 86

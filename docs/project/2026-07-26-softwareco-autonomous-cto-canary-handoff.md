@@ -3,7 +3,7 @@ summary: "Human acceptance, install, activation, observation, and stop handoff f
 read_when:
   - "Preparing to accept or run the 24-hour autonomous CTO canary."
 type: "runbook"
-status: "decision83_stopped_decision86_corrective_review_pending"
+status: "decision83_stopped_decision86_pending_direct_human_acceptance"
 date: "2026-07-26"
 task_id: 4284
 decision_id: 86
@@ -15,7 +15,7 @@ decision_id: 86
 
 Decision `83` is accepted history but its activation was stopped before any model call. Acceptance receipt `9173`, activation receipt `9189`, and direct-human stop receipt `9201` are immutable. Its installed bundle remains for evidence; all units are inactive, both timers are disabled, its activation file is `human_stopped`, and it has zero run directories.
 
-Decision `86` is the inactive corrective candidate. It has no acceptance, installation, activation, or model-call authority. It must receive fresh exact-source review and a new direct-human acceptance bound to a new commit. Do not reuse receipts `9173` or `9189`, the Decision 83 bundle, or the temporary MITO compatibility shim.
+Decision `86` is the inactive corrective candidate in `decision_pending` with controlling `ready_for_adr` synthesis. Authority/security and runtime/operator rereviews both returned `READY` for exact implementation commit `793879676d0ad3eae4bdaff7cdfe8a4dc19592b5`; review closure is tracked at `2a2c31105e01e73a69a0a6e36451a5c42f1e49c1`. It has no acceptance, installation, activation, or model-call authority until a new direct-human receipt binds the final candidate commit. Do not reuse receipts `9173` or `9189`, the Decision 83 bundle, or the temporary MITO compatibility shim.
 
 Do not substitute Decisions `74`, `77`, or `83`.
 
