@@ -35,12 +35,11 @@ Because AGENTS files are concatenated from parents into leaf repos:
 - Use `docs/project/repo-capability-map.md` when you need to choose the right owned repo from vague cues or an arbitrary working directory.
 - Treat lane-root routing summaries as conservative hints; confirm authority and runtime boundaries in the selected repo's own docs before implementing.
 
-## Default read order inside owned repos
-1. `docs/_core/` (if present)
-2. `docs/org_context/` (if present)
-3. `docs/project/`
-4. `docs/decisions/`
-5. `docs/learnings/`
-6. `diary/`
-7. `docs/system4d/`
-8. repo `AGENTS.md`
+## Default bounded read order inside owned repos
+1. Apply the already injected ancestor and deepest repo/package `AGENTS.md` instructions; confirm the selected owner repo before reading broadly.
+2. Read the exact AK task scope or owner-supplied file set when one exists.
+3. For engineering work, read the nearest `docs/engineering.local.md` and use the workspace compact `jq` projection for `policy/engineering-lane.json` when present.
+4. If more documentation discovery is needed, run task-focused `docs-list` from the selected repo.
+5. Read only the selected documents needed for the task; do not bulk-read documentation directories.
+
+Use `docs/_core/`, `docs/org_context/`, `docs/project/`, `docs/decisions/`, `docs/learnings/`, `diary/`, and `docs/system4d/` as discovery categories, not a mandatory ingestion sequence.
