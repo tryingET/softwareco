@@ -62,9 +62,11 @@ The inactive Decision `86` correction:
 
 Decision `86` is separate corrective authority. It does not reopen, rewrite, or continue Decision `83`'s stopped activation window.
 
+Independent authority/security rereview `dispatch-1785173240783` and runtime/operator rereview `dispatch-1785173240793` both returned `READY` for exact commit `793879676d0ad3eae4bdaff7cdfe8a4dc19592b5`. The controlling corrective synthesis is `docs/reviews/2026-07-26-softwareco-autonomous-cto-canary-decision86-closure-synthesis.md` with outcome `ready_for_adr`.
+
 ## Not yet proved
 
-- Decision `86` has no corrective `ready_for_adr` review closure, acceptance receipt, installation, activation, or model-call authority yet;
+- Decision `86` has corrective review closure but no direct-human acceptance receipt, installation, activation, or model-call authority yet;
 - the private WAL-snapshot path has real sandbox/AK read proof but not an accepted production canary cycle;
 - no canary output usefulness, provider cost, successful hourly recurrence, or complete 24-hour window has been observed;
 - Decision `83` remains immutable accepted-and-stopped history under receipts `9173`, `9189`, and `9201`.
