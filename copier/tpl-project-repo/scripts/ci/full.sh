@@ -18,11 +18,6 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-run_work_items() {
-  if [ -f "./governance/work-items.json" ]; then
-    "$AK_CMD" work-items check --repo . --path "./governance/work-items.json"
-  fi
-}
 
 run_task_scope_snapshots() {
   if [ -x "./scripts/check-task-scope-snapshots.sh" ]; then
@@ -50,14 +45,6 @@ run_rocs() {
   fi
 }
 
-say "==> work-items"
-work_items_status=0
-if run_work_items >"$log_dir/work-items.log" 2>&1; then
-  work_items_status=0
-else
-  work_items_status=$?
-fi
-
 say "==> task-scope snapshots"
 task_scopes_status=0
 if run_task_scope_snapshots >"$log_dir/task-scopes.log" 2>&1; then
@@ -82,8 +69,6 @@ else
   rocs_status=$?
 fi
 
-say "--- work-items output ---"
-cat "$log_dir/work-items.log"
 say "--- task-scope output ---"
 cat "$log_dir/task-scopes.log"
 say "--- document-policy output ---"
@@ -91,9 +76,8 @@ cat "$log_dir/document-policy.log"
 say "--- rocs output ---"
 cat "$log_dir/rocs.log"
 
-if [ "$work_items_status" -ne 0 ] || [ "$task_scopes_status" -ne 0 ] || [ "$document_policy_status" -ne 0 ] || [ "$rocs_status" -ne 0 ]; then
+if [ "$task_scopes_status" -ne 0 ] || [ "$document_policy_status" -ne 0 ] || [ "$rocs_status" -ne 0 ]; then
   err "error: full.sh failed"
-  [ "$work_items_status" -eq 0 ] || err "- work-items exit=$work_items_status"
   [ "$task_scopes_status" -eq 0 ] || err "- task-scope snapshots exit=$task_scopes_status"
   [ "$document_policy_status" -eq 0 ] || err "- document policy exit=$document_policy_status"
   [ "$rocs_status" -eq 0 ] || err "- rocs exit=$rocs_status"

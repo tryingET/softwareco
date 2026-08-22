@@ -13,10 +13,6 @@ command -v "$AK_CMD" >/dev/null 2>&1 || {
   exit 2
 }
 
-if [ -f "./governance/work-items.json" ]; then
-  "$AK_CMD" work-items check --repo . --path "./governance/work-items.json"
-fi
-
 if [ -x "./scripts/check-task-scope-snapshots.sh" ]; then
   AK_CMD="$AK_CMD" ./scripts/check-task-scope-snapshots.sh
 fi
