@@ -21,7 +21,6 @@ Because AGENTS files are concatenated from parents into leaf repos:
 ## Guardrails
 - Keep lane-root work in the lane root; child-repo implementation belongs in the child repo that owns it.
 - Track deferred work in Agent Kernel, not scattered TODOs.
-- Treat `governance/work-items.json` as the repo-local deterministic projection exported from plain installed `ak`, not as hand-authored live authority.
 - When explicit task scope is in play, author it in AK and freeze repo-consumption snapshots via `ak task scope show|export ...`; treat `governance/task-scopes/AK-*.snapshot.json` as AK exports, not manual truth.
 
 ## Deterministic tooling

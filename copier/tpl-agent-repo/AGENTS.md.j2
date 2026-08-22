@@ -7,7 +7,6 @@ Template for an **agent product/capability repository**. Repository ownership go
 - No secrets in git (use CI variables + local secret-manager references).
 - Main-first workflow: commit directly to `main` for normal work. Use a review branch/PR only for releases, when the operator explicitly requests a gate, or when a repo-local accepted policy documents a narrower exception.
 - Treat `docs/_core/**` as immutable (vendored snapshot from `governance-kernel`; no submodules).
-- Track deferred work in Agent Kernel; keep `governance/work-items.json` as the exported projection through plain installed `ak`.
 - Author explicit task scope in AK and treat `governance/task-scopes/AK-*.snapshot.json` as frozen exports, not hand-authored authority.
 
 ## Delegation, WIP, outcome, and effect gates
@@ -21,16 +20,12 @@ Template for an **agent product/capability repository**. Repository ownership go
 - Read the relevant AK task, direction, decision, and delegation state before inventing work.
 - Generic input such as `proceed` continues an active execution task; it does not authorize lifecycle closeout, source-owner mutation, publication, or knowledge promotion.
 - Treat closeout/readiness rows as gate inputs, not lifecycle authorization.
-- Treat docs, work-items JSON, task-scope snapshots, and generated exports as projections; AK remains runtime authority.
 - Handoff instead of editing by convenience when facts belong to Prompt Vault, ROCS, Pi/runtime, KES, steward/publication, template propagation, Oracle/DSPx, or another owner.
 - Do not revive SG/TG/OP markdown planning where AK-native direction is declared.
 
 ## Agent Kernel projection flow
 
 ```bash
-ak work-items import --repo . --path governance/work-items.json
-ak work-items export --repo . --path governance/work-items.json
-ak work-items check --repo . --path governance/work-items.json
 ak task scope export <TASK-ID> > governance/task-scopes/AK-<TASK-ID>.snapshot.json
 ./scripts/check-task-scope-snapshots.sh
 ```
@@ -38,7 +33,6 @@ ak task scope export <TASK-ID> > governance/task-scopes/AK-<TASK-ID>.snapshot.js
 Use `AK_CMD="${AK_CMD:-ak}"` only to select an explicit compatible executable. Never substitute another state store when AK is required.
 
 ## Deterministic tooling policy (ROCS-first)
-- Prefer `ak work-items <import|export|check>` for work-items projection operations.
 - Prefer `./scripts/rocs.sh <args...>` before ad-hoc scripting.
 - Use inline Python only when no deterministic repo command exists.
 

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-20",
+  "updated_at": "2026-07-31",
   "owner": "@project-owners",
   "project_name": "owned",
   "milestones": [
@@ -319,6 +319,45 @@
           ],
           "dod": "Task reaches done in society.db with evidence recorded.",
           "completed_at": "2026-07-20"
+        },
+        {
+          "id": "AK-TASK-4174",
+          "title": "Route pi-context-packer explicitly in owned capability map",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Route pi-context-packer explicitly in owned capability map (task #4174)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-07-25"
+        },
+        {
+          "id": "AK-TASK-4306",
+          "title": "Replace broad owned-lane read order with bounded authority-first retrieval",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Replace broad owned-lane read order with bounded authority-first retrieval (task #4306)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-07-27"
+        },
+        {
+          "id": "AK-TASK-4369",
+          "title": "Prevent duplicate expensive gates in standardized Justfile adoption",
+          "state": "done",
+          "tasks": [
+            {
+              "text": "Prevent duplicate expensive gates in standardized Justfile adoption (task #4369)",
+              "done": true
+            }
+          ],
+          "dod": "Task reaches done in society.db with evidence recorded.",
+          "completed_at": "2026-07-31"
         }
       ]
     }

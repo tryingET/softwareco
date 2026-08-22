@@ -7,15 +7,11 @@ type: "reference"
 
 # Project Work Items
 
-`governance/work-items.json` is the checked-in deterministic projection/mirror for this repository's Agent Kernel work-items state.
 
 ## Authority model
 
 | Surface | Role | Authority |
 |---|---|---|
-| Agent Kernel work-items state | Live operational backlog for this repo | **Authoritative** |
-| `governance/work-items.json` | Checked-in projection for review, diffs, and compatibility | Mirror only |
-| `governance/work-items.cue` | Projection shape validation | Contract for the mirror |
 
 Do not treat manual JSON edits as the live source of truth.
 If you are migrating a legacy JSON-first repo, import once, then continue from AK and re-export the projection.
@@ -31,9 +27,6 @@ Use `./scripts/ci/fast.sh` for the cheap local baseline and `./scripts/ci/full.s
 Use plain installed `ak` as the canonical operator path:
 
 ```bash
-ak work-items import --repo . --path governance/work-items.json
-ak work-items export --repo . --path governance/work-items.json
-ak work-items check --repo . --path governance/work-items.json
 ```
 
 Plain installed `ak` is the canonical operator path for repo-local projection and task-scope flows.
@@ -72,7 +65,6 @@ Issue state machine:
 Optional schema-only validation:
 
 ```bash
-cue vet governance/work-items.json governance/work-items.cue
 ```
 
 ## Use this vs alternatives
@@ -80,11 +72,9 @@ cue vet governance/work-items.json governance/work-items.cue
 | Use this projection when | Use alternative when |
 |---|---|
 | You need a reviewable, checked-in mirror of repo-local AK state | Work spans multiple repos/programs (use FCOS/L0 program models) |
-| You are migrating legacy repo-local JSON work-items into AK | You only need lightweight conversational triage (use notes/issues) |
 
 ## Non-negotiable
 
 - Do not leave deferred work as ad-hoc TODO comments or scattered markdown notes.
-- Do not repair operational drift by hand-editing `governance/work-items.json` and pretending the JSON is authoritative.
 - Do not hand-author `governance/task-scopes/AK-*.snapshot.json` as if it were the live task-scope source of truth.
 - For legacy/manual JSON slices, import to AK and then export the projection back out.

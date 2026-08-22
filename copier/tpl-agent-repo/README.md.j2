@@ -11,19 +11,13 @@ This repository owns its agent persona, prompts, code, tests, and release artifa
 - `docs/person/` — persona and behavior contract;
 - `prompts/activities/` — owner-local activity prompts;
 - `docs/decisions/` and `docs/learnings/` — narrative decisions and learning;
-- `governance/work-items.json` — checked-in AK projection;
 - `governance/task-scopes/` — optional frozen AK task-scope exports;
 - `policy/do-not-touch.md` — safety guardrails;
 - `scripts/ci/` — deterministic validation.
 
-## Agent Kernel work-items flow
 
-AK is live authority; `governance/work-items.json` is a deterministic projection.
 
 ```bash
-ak work-items import --repo . --path governance/work-items.json
-ak work-items export --repo . --path governance/work-items.json
-ak work-items check --repo . --path governance/work-items.json
 ```
 
 For explicit task scope:

@@ -53,6 +53,24 @@ Do **not** invent fake `run` or `dev` behavior for repos that do not have a mean
 - Treat `run` as the canonical one-shot execution surface when the repo has one; prefer a truthful `--help`/smoke entrypoint over a fake long-running mode.
 - Do not hide large amounts of custom logic inside `Justfile` recipes if an existing script already owns that behavior.
 
+## Aggregate-gate proof ownership
+
+Compose `just ci` from distinct proof dimensions rather than from overlapping target names:
+
+- execute each expensive proof dimension once in one expanded `just ci` run
+- do not invoke a composite target alongside work already reached transitively through that target
+- treat lint, formatting check, typecheck, tests, artifact build, generated-drift validation, packaging, and runtime smoke as distinct when they prove different claims
+- repeat an expensive command only when scope, mode, inputs, environment, artifact under test, isolation boundary, or failure mode materially changes; make that distinction explicit
+
+Before declaring an existing or reconciled surface healthy:
+
+1. run `just --dry-run ci`
+2. inspect delegated scripts or package commands reached by the expanded recipe
+3. map each expensive invocation to its proof dimension
+4. remove equivalent repetition while preserving every distinct proof
+
+Exact command matching is only a first pass. Differently spelled commands can perform equivalent work, while similar commands can remain necessary when their proof dimensions differ.
+
 ## Recommended implementation pattern
 
 Good:

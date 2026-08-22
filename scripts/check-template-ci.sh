@@ -237,7 +237,6 @@ contracts/layer-contract.yml
 contracts/provenance-seal.yml
 scripts/new-repo-from-copier.sh
 scripts/bootstrap-lane-root.sh
-scripts/docs-list.sh
 scripts/rocs.sh
 scripts/check-template-ci.sh
 scripts/install-hooks.sh
@@ -357,7 +356,7 @@ assert_contains "copier/tpl-agent-repo/scripts/ci/full.sh" 'AK_CMD="${AK_CMD:-ak
 assert_contains "copier/tpl-agent-repo/scripts/ci/full.sh" "work-items check" "agent full CI must check projection drift"
 
 if [ -f "next_session_prompt.md" ]; then
-  assert_command_succeeds "softwareco docs-list wrapper should parse repo next-session prompt" ./scripts/docs-list.sh --from-prompt next_session_prompt.md --paths-only --wikilink
+  assert_command_succeeds "canonical docs-list should parse repo next-session prompt" node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --from-prompt next_session_prompt.md --paths-only --wikilink
 fi
 assert_file "copier/tpl-project-repo/docs/project/product_posture.md"
 assert_contains "copier/tpl-project-repo/docs/project/product_posture.md" "last_validated_commit:" "tpl-project-repo posture should declare a commit evidence baseline"
@@ -368,7 +367,7 @@ assert_not_file "copier/tpl-project-repo/docs/project/strategic_goals.md"
 assert_not_file "copier/tpl-project-repo/docs/project/tactical_goals.md"
 assert_not_file "copier/tpl-project-repo/docs/project/operating_plan.md"
 assert_not_file "copier/tpl-project-repo/docs/project/operational_plan.md"
-assert_command_succeeds "softwareco docs-list wrapper should parse tpl-project-repo next-session prompt" ./scripts/docs-list.sh --from-prompt copier/tpl-project-repo/next_session_prompt.md --paths-only --wikilink
+assert_command_succeeds "canonical docs-list should parse tpl-project-repo next-session prompt" node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --from-prompt copier/tpl-project-repo/next_session_prompt.md --paths-only --wikilink
 check_document_policy_regressions
 assert_not_contains "copier/tpl-project-repo/scripts/ci/full.sh" "./scripts/ak.sh" "tpl-project-repo CI should use plain installed ak via AK_CMD"
 assert_not_contains "copier/tpl-project-repo/scripts/ci/full.sh" "uvx -n --from ./tools/rocs-cli rocs" "tpl-project-repo CI should not hardcode uvx vendored invocation"
@@ -386,7 +385,6 @@ check_multi_pass_suffix_policy
 required_exec="
 scripts/new-repo-from-copier.sh
 scripts/bootstrap-lane-root.sh
-scripts/docs-list.sh
 scripts/rocs.sh
 scripts/check-template-ci.sh
 copier/tpl-project-repo/scripts/check-document-policy.sh
@@ -410,7 +408,8 @@ done
 assert_contains "CONTRIBUTING.md" "check-template-ci.sh" "L1 contributing guide should reference template checks"
 assert_contains "CONTRIBUTING.md" "scripts/rocs.sh --doctor" "L1 contributing guide should include deterministic ROCS wrapper usage"
 assert_contains "AGENTS.md" "Deterministic tooling policy" "L1 AGENTS should document deterministic tooling policy"
-assert_contains "AGENTS.md" "scripts/docs-list.sh" "L1 AGENTS should reference scripts/docs-list.sh"
+assert_contains "AGENTS.md" "core/agent-scripts/scripts/docs-list.mjs" "L1 AGENTS should reference canonical docs-list implementation"
+assert_contains "AGENTS.md" "Do not add company-, repo-, or package-local docs-list wrappers" "L1 AGENTS should prohibit consumer docs-list wrappers"
 assert_contains "AGENTS.md" "scripts/rocs.sh" "L1 AGENTS should reference scripts/rocs.sh"
 assert_contains "AGENTS.md" "diary/" "L1 AGENTS should require repo-local diary"
 assert_contains "AGENTS.md" "L2 Templates" "L1 AGENTS should document L2 templates"

@@ -19,7 +19,6 @@ Project repository with:
   - `org_docs_profile=rich`: adds mission/purpose/vision/strategic objectives/governance context files
 - Decision records (`docs/decisions/`)
 - Learnings capture (`docs/learnings/`)
-- Repo-local work-items projection (`governance/work-items.json`)
 - Ontology support (`ontology/`)
 - ROCS tooling (`tools/rocs-cli/`)
 - CI baseline (`scripts/ci/`)
@@ -127,27 +126,22 @@ From an L1 templates repository:
   --defaults --overwrite
 ```
 
-## Agent Kernel work-items flow
 
 Repo-local deferred work is **AK-first**.
-`governance/work-items.json` is a deterministic checked-in projection/mirror for review and interoperability, not the live operational authority.
 
 Use plain installed `ak` as the canonical operator path:
 
 ```bash
-ak work-items import --repo . --path governance/work-items.json
 ```
 
 Refresh the checked-in projection after AK state changes:
 
 ```bash
-ak work-items export --repo . --path governance/work-items.json
 ```
 
 Fail on projection drift locally/CI:
 
 ```bash
-ak work-items check --repo . --path governance/work-items.json
 ```
 
 ## Optional explicit task-scope snapshots
@@ -170,7 +164,6 @@ Use the staged CI lanes:
 ./scripts/ci/fast.sh                    # cheap local guardrail lane
 ./scripts/check-task-scope-snapshots.sh # verify checked-in AK task-scope snapshots when present
 ./scripts/check-document-policy.sh      # verify living-posture freshness and dated snapshot names
-./scripts/ci/full.sh                    # full lane: fast + work-items + task-scope + document-policy + ROCS checks
 ```
 
 Plain installed `ak` is the canonical operator path for repo-local projection and task-scope flows.
@@ -202,8 +195,6 @@ A posture becomes stale after 30 days or when a later reachable commit touches a
 ├── governance/
 │   ├── README.md          # AK-first workflow and projection rules
 │   ├── task-scopes/       # Optional frozen AK task-scope snapshots
-│   ├── work-items.cue     # Projection schema contract
-│   └── work-items.json    # Checked-in AK projection/mirror
 ├── diary/                 # Repo-local session capture (KES raw input)
 ├── ontology/              # ROCS ontology
 │   └── src/system4d.yaml
