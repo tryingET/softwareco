@@ -8,13 +8,26 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "error: not a git repo" >&2; exit 1; }
 cd "$repo_root"
 
-if [ -f "./governance/work-items.json" ] && [ -f "./crates/ak-cli/Cargo.toml" ] && command -v cargo >/dev/null 2>&1; then
-  cargo run --quiet --bin ak -- work-items check --repo "$repo_root" --path "./governance/work-items.json"
-fi
 
 if [ -x "./scripts/rocs.sh" ] && [ -f "./ontology/manifest.yaml" ]; then
-  workspace_root="${ROCS_WORKSPACE_ROOT:-$HOME}"
-  workspace_ref_mode="${ROCS_WORKSPACE_REF_MODE:-loose}"
+  workspace_root="${ROCS_WORKSPACE_ROOT:-$HOME/ai-society}"
+  ci_profile="${ROCS_CI_PROFILE:-local-dev}"
+  case "$ci_profile" in
+    local-dev)
+      workspace_ref_mode="${ROCS_WORKSPACE_REF_MODE:-loose}"
+      ;;
+    branch-ci|main-strict)
+      workspace_ref_mode="${ROCS_WORKSPACE_REF_MODE:-strict}"
+      if [ "$workspace_ref_mode" != strict ]; then
+        echo "error: $ci_profile requires ROCS_WORKSPACE_REF_MODE=strict" >&2
+        exit 1
+      fi
+      ;;
+    *)
+      echo "error: unknown ROCS_CI_PROFILE: $ci_profile" >&2
+      exit 1
+      ;;
+  esac
   core_rocs_default="$HOME/ai-society/core/rocs-cli/.venv/bin/rocs"
   rocs_bin="${ROCS_BIN:-}"
 

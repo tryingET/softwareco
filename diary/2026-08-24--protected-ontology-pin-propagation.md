@@ -33,3 +33,7 @@ Follow-up AK task `4964` aligns Softwareco's monorepo/package defaults with the 
 `core/ontology-kernel@v0.2.0` release; no Copier archetype now defaults the core layer to `@main`.
 Review hardening moves all archetype checks out of the project-only block and parses each
 `kernel_ontology_ref.default` field, preventing unrelated matching text from masking drift.
+
+AK task `4973` synchronizes the validated fork/infra/ontology adoption and CI fixes into the
+Softwareco parent lane baselines. Unrelated governance, GitLab de-vendoring, vendored tooling,
+project, and subrepo-pointer drift remains explicitly excluded.

@@ -14,7 +14,22 @@ ROCS_REPO="${ROCS_REPO:-.}"
 ROCS_PROFILE="${ROCS_PROFILE:-}"
 ROCS_CMD="${ROCS_CMD:-$repo_root/scripts/rocs.sh}"
 workspace_root="${ROCS_WORKSPACE_ROOT:-$HOME/ai-society}"
-workspace_ref_mode="${ROCS_WORKSPACE_REF_MODE:-loose}"
+case "$ROCS_CI_PROFILE" in
+  local-dev)
+    workspace_ref_mode="${ROCS_WORKSPACE_REF_MODE:-loose}"
+    ;;
+  branch-ci|main-strict)
+    workspace_ref_mode="${ROCS_WORKSPACE_REF_MODE:-strict}"
+    if [[ "$workspace_ref_mode" != strict ]]; then
+      echo "$ROCS_CI_PROFILE requires ROCS_WORKSPACE_REF_MODE=strict" >&2
+      exit 1
+    fi
+    ;;
+  *)
+    echo "unknown ROCS_CI_PROFILE: $ROCS_CI_PROFILE (expected: local-dev|branch-ci|main-strict)" >&2
+    exit 1
+    ;;
+esac
 export ROCS_AUTHORITY_AGGREGATE=1
 export ROCS_WORKSPACE_ROOT="$workspace_root"
 export ROCS_WORKSPACE_REF_MODE="$workspace_ref_mode"

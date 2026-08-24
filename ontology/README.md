@@ -13,7 +13,7 @@ If a file named `NUL` appears in the repo root, delete it and do not commit it (
 ## Validation workflow
 This repo is a layered ontology overlay over `core/ontology-kernel`, so the canonical local path is to resolve refs by default:
 
-- `bash scripts/ci/full.sh`
+- `./scripts/ci/full.sh`
 - `./scripts/rocs.sh --doctor`
 - `./scripts/rocs.sh --which`
 - `ROCS_WORKSPACE_ROOT=~/ai-society ROCS_WORKSPACE_REF_MODE=loose ./scripts/rocs.sh validate --repo . --resolve-refs`
