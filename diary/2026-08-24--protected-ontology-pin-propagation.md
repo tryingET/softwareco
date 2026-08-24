@@ -28,3 +28,6 @@ receipts; deep validation then asserts every provenance/summary output binds the
 This closes the prior validate-only freshness gap without byte-comparing machine-local paths.
 Final review hardening: parser-backed checks now reject mixed/stale core refs and require strict,
 authoritative, zero-error build/validate receipts. Full CI enters the repo root before `--repo .`.
+
+Follow-up AK task `4964` aligns Softwareco's monorepo/package defaults with the protected
+`core/ontology-kernel@v0.2.0` release; no Copier archetype now defaults the core layer to `@main`.

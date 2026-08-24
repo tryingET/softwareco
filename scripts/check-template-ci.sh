@@ -325,6 +325,8 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package
     assert_exec "copier/$tpl/scripts/check-document-policy.sh"
     assert_contains "copier/$tpl/scripts/ci/full.sh" "check-document-policy.sh" "tpl-project-repo full CI should enforce document freshness policy"
     assert_contains "copier/$tpl/copier.yml" 'default: "<repo:core/ontology-kernel@v0.2.0>"' "tpl-project-repo should default core ontology refs to the protected release tag"
+    assert_contains "copier/tpl-monorepo/copier.yml" 'default: "<repo:core/ontology-kernel@v0.2.0>"' "tpl-monorepo should default core ontology refs to the protected release tag"
+    assert_contains "copier/tpl-package/copier.yml" 'default: "<repo:core/ontology-kernel@v0.2.0>"' "tpl-package should default core ontology refs to the protected release tag"
     assert_file "copier/$tpl/scripts/preflight-repo-census.sh.j2"
     assert_file "copier/$tpl/scripts/lib/check-task-scope-snapshots.py"
     assert_file "copier/$tpl/scripts/lib/copier-answers.sh"
