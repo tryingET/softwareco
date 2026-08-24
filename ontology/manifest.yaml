@@ -7,4 +7,4 @@ rocs:
     - "@org-owners"
   depends_on:
     - layer: core
-      ref: "<repo:core/ontology-kernel@main>"
+      ref: "<repo:core/ontology-kernel@v0.2.0>"

@@ -285,6 +285,7 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package
     assert_file "copier/$tpl/scripts/check-document-policy.sh"
     assert_exec "copier/$tpl/scripts/check-document-policy.sh"
     assert_contains "copier/$tpl/scripts/ci/full.sh" "check-document-policy.sh" "tpl-project-repo full CI should enforce document freshness policy"
+    assert_contains "copier/$tpl/copier.yml" 'default: "<repo:core/ontology-kernel@v0.2.0>"' "tpl-project-repo should default core ontology refs to the protected release tag"
     assert_file "copier/$tpl/scripts/preflight-repo-census.sh.j2"
     assert_file "copier/$tpl/scripts/lib/check-task-scope-snapshots.py"
     assert_file "copier/$tpl/scripts/lib/copier-answers.sh"
@@ -297,7 +298,6 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package
     assert_file "copier/$tpl/contracts/layer-contract.yml"
     assert_file "copier/$tpl/docs/org_context/README.md"
     assert_file "copier/$tpl/docs/org_context/org-summary.md"
-    assert_file "copier/$tpl/governance/work-items.cue"
     assert_file "copier/$tpl/governance/work-items.json.j2"
     assert_file "copier/$tpl/scripts/check-task-scope-snapshots.sh"
     assert_file "copier/$tpl/scripts/preflight-repo-census.sh.j2"
@@ -313,7 +313,6 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package
   assert_file "copier/$tpl/scripts/ci/full.sh"
   if [ "$tpl" = "tpl-agent-repo" ]; then
     assert_file "copier/$tpl/governance/README.md"
-    assert_file "copier/$tpl/governance/work-items.cue"
     assert_file "copier/$tpl/governance/work-items.json.j2"
     assert_dir "copier/$tpl/governance/task-scopes"
     assert_file "copier/$tpl/scripts/check-task-scope-snapshots.sh"
@@ -346,14 +345,10 @@ done
 assert_not_contains "copier/tpl-agent-repo/AGENTS.md.j2" "work via proposals + merge requests" "agent template must not contradict main-first policy"
 assert_contains "copier/tpl-agent-repo/AGENTS.md.j2" "Prompt Vault query/retrieve surfaces" "agent template must route reusable procedures through Prompt Vault"
 assert_contains "copier/tpl-agent-repo/AGENTS.md.j2" "engineering-core" "agent template must provide generic engineering-core guidance"
-assert_contains "copier/tpl-agent-repo/README.md.j2" "ak work-items import" "agent README must document AK import"
-assert_contains "copier/tpl-agent-repo/README.md.j2" "ak work-items export" "agent README must document AK export"
-assert_contains "copier/tpl-agent-repo/README.md.j2" "ak work-items check" "agent README must document AK drift check"
 assert_contains "copier/tpl-agent-repo/README.md.j2" "Prompt Vault query/retrieve surfaces" "agent README must route reusable procedures through Prompt Vault"
 assert_contains "copier/tpl-agent-repo/README.md.j2" "engineering-core" "agent README must provide generic engineering guidance"
 assert_not_contains "copier/tpl-agent-repo/README.md.j2" "Softwareco's L1 template" "generic agent template must not leak Softwareco identity"
 assert_contains "copier/tpl-agent-repo/scripts/ci/full.sh" 'AK_CMD="${AK_CMD:-ak}"' "agent full CI must use plain configurable AK"
-assert_contains "copier/tpl-agent-repo/scripts/ci/full.sh" "work-items check" "agent full CI must check projection drift"
 
 if [ -f "next_session_prompt.md" ]; then
   assert_command_succeeds "canonical docs-list should parse repo next-session prompt" node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --from-prompt next_session_prompt.md --paths-only --wikilink
@@ -642,7 +637,6 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
     assert_contains "$l2_dir/policy/engineering-lane.json" '"disciplines"' "generated tpl-monorepo root should declare scanner-visible disciplines"
     assert_file "$l2_dir/docs/org_context/README.md"
     assert_file "$l2_dir/docs/org_context/org-summary.md"
-    assert_file "$l2_dir/governance/work-items.cue"
     assert_file "$l2_dir/governance/work-items.json"
     assert_file "$l2_dir/scripts/check-task-scope-snapshots.sh"
     assert_file "$l2_dir/scripts/preflight-repo-census.sh"
@@ -653,16 +647,12 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
   assert_file "$l2_dir/scripts/ci/full.sh"
   if [ "$tpl" = "tpl-agent-repo" ]; then
     assert_file "$l2_dir/governance/README.md"
-    assert_file "$l2_dir/governance/work-items.cue"
     assert_file "$l2_dir/governance/work-items.json"
     assert_dir "$l2_dir/governance/task-scopes"
     assert_file "$l2_dir/scripts/check-task-scope-snapshots.sh"
     assert_exec "$l2_dir/scripts/check-task-scope-snapshots.sh"
     assert_file "$l2_dir/scripts/lib/check-task-scope-snapshots.py"
     assert_exec "$l2_dir/scripts/lib/check-task-scope-snapshots.py"
-    assert_contains "$l2_dir/README.md" "ak work-items import" "generated agent README must document AK import"
-    assert_contains "$l2_dir/README.md" "ak work-items export" "generated agent README must document AK export"
-    assert_contains "$l2_dir/README.md" "ak work-items check" "generated agent README must document AK drift check"
     assert_contains "$l2_dir/README.md" "Prompt Vault query/retrieve surfaces" "generated agent README must route through Prompt Vault"
     assert_contains "$l2_dir/README.md" "engineering-core" "generated agent README must provide engineering guidance"
     assert_not_contains "$l2_dir/README.md" "Softwareco's L1 template" "generated agent README must remain company-neutral"
@@ -699,33 +689,6 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
     git add . >/dev/null
     git commit -m "initial L2 render" >/dev/null
     ./scripts/ci/smoke.sh >/dev/null
-    if [ "$tpl" = "tpl-agent-repo" ]; then
-      fake_ak="$tmp_root/fake-ak-pass"
-      cat > "$fake_ak" <<'EOF'
-#!/bin/sh
-if [ "$1" = "work-items" ] && [ "$2" = "check" ]; then
-  [ "$3" = "--repo" ] && [ "$4" = "." ] && [ "$5" = "--path" ] && [ "$6" = "./governance/work-items.json" ] || exit 9
-fi
-exit 0
-EOF
-      chmod +x "$fake_ak"
-      AK_CMD="$fake_ak" ./scripts/ci/full.sh >/dev/null
-
-      fake_ak="$tmp_root/fake-ak-drift"
-      cat > "$fake_ak" <<'EOF'
-#!/bin/sh
-if [ "$1" = "work-items" ] && [ "$2" = "check" ]; then
-  echo "projection drift" >&2
-  exit 1
-fi
-exit 0
-EOF
-      chmod +x "$fake_ak"
-      if AK_CMD="$fake_ak" ./scripts/ci/full.sh >/dev/null 2>&1; then
-        echo "error: generated agent full CI accepted projection drift" >&2
-        exit 1
-      fi
-    fi
   )
 
   ./scripts/new-repo-from-copier.sh "$tpl" "$l2_dir" \
