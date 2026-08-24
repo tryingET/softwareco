@@ -37,3 +37,6 @@ Review hardening moves all archetype checks out of the project-only block and pa
 AK task `4973` synchronizes the validated fork/infra/ontology adoption and CI fixes into the
 Softwareco parent lane baselines. Unrelated governance, GitLab de-vendoring, vendored tooling,
 project, and subrepo-pointer drift remains explicitly excluded.
+
+Post-review correction keeps the parent fork governance block while applying only the workspace/
+strict-profile repair, and leaves `/dist/` ignore ownership solely in the nested ontology repo.
