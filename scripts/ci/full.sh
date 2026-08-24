@@ -15,6 +15,8 @@ esac
 
 "$repo_root/scripts/ci/smoke.sh"
 
+cd "$repo_root"
+
 if [ -f "$repo_root/governance/work-items.json" ] && [ -f "$repo_root/crates/ak-cli/Cargo.toml" ] && command -v cargo >/dev/null 2>&1; then
   (
     cd "$repo_root"

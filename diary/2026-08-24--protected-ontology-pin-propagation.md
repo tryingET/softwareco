@@ -26,3 +26,5 @@ now fails if any provenance/summary output drifts from the protected pin.
 The root full gate now resolves strictly, validates and builds while retaining per-command
 receipts; deep validation then asserts every provenance/summary output binds the protected pin.
 This closes the prior validate-only freshness gap without byte-comparing machine-local paths.
+Final review hardening: parser-backed checks now reject mixed/stale core refs and require strict,
+authoritative, zero-error build/validate receipts. Full CI enters the repo root before `--repo .`.

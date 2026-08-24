@@ -267,9 +267,43 @@ for path in $required_files; do
 done
 
 assert_contains "ontology/manifest.yaml" '<repo:core/ontology-kernel@v0.2.0>' "Softwareco ontology manifest must pin the protected core release"
-for output in   ontology/dist/authority-receipt.build.json   ontology/dist/authority-receipt.validate.json   ontology/dist/authority-receipt.json   ontology/dist/resolve.json   ontology/dist/summary.json; do
+for output in \
+  ontology/dist/authority-receipt.build.json \
+  ontology/dist/authority-receipt.validate.json \
+  ontology/dist/authority-receipt.json \
+  ontology/dist/resolve.json \
+  ontology/dist/summary.json; do
   assert_contains "$output" '<repo:core/ontology-kernel@v0.2.0>' "Softwareco ontology output must match the protected core release pin"
 done
+python3 - <<'PYTHON'
+import json
+import re
+from pathlib import Path
+
+expected = "<repo:core/ontology-kernel@v0.2.0>"
+paths = [
+    Path("ontology/manifest.yaml"),
+    Path("ontology/dist/authority-receipt.build.json"),
+    Path("ontology/dist/authority-receipt.validate.json"),
+    Path("ontology/dist/authority-receipt.json"),
+    Path("ontology/dist/resolve.json"),
+    Path("ontology/dist/summary.json"),
+]
+for path in paths:
+    refs = re.findall(r"<repo:core/ontology-kernel@[^>]+>", path.read_text(encoding="utf-8"))
+    if not refs or set(refs) != {expected}:
+        raise SystemExit(f"error: {path} core refs are {refs!r}, expected only {expected}")
+for path in paths[1:3]:
+    receipt = json.loads(path.read_text(encoding="utf-8"))
+    if not (
+        receipt.get("ok") is True
+        and receipt.get("authoritative") is True
+        and receipt.get("workspace_ref_mode") == "strict"
+    ):
+        raise SystemExit(f"error: {path} is not an authoritative strict receipt")
+    if path.name == "authority-receipt.validate.json" and receipt.get("result", {}).get("error_count") != 0:
+        raise SystemExit(f"error: {path} is not a zero-error validation receipt")
+PYTHON
 
 # L2 embedded templates required
 for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package; do
