@@ -2,7 +2,7 @@
   "authoritative": true,
   "authority_mode": "strict_ref_resolution",
   "ci_profile": null,
-  "command": "build",
+  "command": "validate",
   "layer_sources": [
     {
       "kind": "path",
@@ -32,12 +32,17 @@
   "ref_layers_present": true,
   "repo": "/home/tryinget/ai-society/softwareco",
   "resolve_refs_requested": true,
+  "result": {
+    "error_count": 0,
+    "finding_count": 0,
+    "warning_count": 0
+  },
   "schema_version": 3,
   "source_contract_conformance": {
     "complete": true,
     "corpus_digest": "sha256:ad74052110cf74d0e7f5e465c8eb0d74df9044b01229c2823d9d7a908bf1ee2d",
     "document_count": 52,
-    "operation": "build",
+    "operation": "validate",
     "schema": "rocs-source-contract-conformance.v1",
     "scope": "source-contract/schema/reference",
     "source_contract": "ontology-markdown-v1"

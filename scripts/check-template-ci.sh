@@ -266,6 +266,11 @@ for path in $required_files; do
   assert_file "$path"
 done
 
+assert_contains "ontology/manifest.yaml" '<repo:core/ontology-kernel@v0.2.0>' "Softwareco ontology manifest must pin the protected core release"
+for output in   ontology/dist/authority-receipt.build.json   ontology/dist/authority-receipt.validate.json   ontology/dist/authority-receipt.json   ontology/dist/resolve.json   ontology/dist/summary.json; do
+  assert_contains "$output" '<repo:core/ontology-kernel@v0.2.0>' "Softwareco ontology output must match the protected core release pin"
+done
+
 # L2 embedded templates required
 for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package; do
   assert_dir "copier/$tpl"

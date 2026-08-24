@@ -7,7 +7,9 @@
     "core.Agent",
     "core.Assumption",
     "core.AuditEvent",
+    "core.Authority",
     "core.Capability",
+    "core.Claim",
     "core.Consent",
     "core.ConsentTier",
     "core.Constraint",
@@ -18,35 +20,39 @@
     "core.DataClassification",
     "core.Debt",
     "core.DecisionRecord",
+    "core.Evidence",
     "core.Exception",
     "core.IntegrationEdge",
     "core.Invariant",
     "core.Milestone",
     "core.Objection",
+    "core.Observation",
     "core.Pipeline",
     "core.Policy",
     "core.Program",
     "core.Proposal",
+    "core.Receipt",
     "core.Release",
     "core.Repo",
     "core.Risk",
     "core.Role",
     "core.Secret",
     "core.Service",
+    "core.Verification",
     "core.WorkItem"
   ],
   "counts": {
-    "concepts": 34,
+    "concepts": 40,
     "relations": 12
   },
   "layers": [
     {
       "name": "core",
-      "origin": "<repo:core/ontology-kernel@main>"
+      "origin": "<repo:core/ontology-kernel@v0.2.0>"
     },
     {
       "name": "company",
-      "origin": "src"
+      "origin": "ontology/src"
     }
   ],
   "profile": null,
@@ -64,7 +70,7 @@
     "core.rel.triggers",
     "core.rel.uses"
   ],
-  "repo": "/home/tryinget/ai-society/softwareco/ontology",
+  "repo": "/home/tryinget/ai-society/softwareco",
   "schema_version": 1,
-  "version": "0.1.4"
+  "version": "0.3.0"
 }

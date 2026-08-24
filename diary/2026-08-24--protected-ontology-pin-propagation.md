@@ -19,3 +19,10 @@ The obsolete generated-agent fake-AK drift exercise is removed for the same reas
 no longer invokes the retired work-items projection gate.
 The Softwareco L1 repository's own company-overlay manifest is also a live consumer, so it now pins
 the same protected release rather than `@main`.
+
+Post-review correction: the tracked Softwareco root ontology outputs are regenerated under
+`main-strict` against `@v0.2.0`, the authoritative validate receipt is retained, and template CI
+now fails if any provenance/summary output drifts from the protected pin.
+The root full gate now resolves strictly, validates and builds while retaining per-command
+receipts; deep validation then asserts every provenance/summary output binds the protected pin.
+This closes the prior validate-only freshness gap without byte-comparing machine-local paths.
