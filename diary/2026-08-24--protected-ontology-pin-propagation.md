@@ -31,3 +31,5 @@ authoritative, zero-error build/validate receipts. Full CI enters the repo root 
 
 Follow-up AK task `4964` aligns Softwareco's monorepo/package defaults with the protected
 `core/ontology-kernel@v0.2.0` release; no Copier archetype now defaults the core layer to `@main`.
+Review hardening moves all archetype checks out of the project-only block and parses each
+`kernel_ontology_ref.default` field, preventing unrelated matching text from masking drift.

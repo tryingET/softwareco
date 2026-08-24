@@ -65,6 +65,25 @@ assert_not_contains() {
   fi
 }
 
+
+assert_yaml_default() {
+  path="$1"
+  section="$2"
+  expected="$3"
+  label="$4"
+  actual="$(awk -v section="$section:" '''
+    $0 == section { inside = 1; next }
+    inside && /^[^[:space:]]/ { exit }
+    inside && $1 == "default:" {
+      sub(/^[[:space:]]*default:[[:space:]]*/, "")
+      gsub(/^"|"$/, "")
+      print
+      exit
+    }
+  ''' "$path")"
+  [ "$actual" = "$expected" ] || fail "$label (found ${actual:-<missing>} in $path)"
+}
+
 assert_line_precedes() {
   path="$1"
   first="$2"
@@ -305,6 +324,10 @@ for path in paths[1:3]:
         raise SystemExit(f"error: {path} is not a zero-error validation receipt")
 PYTHON
 
+assert_yaml_default "copier/tpl-project-repo/copier.yml" kernel_ontology_ref '<repo:core/ontology-kernel@v0.2.0>' "tpl-project-repo should default core ontology refs to the protected release tag"
+assert_yaml_default "copier/tpl-monorepo/copier.yml" kernel_ontology_ref '<repo:core/ontology-kernel@v0.2.0>' "tpl-monorepo should default core ontology refs to the protected release tag"
+assert_yaml_default "copier/tpl-package/copier.yml" kernel_ontology_ref '<repo:core/ontology-kernel@v0.2.0>' "tpl-package should default core ontology refs to the protected release tag"
+
 # L2 embedded templates required
 for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package; do
   assert_dir "copier/$tpl"
@@ -324,9 +347,6 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package
     assert_file "copier/$tpl/scripts/check-document-policy.sh"
     assert_exec "copier/$tpl/scripts/check-document-policy.sh"
     assert_contains "copier/$tpl/scripts/ci/full.sh" "check-document-policy.sh" "tpl-project-repo full CI should enforce document freshness policy"
-    assert_contains "copier/$tpl/copier.yml" 'default: "<repo:core/ontology-kernel@v0.2.0>"' "tpl-project-repo should default core ontology refs to the protected release tag"
-    assert_contains "copier/tpl-monorepo/copier.yml" 'default: "<repo:core/ontology-kernel@v0.2.0>"' "tpl-monorepo should default core ontology refs to the protected release tag"
-    assert_contains "copier/tpl-package/copier.yml" 'default: "<repo:core/ontology-kernel@v0.2.0>"' "tpl-package should default core ontology refs to the protected release tag"
     assert_file "copier/$tpl/scripts/preflight-repo-census.sh.j2"
     assert_file "copier/$tpl/scripts/lib/check-task-scope-snapshots.py"
     assert_file "copier/$tpl/scripts/lib/copier-answers.sh"
