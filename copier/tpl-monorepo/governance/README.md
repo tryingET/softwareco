@@ -1,17 +1,21 @@
 ---
-summary: "Governance directory placeholder for generated monorepos."
+summary: "Governance guidance for copier-template / copier / tpl-monorepo / governance."
 read_when:
-  - "A generated monorepo needs governance artifact placement guidance."
+  - "Read when changing or validating generated tpl-monorepo documentation for governance guidance for copier-template / copier / tpl-monorepo / governance."
 type: "reference"
 ---
 
 # Monorepo Work Items
 
+`governance/work-items.json` is the checked-in deterministic projection/mirror for this monorepo's Agent Kernel work-items state.
 
 ## Authority model
 
 | Surface | Role | Authority |
 |---|---|---|
+| Agent Kernel work-items state | Live operational backlog for this monorepo | **Authoritative** |
+| `governance/work-items.json` | Checked-in projection for review, diffs, and compatibility | Mirror only |
+| `governance/work-items.cue` | Projection shape validation | Contract for the mirror |
 
 Do not treat manual JSON edits as the live source of truth.
 If you are migrating a legacy JSON-first monorepo, import once, then continue from AK and re-export the projection.
@@ -21,6 +25,9 @@ If you are migrating a legacy JSON-first monorepo, import once, then continue fr
 Use plain installed `ak` as the canonical operator path:
 
 ```bash
+ak work-items import --repo . --path governance/work-items.json
+ak work-items export --repo . --path governance/work-items.json
+ak work-items check --repo . --path governance/work-items.json
 ```
 
 ## Optional explicit task-scope snapshots
@@ -45,6 +52,7 @@ If this monorepo is retiring hand-authored `governance/task-scopes/AK-*.json` fi
 Optional schema-only validation:
 
 ```bash
+cue vet governance/work-items.json governance/work-items.cue
 ```
 
 ## State machine
@@ -59,9 +67,11 @@ triage → queued → doing → review → done
 |------|----------|-------|-----------|
 | **Program** | governance-kernel/governance/programs/ | Cross-company | L0 scheduler / FCOS |
 | **Program** | company-templates/governance/programs/ | Company | Planning only |
+| **Monorepo** | repo/governance/work-items.json (this file) | This repo | AK authoritative; JSON is the projection |
 
 ## Non-negotiable
 
 - Do not leave deferred work as ad-hoc TODO comments or scattered markdown notes.
+- Do not repair operational drift by hand-editing `governance/work-items.json` and pretending the JSON is authoritative.
 - Do not hand-author `governance/task-scopes/AK-*.snapshot.json` as if it were the live task-scope source of truth.
 - For legacy/manual JSON slices, import to AK and then export the projection back out.

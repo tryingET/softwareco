@@ -1,7 +1,7 @@
 ---
-summary: "Ontology concept reference placeholder for generated project repos."
+summary: "Repo Concepts."
 read_when:
-  - "A generated project repo needs concept reference placement guidance."
+  - "Read when changing or validating generated tpl-project-repo documentation for repo concepts."
 type: "reference"
 ---
 

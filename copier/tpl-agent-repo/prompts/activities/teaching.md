@@ -1,7 +1,7 @@
 ---
-summary: "Activity prompt for teaching-oriented agent work."
+summary: "Prompt guidance: Activity Prompt: Teaching."
 read_when:
-  - "An agent persona needs a teaching activity prompt."
+  - "Read when changing or validating generated tpl-agent-repo documentation for prompt guidance: activity prompt: teaching."
 type: "reference"
 ---
 

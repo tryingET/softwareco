@@ -1,10 +1,11 @@
+
 schema: ai-society.template-provenance.v1
 template:
-  profile: 
+  profile: "custom"
   source_repository: "core/tpl-template-repo"
-  source_sha: "e48b6191be68b37851a682c5c38c40cea0f70e60"
+  source_sha: "33f286e116469590ae7d3b5c9150cc1cef3a903b"
 render:
   repo_slug: "softwareco"
   layer: L1
   answers_file: ".copier-answers.yml"
-  content_hash_sha256: "fbf22faa06a76ae596aefabcc40f5b44c0fc5a9a22f9698c0922919470c812b8"
+  content_hash_sha256: "15d8bdedd5f2987d27f7ba70c171f2d43771ae95f064e18dbe04d1d6d7f967d3"

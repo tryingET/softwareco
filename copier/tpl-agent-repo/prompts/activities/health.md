@@ -1,7 +1,7 @@
 ---
-summary: "Activity prompt for health-oriented agent work."
+summary: "Prompt guidance: Activity Prompt: Health."
 read_when:
-  - "An agent persona needs a health activity prompt."
+  - "Read when changing or validating generated tpl-agent-repo documentation for prompt guidance: activity prompt: health."
 type: "reference"
 ---
 

@@ -21,6 +21,31 @@ has_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
 
+path_fallback_enabled() {
+  case "${ROCS_ALLOW_PATH_FALLBACK:-0}" in
+    1|true|TRUE|yes|YES|on|ON)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+python_cmd() {
+  if has_cmd python3; then
+    printf '%s\n' "python3"
+    return 0
+  fi
+
+  if has_cmd python; then
+    printf '%s\n' "python"
+    return 0
+  fi
+
+  return 1
+}
+
 usage() {
   cat <<'EOF'
 usage: scripts/rocs.sh [--doctor|--which|--help] [rocs args...]
@@ -30,7 +55,7 @@ Portable ROCS launcher with deterministic resolution order:
   2) vendored ./tools/rocs-cli
   3) local rocs-cli project (this repo)
   4) workspace core ~/ai-society/core/rocs-cli (or ROCS_CORE_PROJECT)
-  5) rocs on PATH
+  5) rocs on PATH only when ROCS_ALLOW_PATH_FALLBACK=1
 
 Examples:
   ./scripts/rocs.sh version
@@ -40,18 +65,41 @@ Examples:
 EOF
 }
 
+toml_declares_rocs_cli() {
+  toml_file="$1"
+  [ -f "$toml_file" ] || return 1
+  grep -Eq "^[[:space:]]*name[[:space:]]*=[[:space:]]*['\"]?rocs-cli['\"]?[[:space:]]*(#.*)?$" "$toml_file"
+}
+
+has_vendored_rocs_dir() {
+  [ -d "$repo_root/tools/rocs-cli" ]
+}
+
+is_vendored_rocs_project() {
+  has_vendored_rocs_dir || return 1
+
+  if toml_declares_rocs_cli "$repo_root/tools/rocs-cli/pyproject.toml"; then
+    return 0
+  fi
+
+  [ -f "$repo_root/tools/rocs-cli/setup.py" ]
+}
+
 is_local_rocs_project() {
-  [ -f "$repo_root/pyproject.toml" ] || return 1
-  grep -q 'name = "rocs-cli"' "$repo_root/pyproject.toml"
+  toml_declares_rocs_cli "$repo_root/pyproject.toml"
 }
 
 select_runner() {
   if [ -n "${ROCS_BIN:-}" ]; then
-    printf '%s\n' "rocs-bin"
+    if [ -x "$ROCS_BIN" ] || command -v "$ROCS_BIN" >/dev/null 2>&1; then
+      printf '%s\n' "rocs-bin"
+      return
+    fi
+    printf '%s\n' "rocs-bin-missing"
     return
   fi
 
-  if [ -d "$repo_root/tools/rocs-cli" ]; then
+  if is_vendored_rocs_project; then
     if has_cmd uvx; then
       printf '%s\n' "vendored-uvx"
       return
@@ -69,8 +117,8 @@ select_runner() {
       printf '%s\n' "local-project-uv"
       return
     fi
-    if has_cmd python; then
-      printf '%s\n' "local-project-python"
+    if python_bin="$(python_cmd 2>/dev/null)"; then
+      printf 'local-project-%s\n' "$python_bin"
       return
     fi
   fi
@@ -81,7 +129,11 @@ select_runner() {
   fi
 
   if has_cmd rocs; then
-    printf '%s\n' "path-rocs"
+    if path_fallback_enabled; then
+      printf '%s\n' "path-rocs"
+    else
+      printf '%s\n' "path-rocs-blocked"
+    fi
     return
   fi
 
@@ -92,6 +144,9 @@ runner_desc() {
   case "$1" in
     rocs-bin)
       printf 'ROCS_BIN=%s\n' "${ROCS_BIN}"
+      ;;
+    rocs-bin-missing)
+      printf 'ROCS_BIN is set but not executable/resolvable (%s)\n' "${ROCS_BIN}"
       ;;
     vendored-uvx)
       printf 'vendored via uvx: %s\n' "$repo_root/tools/rocs-cli"
@@ -105,14 +160,18 @@ runner_desc() {
     local-project-uv)
       printf 'local rocs-cli project via uv --project %s\n' "$repo_root"
       ;;
-    local-project-python)
-      printf 'local rocs-cli project via python -m rocs_cli (%s)\n' "$repo_root"
+    local-project-python|local-project-python3)
+      python_bin="${1#local-project-}"
+      printf 'local rocs-cli project via PYTHONPATH=%s/src %s -m rocs_cli (%s)\n' "$repo_root" "$python_bin" "$repo_root"
       ;;
     workspace-core-uv)
       printf 'workspace core via uv --project %s\n' "$core_project_default"
       ;;
     path-rocs)
-      printf 'rocs on PATH (%s)\n' "$(command -v rocs)"
+      printf 'rocs on PATH (%s) with explicit ROCS_ALLOW_PATH_FALLBACK=1\n' "$(command -v rocs)"
+      ;;
+    path-rocs-blocked)
+      printf 'rocs on PATH is available (%s) but blocked by default; set ROCS_ALLOW_PATH_FALLBACK=1 or ROCS_BIN=/absolute/path/to/rocs\n' "$(command -v rocs)"
       ;;
     missing)
       printf 'unresolved (no viable rocs runner)\n'
@@ -131,15 +190,20 @@ doctor() {
   say "- core_project_default: $core_project_default"
   say "- has uv: $(has_cmd uv && printf yes || printf no)"
   say "- has uvx: $(has_cmd uvx && printf yes || printf no)"
+  say "- has python3: $(has_cmd python3 && printf yes || printf no)"
   say "- has python: $(has_cmd python && printf yes || printf no)"
   say "- has rocs on PATH: $(has_cmd rocs && printf yes || printf no)"
-  say "- has vendored tools/rocs-cli: $([ -d "$repo_root/tools/rocs-cli" ] && printf yes || printf no)"
+  say "- path fallback enabled: $(path_fallback_enabled && printf yes || printf no)"
+  say "- has vendored tools/rocs-cli dir: $(has_vendored_rocs_dir && printf yes || printf no)"
+  say "- vendored tools/rocs-cli is valid project: $(is_vendored_rocs_project && printf yes || printf no)"
   say "- local project is rocs-cli: $(is_local_rocs_project && printf yes || printf no)"
   say "- selected runner: $(runner_desc "$runner")"
 
-  if [ "$runner" = "missing" ] || [ "$runner" = "vendored-missing-runtime" ]; then
-    return 1
-  fi
+  case "$runner" in
+    missing|vendored-missing-runtime|rocs-bin-missing|path-rocs-blocked)
+      return 1
+      ;;
+  esac
   return 0
 }
 
@@ -157,15 +221,20 @@ runner="$(select_runner)"
 
 if [ "${1:-}" = "--which" ]; then
   runner_desc "$runner"
-  if [ "$runner" = "missing" ] || [ "$runner" = "vendored-missing-runtime" ]; then
-    exit 1
-  fi
+  case "$runner" in
+    missing|vendored-missing-runtime|rocs-bin-missing|path-rocs-blocked)
+      exit 1
+      ;;
+  esac
   exit 0
 fi
 
 case "$runner" in
   rocs-bin)
     exec "$ROCS_BIN" "$@"
+    ;;
+  rocs-bin-missing)
+    die "ROCS_BIN is set but not executable/resolvable: $ROCS_BIN"
     ;;
   vendored-uvx)
     exec uvx -n --from "$repo_root/tools/rocs-cli" rocs "$@"
@@ -179,8 +248,9 @@ case "$runner" in
   local-project-uv)
     exec uv --project "$repo_root" run rocs "$@"
     ;;
-  local-project-python)
-    exec python -m rocs_cli "$@"
+  local-project-python|local-project-python3)
+    python_bin="${runner#local-project-}"
+    PYTHONPATH="$repo_root/src${PYTHONPATH:+:$PYTHONPATH}" exec "$python_bin" -m rocs_cli "$@"
     ;;
   workspace-core-uv)
     exec uv --project "$core_project_default" run rocs "$@"
@@ -188,7 +258,10 @@ case "$runner" in
   path-rocs)
     exec rocs "$@"
     ;;
+  path-rocs-blocked)
+    die "rocs on PATH is available but blocked by default; set ROCS_ALLOW_PATH_FALLBACK=1 for an explicit ambient fallback, set ROCS_BIN=/absolute/path/to/rocs, or provide the vendored/workspace-core rocs-cli"
+    ;;
   *)
-    die "unable to locate rocs runner; install uv or set ROCS_BIN"
+    die "unable to locate rocs runner; set ROCS_BIN=/absolute/path/to/rocs, provide the vendored/workspace-core rocs-cli, or explicitly allow rocs on PATH with ROCS_ALLOW_PATH_FALLBACK=1"
     ;;
 esac

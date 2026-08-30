@@ -1,7 +1,7 @@
 ---
-summary: "Diary directory placeholder for generated monorepos."
+summary: "Diary guidance for copier-template / copier / tpl-monorepo / diary."
 read_when:
-  - "A generated monorepo needs local diary capture guidance."
+  - "Read when changing or validating generated tpl-monorepo documentation for diary guidance for copier-template / copier / tpl-monorepo / diary."
 type: "reference"
 ---
 

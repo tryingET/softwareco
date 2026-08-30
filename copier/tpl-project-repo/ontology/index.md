@@ -1,7 +1,7 @@
 ---
-summary: "Ontology index placeholder for generated project repos."
+summary: "Ontology Index repo."
 read_when:
-  - "A generated project repo needs ontology index placement guidance."
+  - "Read when changing or validating generated tpl-project-repo documentation for ontology index repo."
 type: "reference"
 ---
 

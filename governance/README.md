@@ -1,10 +1,18 @@
+---
+summary: "Governance guidance for generated L1 template repositories."
+read_when:
+  - "Read when changing generated L1 governance guidance."
+type: "reference"
+---
+
 # Governance
 
 Template governance layer for this company.
 
 ## Purpose
 
-This folder contains **planning artifacts** for company-level coordination:
+This folder contains company-level planning artifacts plus validation contracts.
+Repo-local work-items in generated L2 project/monorepo repos are **AK-first** and only projected back into git.
 
 | Folder | Purpose | Operational? |
 |--------|---------|--------------|
@@ -13,11 +21,11 @@ This folder contains **planning artifacts** for company-level coordination:
 
 ## Three-Level Hierarchy
 
-| Level | Scope | Location | Operational? |
-|-------|-------|----------|--------------|
-| **L0** | Cross-company | governance-kernel/governance/programs/ | Yes (scheduler) |
+| Level | Scope | Location | Authority |
+|-------|-------|----------|-----------|
+| **L0** | Cross-company | governance-kernel/governance/programs/ | Yes (scheduler / FCOS) |
 | **L1** | Company | this repo: governance/programs/ | Planning only |
-| **L2** | Project | repo/governance/work-items.json | Planning only |
+| **L2** | Project / monorepo | repo/governance/work-items.json | Agent Kernel authoritative; JSON is the checked-in projection |
 
 ## Company-Level Programs
 
@@ -39,14 +47,52 @@ programs/
 ### What Does NOT Go Here
 
 - Cross-company work → L0 (governance-kernel)
-- Single-repo features → L2 (project governance)
+- Single-repo features → L2 repo-local AK work-items
+
+## L2 repo-local work-items (AK-first)
+
+Generated `tpl-project-repo` and `tpl-monorepo` repos treat repo-local work-items this way:
+
+- live operational authority stays in Agent Kernel
+- `governance/work-items.json` is a deterministic checked-in projection/mirror
+- `ak work-items import` is the legacy JSON bootstrap path
+- `ak work-items export` refreshes the checked-in projection
+- `ak work-items check` is the drift gate used by repo CI
+
+## Repo-local task-scope snapshots (AK-authored)
+
+When a generated repo opts into explicit AK task scope:
+
+- AK remains the authoring surface via `ak task scope show|set|update ...`
+- repo-side consumers use frozen exports under `governance/task-scopes/AK-<TASK-ID>.snapshot.json`
+- `ak task scope export <TASK-ID> > governance/task-scopes/AK-<TASK-ID>.snapshot.json` refreshes the checked-in snapshot
+- `./scripts/check-task-scope-snapshots.sh` verifies checked-in snapshots against live AK state and repo ownership when snapshots are present
+- missing snapshots remain acceptable while a task still inherits repo-default scope
+- any hand-authored `governance/task-scopes/AK-*.json` file that is not an AK export is transitional scaffolding, not authoritative truth
+
+## Brownfield migration boundary
+
+If an existing generated repo still carries hand-authored `governance/task-scopes/AK-*.json` files:
+
+- author/update explicit scope in AK first, then export `AK-<TASK-ID>.snapshot.json`
+- keep the legacy `AK-*.json` file only as temporary compatibility fallback while the repo still depends on it
+- remove legacy manifest authoring from workflow docs/handoffs once `./scripts/check-task-scope-snapshots.sh` passes
+- if a task remains on repo-default scope, do not invent either file
+
+See `docs/dev/task-scope-migration-playbook.md` for the template-side rollout path.
 
 ## Validation
 
-Validate work-items against schema:
+Validate company-level program work-items against schema:
 
 ```bash
 cue vet governance/programs/*/work-items.json governance/model-languages/contract/work-items.cue
+```
+
+Validate repo-local task-scope snapshots when they are checked in:
+
+```bash
+./scripts/check-task-scope-snapshots.sh
 ```
 
 ## TIP Review Process

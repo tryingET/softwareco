@@ -1,3 +1,10 @@
+---
+summary: "Agent operating contract for generated organization repositories."
+read_when:
+  - "Read when changing the generated tpl-org-repo AGENTS.md operating contract."
+type: "reference"
+---
+
 # AGENTS.md — {{ repo_slug }}
 
 ## Intent
@@ -5,18 +12,22 @@ Template for an org/company handbook repo (consent-gated).
 
 ## Guardrails
 - No secrets in git.
-- Main-first workflow: commit directly to `main` for normal work. Use a review branch/PR only for releases, when the operator explicitly requests a gate, or when a repo-local accepted policy documents a narrower exception.
+- Never push to `main`; MRs only.
 - Treat `docs/_core/**` as immutable.
 
 ## AK-native route guardrails
 - If this repo declares AK-native task, direction, or route authority, read the relevant AK task and route/open-frame status before inventing new work.
 - Generic operator input such as `proceed` continues the active execution task when one exists; it does not authorize lifecycle closeout, source-owner mutation, publication, or knowledge promotion.
 - Treat closeout/readiness rows as gate inputs, not lifecycle authorization.
-- Handoff instead of editing by convenience when facts belong to Prompt Vault, ROCS, Pi/runtime, KES, steward/publication, template propagation, Oracle/DSPx, or another repo owner.
+- Treat docs, task-scope snapshots, and direction explorer exports as projections unless the repo declares otherwise; AK DB remains runtime authority for AK tasks, direction, evidence, and decisions.
+- Handoff instead of editing by convenience when facts belong to Prompt Vault, ROCS, Pi/runtime, KES, steward/publication, template propagation, Oracle/DSPx, or another repo.
+- Prefer `docs/project/vision.md` as durable product direction where present and `docs/project/product_posture.md` as a product-maturity bridge, not a queue, roadmap, changelog, or execution authority.
 - Do not revive SG/TG/OP markdown planning where AK-native direction authority is declared; legacy `strategic_goals.md`, `tactical_goals.md`, `operating_plan.md`, or `operational_plan.md` files are archive/projection only unless a repo-local owner decision explicitly says otherwise.
 
 ## Deterministic tooling policy (ROCS-first)
 - Prefer `./scripts/rocs.sh <args...>` before ad-hoc inline scripting.
+- Use `./scripts/preflight-repo-census.sh [scope]` for shallow multi-repo status checks.
+- When explicit task scope is in play, author it in AK and freeze repo-consumption snapshots via `ak task scope show|export <TASK-ID> ...`; treat `governance/task-scopes/AK-<TASK-ID>.snapshot.json` as AK exports, not hand-authored truth.
 - For ontology/policy checks, use ROCS commands as the default execution path.
 - Use inline Python only as an explicit escape hatch when no deterministic command exists.
 
@@ -47,6 +58,7 @@ Forbidden:
 2) `docs/org/`
 3) `docs/decisions/`
 4) `docs/learnings/`
-5) `diary/`               ← recent operational sessions
-6) `docs/registers/`
-7) `docs/system4d/`
+5) `governance/README.md`
+6) `diary/`               ← recent operational sessions
+7) `docs/registers/`
+8) `docs/system4d/`

@@ -1,3 +1,10 @@
+---
+summary: "README for generated project repositories."
+read_when:
+  - "Read when changing generated tpl-project-repo overview guidance."
+type: "reference"
+---
+
 # {{ repo_slug }}
 
 {{ company_name }} project repository.
@@ -38,7 +45,7 @@ uv run pytest        # Run tests
 uv run ruff check .  # Lint
 ```
 
-Explicit stack contract surface:
+Explicit engineering contract surface:
 - `policy/engineering-lane.json`
 - `docs/engineering.local.md`
 - `policy/engineering-lane.json` -> `engineering_core.command` retrieves the upstream lane
@@ -55,7 +62,7 @@ npm install          # Install dependencies
 npm test             # Run tests
 ```
 
-Explicit stack contract surface:
+Explicit engineering contract surface:
 - `policy/engineering-lane.json`
 - `docs/engineering.local.md`
 - `policy/engineering-lane.json` -> `engineering_core.command` retrieves the upstream lane
@@ -69,7 +76,7 @@ cargo build          # Build
 cargo test           # Run tests
 ```
 
-Explicit stack contract surface:
+Explicit engineering contract surface:
 - `policy/engineering-lane.json`
 - `docs/engineering.local.md`
 - `policy/engineering-lane.json` -> `engineering_core.command` retrieves the upstream lane
@@ -83,7 +90,7 @@ go build ./...       # Build
 go test ./...        # Run tests
 ```
 
-Explicit stack contract surface:
+Explicit engineering contract surface:
 - `policy/engineering-lane.json`
 - `docs/engineering.local.md`
 - `policy/engineering-lane.json` -> `engineering_core.command` retrieves the upstream lane
@@ -98,7 +105,7 @@ mix test             # Run tests
 mix format           # Format code
 ```
 
-Explicit stack contract surface:
+Explicit engineering contract surface:
 - `policy/engineering-lane.json`
 - `docs/engineering.local.md`
 - `policy/engineering-lane.json` -> `engineering_core.command` retrieves the upstream lane
@@ -126,23 +133,19 @@ From an L1 templates repository:
   --defaults --overwrite
 ```
 
+## Agent Kernel work flow
 
-Repo-local deferred work is **AK-first**.
+Repo-local deferred work is **AK-native**: the Agent Kernel DB is the sole work authority.
 
 Use plain installed `ak` as the canonical operator path:
 
 ```bash
+ak task create -r "$PWD" "<title>"
+ak task ready
+ak task complete <TASK-ID> --result '<json>'
 ```
 
-Refresh the checked-in projection after AK state changes:
-
-```bash
-```
-
-Fail on projection drift locally/CI:
-
-```bash
-```
+No checked-in work-items projection exists in this repo; do not reintroduce one.
 
 ## Optional explicit task-scope snapshots
 
@@ -163,23 +166,17 @@ Use the staged CI lanes:
 ```bash
 ./scripts/ci/fast.sh                    # cheap local guardrail lane
 ./scripts/check-task-scope-snapshots.sh # verify checked-in AK task-scope snapshots when present
-./scripts/check-document-policy.sh      # verify living-posture freshness and dated snapshot names
+./scripts/ci/full.sh                    # explicit full lane; runs fast first, then work-items + task-scope + ROCS checks in parallel when they apply
 ```
 
 Plain installed `ak` is the canonical operator path for repo-local projection and task-scope flows.
-
-### Product-posture freshness
-
-`docs/project/product_posture.md` is the stable living posture path. Before using it as current product truth, initialize and maintain its `as_of`, `last_validated`, `last_validated_commit`, and `evidence_paths` metadata. The generated `UNVALIDATED` value intentionally fails the full CI lane until an owner checks the claims against a prior evidence commit.
-
-A posture becomes stale after 30 days or when a later reachable commit touches a declared evidence path. Use two commits: land the evidence state first, then record that full commit SHA in the posture metadata. Separate transition, migration, current-vs-target, and status snapshots must use `YYYY-MM-DD--<kind>--<scope>.md`; stale snapshots are history, not current capability truth.
 
 ## Structure
 
 ```
 <project>/
 ├── AGENTS.md              # Project-specific instructions
-├── next_session_prompt.md # Stable session-start procedure; no mutable status
+├── next_session_prompt.md # Active handoff for the next session
 ├── docs/
 │   ├── _core/             # Vendored governance (immutable)
 │   ├── org_context/       # Organization context summary (+ optional rich org-context pack)
@@ -195,6 +192,8 @@ A posture becomes stale after 30 days or when a later reachable commit touches a
 ├── governance/
 │   ├── README.md          # AK-first workflow and projection rules
 │   ├── task-scopes/       # Optional frozen AK task-scope snapshots
+│   ├── work-items.cue     # Projection schema contract
+│   └── work-items.json    # Checked-in AK projection/mirror
 ├── diary/                 # Repo-local session capture (KES raw input)
 ├── ontology/              # ROCS ontology
 │   └── src/system4d.yaml
@@ -202,9 +201,8 @@ A posture becomes stale after 30 days or when a later reachable commit touches a
 ├── src/                   # Source code
 ├── tests/                 # Test suite
 └── scripts/
-    ├── check-document-policy.sh # Posture freshness + dated snapshot policy
-    ├── rocs.sh                   # Deterministic ROCS launcher
-    └── ci/                       # CI scripts
+    ├── ak.sh             # Deterministic AK launcher
+    └── ci/               # CI scripts
 ```
 
 ## Customization

@@ -1,7 +1,7 @@
 ---
-summary: "Learnings directory placeholder for generated project repos."
+summary: "Learnings guidance for copier-template / copier / tpl-project-repo / docs / learnings."
 read_when:
-  - "A generated project repo needs a place for crystallized learnings."
+  - "Read when changing or validating generated tpl-project-repo documentation for learnings guidance for copier-template / copier / tpl-project-repo / docs / learnings."
 type: "reference"
 ---
 

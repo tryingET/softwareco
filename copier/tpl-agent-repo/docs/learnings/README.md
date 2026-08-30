@@ -1,8 +1,7 @@
 ---
-summary: "Learnings directory placeholder for generated agent repos."
+summary: "Learnings guidance for copier-template / copier / tpl-agent-repo / docs / learnings."
 read_when:
-  - "A generated agent repo needs a place for crystallized learnings."
-  - "Template docs strictness checks scan generated learnings README files."
+  - "Read when changing or validating generated tpl-agent-repo documentation for learnings guidance for copier-template / copier / tpl-agent-repo / docs / learnings."
 type: "reference"
 ---
 

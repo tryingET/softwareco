@@ -1,7 +1,7 @@
 ---
-summary: "Activity prompt for finance-oriented agent work."
+summary: "Prompt guidance: Activity Prompt: Finance."
 read_when:
-  - "An agent persona needs a finance activity prompt."
+  - "Read when changing or validating generated tpl-agent-repo documentation for prompt guidance: activity prompt: finance."
 type: "reference"
 ---
 

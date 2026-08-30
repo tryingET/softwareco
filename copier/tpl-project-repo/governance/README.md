@@ -1,35 +1,13 @@
 ---
-summary: "Governance directory placeholder for generated project repos."
+summary: "Governance guidance for copier-template / copier / tpl-project-repo / governance."
 read_when:
-  - "A generated project repo needs governance artifact placement guidance."
+  - "Read when changing or validating generated tpl-project-repo documentation for governance guidance for copier-template / copier / tpl-project-repo / governance."
 type: "reference"
 ---
 
-# Project Work Items
+# Governance
 
-
-## Authority model
-
-| Surface | Role | Authority |
-|---|---|---|
-
-Do not treat manual JSON edits as the live source of truth.
-If you are migrating a legacy JSON-first repo, import once, then continue from AK and re-export the projection.
-
-## Fresh-repo baseline
-
-This template ships the empty projection that matches a fresh AK export for this repo identity.
-That keeps `./scripts/ci/full.sh` honest: if `ak` is available, CI can validate drift immediately instead of silently skipping the check.
-Use `./scripts/ci/fast.sh` for the cheap local baseline and `./scripts/ci/full.sh` for the explicit full lane.
-
-## Workflow
-
-Use plain installed `ak` as the canonical operator path:
-
-```bash
-```
-
-Plain installed `ak` is the canonical operator path for repo-local projection and task-scope flows.
+Deferred and active work for this repository lives in the **Agent Kernel DB** (`ak task ...`). The AK DB is the sole work authority; no checked-in projection file exists or should be reintroduced.
 
 ## Optional explicit task-scope snapshots
 
@@ -50,31 +28,8 @@ If this repo is retiring hand-authored `governance/task-scopes/AK-*.json` files:
 - remove legacy manifest authoring from workflow docs and handoffs as soon as `./scripts/check-task-scope-snapshots.sh` passes
 - if the task still uses repo-default scope, do not invent a snapshot or a replacement legacy manifest
 
-## Projection contract
-
-Core fields:
-- `schema_version`
-- `updated_at`
-- `owner`
-- `project_name`
-- `milestones[]`
-
-Issue state machine:
-- `triage -> queued -> doing -> review -> done`
-
-Optional schema-only validation:
-
-```bash
-```
-
-## Use this vs alternatives
-
-| Use this projection when | Use alternative when |
-|---|---|
-| You need a reviewable, checked-in mirror of repo-local AK state | Work spans multiple repos/programs (use FCOS/L0 program models) |
-
 ## Non-negotiable
 
 - Do not leave deferred work as ad-hoc TODO comments or scattered markdown notes.
 - Do not hand-author `governance/task-scopes/AK-*.snapshot.json` as if it were the live task-scope source of truth.
-- For legacy/manual JSON slices, import to AK and then export the projection back out.
+- Do not reintroduce a checked-in `governance/work-items.json` projection; the AK DB is authoritative.

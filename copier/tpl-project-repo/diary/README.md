@@ -1,7 +1,7 @@
 ---
-summary: "Diary directory placeholder for generated project repos."
+summary: "Diary guidance for copier-template / copier / tpl-project-repo / diary."
 read_when:
-  - "A generated project repo needs local diary capture guidance."
+  - "Read when changing or validating generated tpl-project-repo documentation for diary guidance for copier-template / copier / tpl-project-repo / diary."
 type: "reference"
 ---
 

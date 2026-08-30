@@ -1,8 +1,7 @@
 ---
-summary: "Diary directory placeholder for generated agent repos."
+summary: "Diary guidance for copier-template / copier / tpl-agent-repo / diary."
 read_when:
-  - "A generated agent repo needs local diary capture guidance."
-  - "Template docs strictness checks scan generated diary README files."
+  - "Read when changing or validating generated tpl-agent-repo documentation for diary guidance for copier-template / copier / tpl-agent-repo / diary."
 type: "reference"
 ---
 
