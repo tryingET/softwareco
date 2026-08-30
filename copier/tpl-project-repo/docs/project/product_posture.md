@@ -1,23 +1,19 @@
 ---
-summary: "Living product posture: current maturity, target product experience, major gaps, and proof signals."
+summary: "Product posture snapshot: current maturity, target product experience, major gaps, and proof signals."
 read_when:
   - "When deciding where the project stands relative to its durable vision"
   - "When selecting or reviewing work from product maturity rather than task history"
   - "When checking whether active work converges on the intended product experience"
 type: "reference"
-as_of: "1970-01-01"
-last_validated: "1970-01-01"
-last_validated_commit: "UNVALIDATED"
-evidence_paths: []
 ---
 
 # Product Posture
 
 ## Purpose
 
-This stable file is the living product-maturity bridge below durable vision.
+This file is the product-maturity bridge below durable vision.
 
-It captures where the product stands, what target experience it is converging toward, which gaps matter most, and what proof would close those gaps. Its generated metadata is deliberately unvalidated: an owner must validate the claims against repository evidence before treating them as current.
+It captures where the product stands, what target experience it is converging toward, which gaps matter most, and what proof would close those gaps.
 
 It does **not** replace:
 
@@ -71,36 +67,7 @@ Describe the intended user, operator, or system journey in concrete terms:
 - Say “target posture” or “intended experience” when proof has not landed yet.
 - Say “proof of closure” only when the cited code, artifact, test, runtime evidence, or owner decision exists.
 - Keep product-wide posture here; task-level current truth belongs in AK and the repo's active execution surface.
-- Use current-vs-target language inside this file when useful, but reserve separate dated snapshots for seam-specific transitions.
-
-## Freshness contract
-
-This file keeps the stable path `docs/project/product_posture.md`; do not rename it on refresh.
-
-- `as_of`: latest UTC date through which its current-posture claims are intended to be accurate.
-- `last_validated`: UTC date when an accountable owner checked those claims against every declared evidence path.
-- `last_validated_commit`: full 40-character commit SHA containing the evidence state that was reviewed.
-- `evidence_paths`: non-empty repo-relative literal files or directory prefixes that substantiate current-state claims.
-
-`./scripts/check-document-policy.sh` treats this posture as stale when:
-
-1. `as_of` or `last_validated` is more than 30 calendar days old; or
-2. a commit reachable after `last_validated_commit` changes a declared evidence path.
-
-A date alone cannot prove freshness. Validate in two commits: first land the evidence state, then update this file in a later commit so `last_validated_commit` can truthfully name the reviewed baseline. If the baseline is missing, not an ancestor of `HEAD`, or unavailable in a shallow clone, freshness is unverifiable and the checker fails closed.
-
-The checker also fails for future dates, dirty posture/evidence paths, any intervening commit that touched evidence even if later reverted, or anything other than exactly one posture-validation commit after the evidence baseline. Further edits to posture claims therefore require a new evidence baseline and validation commit.
-
-Separate time-bounded documents use one of these names:
-
-```text
-YYYY-MM-DD--transition--<scope>.md
-YYYY-MM-DD--migration--<scope>.md
-YYYY-MM-DD--current-vs-target--<scope>.md
-YYYY-MM-DD--status--<scope>.md
-```
-
-A stale or unverifiable document may provide history, but must not be cited as current capability truth.
+- Use current-vs-target language inside this file when useful, but reserve separate `current-vs-target` boundary docs for seam-specific transitions.
 
 ## Authority map
 

@@ -1,7 +1,7 @@
 ---
-summary: "Ontology bridge placeholder for generated project repos."
+summary: "Bridge."
 read_when:
-  - "A generated project repo needs ontology bridge mapping guidance."
+  - "Read when changing or validating generated tpl-project-repo documentation for bridge."
 type: "reference"
 ---
 

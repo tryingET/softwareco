@@ -16,26 +16,7 @@
       "security-privacy",
       "documentation",
       "dependency-governance"
-    ],
-    "selected_discipline_model": "Start with validation, testing, security-privacy, documentation, and dependency-governance; add optional disciplines only when package concerns require them.",
-    "optional_disciplines": [
-      "local-first-data",
-      "observability",
-      "accessibility",
-      "design-system",
-      "specification-and-dsls",
-      "engineering-reasoning",
-      "build-graph-acceleration"
-    ],
-    "conditional_addenda": [{% if language == "rust" %}
-      {
-        "lane": "rust-build-graph",
-        "requires": ["rust"],
-        "conditional": true,
-        "command": "uv tool -n run --from ~/ai-society/core/engineering-core engineering-core show rust-build-graph",
-        "note": "Use only for measured Rust build/test bottlenecks; Cargo remains canonical and Buck2/Bazel are optional acceleration overlays."
-      }
-    {% endif %}]
+    ]
   }
 }
 {%- endif -%}

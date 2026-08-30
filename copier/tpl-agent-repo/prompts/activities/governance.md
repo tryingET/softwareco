@@ -1,7 +1,7 @@
 ---
-summary: "Activity prompt for governance-oriented agent work."
+summary: "Prompt guidance: Activity Prompt: Governance."
 read_when:
-  - "An agent persona needs a governance activity prompt."
+  - "Read when changing or validating generated tpl-agent-repo documentation for prompt guidance: activity prompt: governance."
 type: "reference"
 ---
 

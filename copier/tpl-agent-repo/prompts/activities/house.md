@@ -1,7 +1,7 @@
 ---
-summary: "Activity prompt for household-oriented agent work."
+summary: "Prompt guidance: Activity Prompt: House."
 read_when:
-  - "An agent persona needs a household activity prompt."
+  - "Read when changing or validating generated tpl-agent-repo documentation for prompt guidance: activity prompt: house."
 type: "reference"
 ---
 

@@ -1,3 +1,10 @@
+---
+summary: "Agent operating contract for generated monorepo packages."
+read_when:
+  - "Read when changing the generated tpl-package AGENTS.md operating contract."
+type: "reference"
+---
+
 # AGENTS.md — {{ package_name }}
 
 ## Intent
@@ -14,6 +21,7 @@ Package inside monorepo: {{ package_type }} ({{ language }})
 - If the parent monorepo declares AK-native task, direction, or route authority, run package AK route checks from the monorepo root: read the root AK task and route/open-frame status before inventing package work.
 - Generic operator input such as `proceed` continues the active root execution task when one exists; it does not authorize lifecycle closeout, source-owner mutation, publication, or knowledge promotion.
 - Treat package docs and generated files as projections unless the monorepo declares otherwise; hand off Prompt Vault, ROCS, Pi/runtime, KES, steward/publication, template propagation, Oracle/DSPx, and other repo facts to their owners.
+- Prefer parent/root `docs/project/vision.md` as durable product direction where present and `docs/project/product_posture.md` as a product-maturity bridge, not a queue, roadmap, changelog, or execution authority.
 - Do not revive SG/TG/OP markdown planning where AK-native direction authority is declared; legacy `strategic_goals.md`, `tactical_goals.md`, `operating_plan.md`, or `operational_plan.md` files are archive/projection only unless a repo-local owner decision explicitly says otherwise.
 
 ## Deterministic tooling policy (ROCS-first)

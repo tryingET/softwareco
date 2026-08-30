@@ -1,58 +1,73 @@
+---
+summary: "Agent operating contract for generated agent repositories."
+read_when:
+  - "Read when changing the generated tpl-agent-repo AGENTS.md operating contract."
+type: "reference"
+---
+
 # AGENTS.md — {{ repo_slug }}
 
 ## Intent
-Template for an **agent product/capability repository**. Repository ownership governs its persona, code, prompts, tests, and releases; it does not appoint the agent to an organizational role or grant company authority.
+This is one agent repository in the workspace fleet home: `ai-society/agents/agent-<name>`. Keep exactly one repository and one canonical role per agent; do not nest agents. Work through exact AK tasks plus proposals and merge requests.
+
+## Authority and fleet lifecycle
+- This agent is advisory by default. Its persona may narrow this authority, never broaden it.
+- Keep one role in one `ai-society/agents/agent-<name>` repository; do not nest agents or combine roles.
+- Creating an agent requires an AK task naming its role, the recurring pain it removes, and how it differs from existing agents.
+- Writes to another repository require an exact active AK task owned by that target repository. AK is runtime authority; proposals and merge requests are review surfaces.
+- Template refresh is plan-first: review `./scripts/propagate-template.sh`, then explicitly rerun it with `--apply`.
 
 ## Guardrails
-- No secrets in git (use CI variables + local secret-manager references).
-- Main-first workflow: commit directly to `main` for normal work. Use a review branch/PR only for releases, when the operator explicitly requests a gate, or when a repo-local accepted policy documents a narrower exception.
+- No secrets in git (use CI variables + local secret manager references).
+- Never push to `main`; open branches + MRs.
 - Treat `docs/_core/**` as immutable (vendored snapshot from `governance-kernel`; no submodules).
-- Author explicit task scope in AK and treat `governance/task-scopes/AK-*.snapshot.json` as frozen exports, not hand-authored authority.
-
-## Delegation, WIP, outcome, and effect gates
-- This repository does not appoint organizational roles or grant company delegation. Discover delegation through accepted AK/governance state; if it is missing, expired, or ambiguous, stop and escalate.
-- Admit active work only through a scoped owner-native task and finite-WIP decision. Starting work must name what is displaced, deferred, or stopped when capacity is full.
-- Passing validation is not an outcome, release, external-effect authorization, or lifecycle decision.
-- External effects and terminal `continue`, `stop`, `redirect`, or `complete` decisions require explicit human or accountable-owner authority.
-- A CTO/technical-steward packet is a freshness-bounded projection from owner-native state, never a shadow backlog or authority surface.
 
 ## AK-native route guardrails
-- Read the relevant AK task, direction, decision, and delegation state before inventing work.
-- Generic input such as `proceed` continues an active execution task; it does not authorize lifecycle closeout, source-owner mutation, publication, or knowledge promotion.
+- If this repo declares AK-native task, direction, or route authority, read the relevant AK task and route/open-frame status before inventing new work.
+- Generic operator input such as `proceed` continues the active execution task when one exists; it does not authorize lifecycle closeout, source-owner mutation, publication, or knowledge promotion.
 - Treat closeout/readiness rows as gate inputs, not lifecycle authorization.
-- Handoff instead of editing by convenience when facts belong to Prompt Vault, ROCS, Pi/runtime, KES, steward/publication, template propagation, Oracle/DSPx, or another owner.
-- Do not revive SG/TG/OP markdown planning where AK-native direction is declared.
-
-## Agent Kernel projection flow
-
-```bash
-ak task scope export <TASK-ID> > governance/task-scopes/AK-<TASK-ID>.snapshot.json
-./scripts/check-task-scope-snapshots.sh
-```
-
-Use `AK_CMD="${AK_CMD:-ak}"` only to select an explicit compatible executable. Never substitute another state store when AK is required.
+- Treat docs, task-scope snapshots, and direction explorer exports as projections unless the repo declares otherwise; AK DB remains runtime authority for AK tasks, direction, evidence, and decisions.
+- Handoff instead of editing by convenience when facts belong to Prompt Vault, ROCS, Pi/runtime, KES, steward/publication, template propagation, Oracle/DSPx, or another repo.
+- Prefer `docs/project/vision.md` as durable product direction where present and `docs/project/product_posture.md` as a product-maturity bridge, not a queue, roadmap, changelog, or execution authority.
+- Do not revive SG/TG/OP markdown planning where AK-native direction authority is declared; legacy `strategic_goals.md`, `tactical_goals.md`, `operating_plan.md`, or `operational_plan.md` files are archive/projection only unless a repo-local owner decision explicitly says otherwise.
 
 ## Deterministic tooling policy (ROCS-first)
-- Prefer `./scripts/rocs.sh <args...>` before ad-hoc scripting.
-- Use inline Python only when no deterministic repo command exists.
-
-## Stack contract
-- If this agent ships language-specific software, declare its accepted engineering-core lane in `policy/engineering-lane.json` and local deltas in `docs/engineering.local.md`.
-- If no language lane is selected, consult engineering-core through its catalog/list commands without pretending that a repo-local lane contract exists.
-
-## Reusable procedures
-Reusable cognitive and operating procedures belong to Prompt Vault governance. Discover them through the Prompt Vault query/retrieve surfaces, check dispatch posture before execution, and keep runtime decisions/evidence in AK rather than copying procedure bodies into this repository.
+- Prefer `./scripts/rocs.sh <args...>` before ad-hoc inline scripting.
+- Use `./scripts/preflight-repo-census.sh [scope]` for shallow multi-repo status checks.
+- When explicit task scope is in play, author it in AK and freeze repo-consumption snapshots via `ak task scope show|export <TASK-ID> ...`; treat `governance/task-scopes/AK-<TASK-ID>.snapshot.json` as AK exports, not hand-authored truth.
+- For ontology/policy checks, use ROCS commands as the default execution path.
+- Use inline Python only as an explicit escape hatch when no deterministic command exists.
 
 ## Knowledge Crystallization Flow
 
-```text
+```
 Session → diary/ (raw) → docs/learnings/ (crystallized) → TIPs (propagated)
 ```
 
-1. During a session, capture raw facts in `diary/YYYY-MM-DD--type-scope-summary.md`.
-2. Extract durable patterns into `docs/learnings/`.
-3. Route generalized reusable procedures to Prompt Vault and semantic changes to their ontology owner.
-4. Keep owner-local product learnings in this repository.
+**Knowledge that isn't crystallized is knowledge that will be re-learned the hard way.**
+
+1. During session: Capture in `diary/YYYY-MM-DD--type-scope-summary.md`
+2. End of session: Extract patterns, surprises, heuristics
+3. Weekly: Promote diary entries to `docs/learnings/`
+4. When pattern generalizes: Propose TIP to parent L1
+
+## Cognitive Tools
+
+Higher-order thinking frameworks for when you're stuck, planning, or making high-stakes decisions.
+
+**Invoke by name:**
+- "What's the NEXUS intervention here?" — Find highest-leverage action
+- "Apply FIRST PRINCIPLES to this blocker" — Dissolve assumptions
+- "Inventory our CONSTRAINTS" — Find hidden freedom
+- "Generate five ALTERNATIVES" — Escape solution fixation
+- "Design the ESCAPE HATCH first" — Plan rollback before change
+- "Time travel: what degrades in 12 months?" — Future-proof
+- "Run TELESCOPIC analysis" — See both micro and macro
+- "ELEVATE this document" — Transcend incremental improvement
+
+See `prompts/cognitive-tools/` for full frameworks.
+
+These compound. Each use improves pattern recognition for the next.
 
 ## Recursion policy (explicit)
 Allowed:
@@ -64,10 +79,11 @@ Forbidden:
 - any cycle
 
 ## Read order
-1. `docs/_core/README.md`
-2. `docs/person/`
-3. `governance/README.md`
-4. `docs/decisions/`
-5. `docs/learnings/`
-6. `diary/`
-7. `docs/system4d/`
+1) `docs/_core/README.md`
+2) `docs/person/`
+3) `docs/decisions/`
+4) `docs/learnings/`
+5) `governance/README.md`
+6) `diary/`               ← recent sessions
+7) `prompts/cognitive-tools/` ← when stuck or planning
+8) `docs/system4d/`

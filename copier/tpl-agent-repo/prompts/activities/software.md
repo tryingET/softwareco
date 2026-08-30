@@ -1,7 +1,7 @@
 ---
-summary: "Activity prompt for software-oriented agent work."
+summary: "Prompt guidance: Activity Prompt: Software."
 read_when:
-  - "An agent persona needs a software activity prompt."
+  - "Read when changing or validating generated tpl-agent-repo documentation for prompt guidance: activity prompt: software."
 type: "reference"
 ---
 
