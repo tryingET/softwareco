@@ -16,12 +16,12 @@ Do not ask for permission to start.
 - Keep only the active handoff window (not a history log).
 - Move finished session narrative to `diary/`.
 - Crystallize durable patterns in `docs/learnings/` and decisions in `docs/decisions/`.
-- Track deferred work in `governance/work-items.json` (not in ad-hoc TODO notes).
+- Track active and deferred work in Agent Kernel (`ak task ready|list|show`), not in ad-hoc TODO notes or a checked-in generic mirror.
 
 ## SOURCE-OF-TRUTH MAP
 - Repo operating contract: `AGENTS.md`
 - Mission and goals: `docs/project/`
-- Active/deferred work contract: `governance/work-items.json`
+- Active/deferred work authority: Agent Kernel task readback for this registered repo
 - Prior decisions: `docs/decisions/`
 - Crystallized learnings: `docs/learnings/`
 - Raw session capture: `diary/`
@@ -42,13 +42,13 @@ Do not ask for permission to start.
 ## READ-FIRST ALLOWLIST (STARTUP BUDGET)
 1. `AGENTS.md`
 2. `README.md`
-3. `governance/work-items.json`
+3. `ak task ready` and the exact active `ak task show <id>` readback
 4. `docs/project/mission.md`
 5. `docs/project/tactical_goals.md`
 6. Most recent `diary/YYYY-MM-DD--type-scope-summary.md`
 
 ## EXECUTION MODE (ONE SESSION = ONE SLICE)
-1. Pick one highest-leverage actionable slice from `governance/work-items.json`.
+1. Pick one exact authorized slice from `ak task ready`, then inspect and claim its task id.
 2. Implement end-to-end on a branch.
 3. Validate:
    - `./scripts/ci/smoke.sh`
@@ -58,9 +58,9 @@ Do not ask for permission to start.
 ## SESSION CHECKPOINT (UPDATE BEFORE /commit)
 - Slice executed: create the first concrete repo under `softwareco/fork/`
 - Outcome: `pi-mono/` now exists as the first child repo; lane-root handoff now points execution into that child repo
-- Files changed: lane-root README/mission/goals/work-items/diary/handoff
+- Files changed: lane-root README/mission/goals/diary/handoff
 - Validation commands + results: `./scripts/ci/smoke.sh` (pass); `node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --docs docs --strict` (pass)
-- Deferred tasks updated in `governance/work-items.json`: yes
+- Active/deferred AK task ids and evidence recorded: yes
 - Next-session starting point: repo-local work should start in `pi-mono/`
 
 ## END-OF-SESSION

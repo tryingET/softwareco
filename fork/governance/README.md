@@ -1,12 +1,14 @@
 ---
-summary: "Planning contract for lane-root work items."
+summary: "AK-native planning boundary for fork lane-root work."
 read_when:
-  - "When updating governance/work-items.json in the fork lane root"
+  - "When routing active or deferred fork lane-root work"
   - "When deciding whether work belongs in the lane root or a child repo"
 ---
 
-# Project Work Items
+# Project Work Authority
 
-`governance/work-items.json` tracks lane-root policy and inventory work.
+Agent Kernel is the live authority for active and deferred work in this registered repository. Use `ak task ready`, `ak task list`, and exact `ak task show <id>` readbacks; the generic checked-in `governance/work-items.json` mirror is retired under accepted Decision 127.
 
-If the work is specific to a child repo, prefer that child repo's own planning model instead of centralizing execution here.
+The retained `governance/work-items.cue` file is a non-operational historical schema, not task authority. Frozen AK task-scope exports and other owner-native state are separate surfaces and are not retired by analogy.
+
+If work is specific to a child repo, route it through that child repo's own registered task authority instead of centralizing execution here.
