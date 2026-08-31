@@ -15,6 +15,7 @@ case "${1:-}" in
 esac
 
 "$repo_root/scripts/ci/smoke.sh"
+python3 -m unittest tests.test_ontology_materializer -q
 
 if [ -f "$repo_root/scripts/check-task-scope-snapshots.sh" ]; then
   "$repo_root/scripts/check-task-scope-snapshots.sh"
@@ -24,9 +25,19 @@ if [ "$deep" -eq 1 ]; then
   "$repo_root/scripts/check-template-ci.sh"
 fi
 
-if [ -x "$repo_root/scripts/rocs.sh" ] && [ -f "$repo_root/ontology/manifest.yaml" ]; then
-  "$repo_root/scripts/rocs.sh" version
-  "$repo_root/scripts/rocs.sh" validate --repo . --resolve-refs
+if [ ! -x "$repo_root/scripts/rocs.sh" ]; then
+  echo "error: missing executable scripts/rocs.sh" >&2
+  exit 1
 fi
+if [ -L "$repo_root/ontology/manifest.yaml" ]; then
+  echo "error: ontology manifest may not be a symlink" >&2
+  exit 1
+fi
+if [ ! -f "$repo_root/ontology/manifest.yaml" ]; then
+  echo "error: ontology is not materialized; run ./scripts/materialize-ontology.sh" >&2
+  exit 1
+fi
+"$repo_root/scripts/rocs.sh" version
+"$repo_root/scripts/rocs.sh" validate --repo . --resolve-refs
 
 echo "ok: ci full"

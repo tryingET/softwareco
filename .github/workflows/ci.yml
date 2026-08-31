@@ -29,15 +29,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Reject symlinked ontology manifest
+        run: |
+          if [ -L ontology/manifest.yaml ]; then
+            echo "error: ontology manifest may not be a symlink" >&2
+            exit 1
+          fi
+
       - name: Run smoke lane
         run: bash ./scripts/ci/smoke.sh
 
   full:
-    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.lane == 'full') }}
+    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.lane == 'full' && github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Materialize ontology owner when declared
+        env:
+          SOFTWARECO_ONTOLOGY_TOKEN: ${{ secrets.SOFTWARECO_ONTOLOGY_TOKEN }}
+        run: |
+          if [ -L ontology/manifest.yaml ]; then
+            echo "error: ontology manifest may not be a symlink" >&2
+            exit 1
+          fi
+          if [ ! -f ontology/manifest.yaml ]; then
+            ./scripts/materialize-ontology.sh \
+              --expected-oid 07d4b8b89f6ca436618adb42827885e9a45289c7 \
+              --source https://github.com/tryingET/softwareco-ontology.git \
+              --token-env SOFTWARECO_ONTOLOGY_TOKEN
+          fi
 
       - name: Setup uv (full lane)
         uses: astral-sh/setup-uv@v5
@@ -46,11 +68,26 @@ jobs:
         run: bash ./scripts/ci/full.sh
 
   deep:
-    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lane == 'deep') }}
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.lane == 'deep' && github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Materialize ontology owner when declared
+        env:
+          SOFTWARECO_ONTOLOGY_TOKEN: ${{ secrets.SOFTWARECO_ONTOLOGY_TOKEN }}
+        run: |
+          if [ -L ontology/manifest.yaml ]; then
+            echo "error: ontology manifest may not be a symlink" >&2
+            exit 1
+          fi
+          if [ ! -f ontology/manifest.yaml ]; then
+            ./scripts/materialize-ontology.sh \
+              --expected-oid 07d4b8b89f6ca436618adb42827885e9a45289c7 \
+              --source https://github.com/tryingET/softwareco-ontology.git \
+              --token-env SOFTWARECO_ONTOLOGY_TOKEN
+          fi
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v5

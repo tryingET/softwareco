@@ -20,6 +20,37 @@ need_cmd mktemp
 need_cmd python3
 need_cmd sort
 
+ontology_materialized=1
+if [ -L "$repo_root/ontology/manifest.yaml" ]; then
+	echo "error: ontology manifest may not be a symlink" >&2
+	exit 1
+fi
+if [ ! -f "$repo_root/ontology/manifest.yaml" ]; then
+	ontology_materialized=0
+	[ -f "$repo_root/.gitmodules" ] && [ ! -L "$repo_root/.gitmodules" ] || {
+		echo "error: unmaterialized ontology lacks regular .gitmodules" >&2
+		exit 1
+	}
+	expected_oid=07d4b8b89f6ca436618adb42827885e9a45289c7
+	expected_source=https://github.com/tryingET/softwareco-ontology.git
+	[ "$(git rev-parse HEAD:.gitmodules)" = "$(git rev-parse :.gitmodules)" ] || {
+		echo "error: indexed .gitmodules differs from HEAD" >&2
+		exit 1
+	}
+	[ "$(git hash-object "$repo_root/.gitmodules")" = "$(git rev-parse HEAD:.gitmodules)" ] || {
+		echo "error: worktree .gitmodules differs from HEAD" >&2
+		exit 1
+	}
+	[ "$(git config -f "$repo_root/.gitmodules" --get submodule.ontology.path)" = ontology ] || exit 1
+	[ "$(git config -f "$repo_root/.gitmodules" --get submodule.ontology.url)" = "$expected_source" ] || exit 1
+	[ "$(git config -f "$repo_root/.gitmodules" --get submodule.ontology.branch)" = main ] || exit 1
+	expected_entry="$(printf '160000 commit %s\tontology' "$expected_oid")"
+	[ "$(git ls-tree HEAD -- ontology)" = "$expected_entry" ] || {
+		echo "error: HEAD ontology gitlink does not match the accepted OID" >&2
+		exit 1
+	}
+fi
+
 answers_lib="$repo_root/scripts/lib/copier-answers.sh"
 [ -f "$answers_lib" ] || {
 	echo "error: missing dependency: $answers_lib" >&2
@@ -244,12 +275,15 @@ docs/.gitkeep
 docs/dev/tpl-project-repo-file-contract.md
 examples/.gitkeep
 external/.gitkeep
-ontology/.gitkeep
 policy/.gitkeep
 src/.gitkeep
 tests/.gitkeep
 diary/README.md
 "
+
+if [ "$ontology_materialized" = 1 ]; then
+	required_files="$required_files ontology/.gitkeep"
+fi
 
 for path in $required_files; do
 	assert_file "$path"
@@ -469,6 +503,35 @@ assert_contains ".githooks/pre-push" "scripts/ci/full.sh" "pre-push must run ful
 assert_contains "scripts/ci/full.sh" "check-task-scope-snapshots.sh" "L1 full CI should enforce task-scope snapshot checks"
 assert_not_contains "scripts/ci/full.sh" "crates/ak-cli/Cargo.toml" "L1 full CI must not gate AK checks on vendored ak-cli"
 assert_contains "scripts/ci/full.sh" "scripts/rocs.sh" "L1 full CI should use scripts/rocs.sh when ontology is present"
+assert_file "scripts/materialize-ontology.py"
+assert_file "scripts/materialize-ontology.sh"
+assert_file "tests/test_ontology_materializer.py"
+assert_exec "scripts/materialize-ontology.py"
+assert_exec "scripts/materialize-ontology.sh"
+assert_contains "scripts/materialize-ontology.py" "submodule.ontology.path" "ontology materializer must bind the exact declared submodule path"
+assert_contains "scripts/materialize-ontology.py" "--git-common-dir" "ontology materializer must prepare metadata in the parent Git common directory"
+assert_contains "scripts/materialize-ontology.py" "softwareco-ontology-materialization.json" "ontology materializer must journal interrupted activation"
+assert_contains "scripts/materialize-ontology.py" "required=True" "ontology materializer must require independent source and OID bindings"
+assert_not_contains "scripts/materialize-ontology.py" "--recursive" "ontology materializer must never initialize unrelated raw gitlinks recursively"
+assert_contains "scripts/ci/full.sh" "ontology is not materialized" "L1 full CI must fail instead of silently skipping missing ontology"
+assert_contains "scripts/ci/full.sh" "ontology manifest may not be a symlink" "L1 full CI must reject symlinked ontology manifests"
+assert_contains "scripts/check-template-ci.sh" "ontology manifest may not be a symlink" "template CI must reject symlinked ontology manifests before materialization"
+assert_contains "scripts/ci/full.sh" "tests.test_ontology_materializer" "L1 full CI must execute ontology materializer behavior tests"
+assert_line_precedes "scripts/check-template-ci.sh" 'if [ ! -f "$repo_root/ontology/manifest.yaml" ]; then' "ontology/.gitkeep" "template checks must classify unmaterialized ontology before required-file assertions"
+assert_contains "scripts/ci/full.sh" "missing executable scripts/rocs.sh" "L1 full CI must not bypass ontology checks through launcher mode drift"
+ci_workflow=".github/workflows/ci.yml"
+assert_contains "$ci_workflow" "./scripts/materialize-ontology.sh" "root CI must use the targeted ontology materializer when declared"
+assert_contains "$ci_workflow" "SOFTWARECO_ONTOLOGY_TOKEN" "root CI must use the narrowly scoped noninteractive ontology credential"
+assert_contains "$ci_workflow" "github.ref == 'refs/heads/main'" "manual token-bearing lanes must be restricted to main"
+if awk '/^  smoke:/{inside=1} /^  full:/{inside=0} inside{print}' "$ci_workflow" | grep -qF SOFTWARECO_ONTOLOGY_TOKEN; then
+	fail "pull-request smoke job must not receive the private ontology token"
+fi
+if ! awk '/^  smoke:/{inside=1} /^  full:/{inside=0} inside{print}' "$ci_workflow" | grep -qF 'ontology manifest may not be a symlink'; then
+	fail "pull-request smoke job must reject a symlinked ontology manifest"
+fi
+assert_contains "$ci_workflow" "ontology manifest may not be a symlink" "root CI must reject a symlinked ontology manifest"
+assert_contains "$ci_workflow" "if [ ! -f ontology/manifest.yaml ]" "root CI must materialize or fail when ontology is absent"
+assert_not_contains "$ci_workflow" "submodules: recursive" "root CI must not initialize unrelated raw gitlinks recursively"
 assert_not_contains "scripts/install-hooks.sh" "copier/template-repo" "install-hooks must not reference removed legacy template-repo path"
 assert_contains "scripts/install-hooks.sh" "scripts/bootstrap-lane-root.sh" "install-hooks must normalize executable bit for lane bootstrap helper"
 assert_contains "scripts/install-hooks.sh" "scripts/rocs.sh" "install-hooks must normalize executable bit for the L1 ROCS wrapper"
@@ -781,7 +844,12 @@ fi
 l1_task_scope_id="$(create_scoped_task "$repo_root" "template-ci: generated L1 task-scope snapshot")"
 write_task_scope_snapshot "$repo_root" "$l1_task_scope_id"
 run_repo_cmd "$repo_root" ./scripts/check-task-scope-snapshots.sh >/dev/null
-run_repo_cmd "$repo_root" ./scripts/ci/full.sh >/dev/null
+if [ "$ontology_materialized" = 1 ]; then
+	run_repo_cmd "$repo_root" ./scripts/ci/full.sh >/dev/null
+else
+	assert_command_fails_with_stderr "unmaterialized root full gate must fail" "ontology is not materialized" \
+		run_repo_cmd "$repo_root" ./scripts/ci/full.sh
+fi
 restore_l1_task_scope_dir
 assert_command_fails_with_stderr "generated L1 wrapper should reject L1 destinations" "destination already declares layer L1" ./scripts/new-repo-from-copier.sh tpl-project-repo "$repo_root" -d repo_slug=forbidden-l1-destination --defaults --overwrite
 agent_creation_task_id="$(create_scoped_task "$repo_root" "template-ci agent role: recurring pain and differentiation from existing agents")"
