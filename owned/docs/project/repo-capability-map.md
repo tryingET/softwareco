@@ -82,6 +82,8 @@ Expand conservatively when routing pressure becomes real.
 | `ts-quality` | public-package proof harness and durable adoption evidence docs for cross-repo slices | ts-quality adoption evidence, public package proof, dependency-intelligence evidence docs, static/runtime adoption record | `~/ai-society/softwareco/owned/ts-quality/README.md`, `~/ai-society/softwareco/owned/ts-quality/AGENTS.md`, `~/ai-society/softwareco/owned/ts-quality/docs/adoption/` | none | Route here for durable adoption/proof records only. Do not treat ts-quality evidence docs as owner truth for runtime traces, dep-diet fusion, or dep-viz UI behavior. |
 | `dotfiles-managed` | dotfiles, chezmoi-style environment management, public + private layer split, developer-environment convergence | dotfiles, chezmoi, shell config, managed dotfiles, multi-OS environment, WSL-first environment | `~/ai-society/softwareco/owned/dotfiles-managed/README.md`, `~/ai-society/softwareco/owned/dotfiles-managed/AGENTS.md` | none | Owns dotfiles/env convergence, not workstation runtime control planes. |
 | `pi-server` | standalone Pi session multiplexer/server, WebSocket + stdio transports, session lifecycle, remote UI protocol | pi server, session multiplexer, websocket server, stdio transport, protocol versioning, AgentSession server | `~/ai-society/softwareco/owned/pi-server/README.md`, `~/ai-society/softwareco/owned/pi-server/AGENTS.md`, `~/ai-society/softwareco/owned/pi-server/PROTOCOL.md` | none | Standalone server package, not an extension bundle. |
+| `misegraph` | recipe workflow DSL, canonical IR, graph-aware linter, and deterministic renderers for web, print, and e-ink | misegraph, `.mise`, recipe IR, e-ink renderer, Cooklang importer, recipe schema | `~/ai-society/softwareco/owned/misegraph/README.md`, `~/ai-society/softwareco/owned/misegraph/AGENTS.md`, `~/ai-society/softwareco/owned/misegraph/docs/project/vision.md`, `~/ai-society/softwareco/owned/misegraph/docs/eink.md` | none | Renderer/language owner. Physical E1001 canary evidence lives here; permanent kitchen serving does not. |
+| `misegraph-kitchen` | local kitchen product around Misegraph: recipe catalog, current selection, Android-friendly PWA, NAS frame serving, atomic replace, ETag/304, device previous/next | kitchen PWA, NAS recipe frame, e-paper serving, previous/next recipe, Android recipe editor, kitchen catalog | `~/ai-society/softwareco/owned/misegraph-kitchen/README.md`, `~/ai-society/softwareco/owned/misegraph-kitchen/AGENTS.md`, `~/ai-society/softwareco/owned/misegraph-kitchen/docs/project/owner-boundaries.md`, `~/ai-society/softwareco/owned/misegraph-kitchen/docs/project/architecture.md` | none | Consumes Misegraph as a renderer. Do not implement `.mise` parsing or renderers here. NAS/PWA/device apps are not implemented at bootstrap; contracts live in `packages/kitchen-contracts`. |
 
 ## Common ambiguity edges
 
@@ -119,6 +121,11 @@ Choose `softwareco/infra/workstation` for packaging, runtime bridges, service li
 Choose `zotero-plugins` for add-on mutation semantics, request contracts, receipt/readback, safe-update behavior, and plugin runtime behavior.
 
 Choose runtime/service packaging owners when the concern is persistent localhost service packaging, systemd, ports, publication, or workstation runtime productization.
+
+### `misegraph` vs `misegraph-kitchen`
+Choose `misegraph` for the recipe language, IR, lint, schema, and deterministic renderers, including e-ink profile proof.
+
+Choose `misegraph-kitchen` for catalog browsing, current-recipe selection, Android-friendly editing, NAS frame serving, atomic replacement, conditional HTTP, and device previous/next semantics. Invoke Misegraph as an external renderer; do not parse `.mise` in the kitchen repo.
 
 ### Dependency-intelligence vertical corridor
 Use this map to route to the owner layer, not to restate the corridor's detailed proof history:
