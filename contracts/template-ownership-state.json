@@ -1,14 +1,17 @@
 {
   "adr_commit": "1f26ddf540a152215554154978408134d94a3a9e",
+  "applied_commit": "1d71fd69cd67f92a4ecaf640ff29cff8f9dbd0b8",
   "decision_id": 144,
+  "evidence_id": 8156,
   "executor": "session-01a04208-5a5a-7aab-8539-4ac10e42a427",
   "kind": "l1_ownership_transition_state",
+  "origin": "ownership-transition",
   "ownership_map_sha256": "8587f10596289d0bc6fa321e59e31557a25899657fc82404a4a1611b3d3224d0",
   "plan_sha256": "bd4ed944e633d548d67202a063135ad7048f93822a221847b9cfb3b211a7ff1f",
   "predecessor_commit": "43afe22e476225ab5374f44fcbf49e4fa2c7f949",
   "predecessor_map_sha256": "72f2f2a765200d32c13680cbf9c22f85791c30bf7b2d3645b05d8a40d71c66e1",
   "predecessor_state_sha256": "85a5f646213baf37032710e5983844e9ee520efab07bf3497dcebd531620e460",
   "schema": "ai-society.template-ownership-state/2",
-  "state": "ownership_transition_pending_receipt",
+  "state": "established",
   "transition_task_id": 5283
 }
