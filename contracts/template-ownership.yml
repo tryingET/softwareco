@@ -30,13 +30,14 @@ template_owned:
   - external/**
   - governance/**
   - metrics/**
-  - ontology/**
   - policy/**
   - scripts/**
   - src/**
   - tests/**
   - tips/**
 agent_owned:
+  - .gitmodules
+  - ontology
   - contracts/template-ownership-adoption.json
   - .github/workflows/ci.yml
   - .gitignore

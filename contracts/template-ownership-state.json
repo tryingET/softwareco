@@ -1,13 +1,14 @@
 {
-  "applied_commit": "50599ea00d59cfde2cee16a02825f33ec0e58157",
-  "evidence_id": 7974,
-  "kind": "l1_contract_refresh_state",
-  "origin": "contract-refresh",
-  "ownership_map_sha256": "72f2f2a765200d32c13680cbf9c22f85791c30bf7b2d3645b05d8a40d71c66e1",
-  "plan_sha256": "ab8fd6507a59c3f751c5995f3af0a14f4a223217035b610dc240211ab4f05264",
-  "schema": "ai-society.template-ownership-state/1",
-  "source_l0_commit": "33f286e116469590ae7d3b5c9150cc1cef3a903b",
-  "state": "established",
-  "wave_id": "softwareco-rich-33f286e-5197-v3",
-  "wave_task_id": 5197
+  "adr_commit": "1f26ddf540a152215554154978408134d94a3a9e",
+  "decision_id": 144,
+  "executor": "session-01a04208-5a5a-7aab-8539-4ac10e42a427",
+  "kind": "l1_ownership_transition_state",
+  "ownership_map_sha256": "8587f10596289d0bc6fa321e59e31557a25899657fc82404a4a1611b3d3224d0",
+  "plan_sha256": "bd4ed944e633d548d67202a063135ad7048f93822a221847b9cfb3b211a7ff1f",
+  "predecessor_commit": "43afe22e476225ab5374f44fcbf49e4fa2c7f949",
+  "predecessor_map_sha256": "72f2f2a765200d32c13680cbf9c22f85791c30bf7b2d3645b05d8a40d71c66e1",
+  "predecessor_state_sha256": "85a5f646213baf37032710e5983844e9ee520efab07bf3497dcebd531620e460",
+  "schema": "ai-society.template-ownership-state/2",
+  "state": "ownership_transition_pending_receipt",
+  "transition_task_id": 5283
 }

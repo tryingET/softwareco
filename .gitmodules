@@ -1,0 +1,4 @@
+[submodule "ontology"]
+	path = ontology
+	url = https://github.com/tryingET/softwareco-ontology.git
+	branch = main
