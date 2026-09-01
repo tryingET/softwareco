@@ -18,6 +18,7 @@ need_cmd git
 need_cmd grep
 need_cmd mktemp
 need_cmd python3
+need_cmd sha256sum
 need_cmd sort
 
 ontology_materialized=1
@@ -503,6 +504,37 @@ assert_contains ".githooks/pre-push" "scripts/ci/full.sh" "pre-push must run ful
 assert_contains "scripts/ci/full.sh" "check-task-scope-snapshots.sh" "L1 full CI should enforce task-scope snapshot checks"
 assert_not_contains "scripts/ci/full.sh" "crates/ak-cli/Cargo.toml" "L1 full CI must not gate AK checks on vendored ak-cli"
 assert_contains "scripts/ci/full.sh" "scripts/rocs.sh" "L1 full CI should use scripts/rocs.sh when ontology is present"
+assert_file "tools/rocs-cli/VENDORED_HASHES.json"
+assert_file "tools/rocs-cli/uv.lock"
+assert_file "tools/rocs-cli/rocs.py"
+assert_contains "tools/rocs-cli/VENDORED_HASHES.json" '"schema_version": 3' "L1 ROCS bundle must use receipt schema 3"
+assert_contains "tools/rocs-cli/VENDORED_HASHES.json" '"upstream_version": "0.4.2"' "L1 ROCS bundle must pin release 0.4.2"
+assert_contains "tools/rocs-cli/VENDORED_HASHES.json" '"source_commit": "b72ce580c99eb24e30499b7e3c8502f32eb9ad67"' "L1 ROCS bundle must bind the reviewed source commit"
+assert_contains "scripts/rocs.sh" '_TRUSTED_RECEIPT_SHA256 = "259e5264e9c3dc620981448a75efbad0d840d213898c9cacf87655b3980d80b7"' "L1 ROCS wrapper must bind the generated bundle trust anchor"
+assert_contains "scripts/rocs.sh" '_run_captured_argv(sys.argv[3:])' "L1 ROCS wrapper must preserve generic command dispatch from private bytes"
+assert_contains "scripts/rocs.sh" "--doctor)" "L1 ROCS wrapper must preserve the doctor diagnostic"
+assert_contains "scripts/rocs.sh" "--which)" "L1 ROCS wrapper must preserve the runner diagnostic"
+assert_contains "scripts/rocs.sh" "_private_archive" "L1 ROCS wrapper must execute from a sealed private archive"
+assert_contains "scripts/rocs.sh" "_sealed_memfd" "L1 ROCS wrapper must seal native extension bytes"
+assert_contains "scripts/rocs.sh" 'ROCS_OUTPUT_ROOT must be $required_output_root' "L1 ROCS wrapper must enforce the exact parent-owned output root"
+assert_contains "scripts/rocs.sh" "--repo must be the Softwareco parent" "L1 ROCS wrapper must reject non-parent command targets"
+assert_contains "scripts/rocs.sh" "ROCS_REPO must be the Softwareco parent" "L1 ROCS wrapper must reject non-parent environment targets"
+assert_contains "scripts/ci/full.sh" 'ROCS_OUTPUT_ROOT must be $required_output_root' "L1 full CI must enforce the exact parent-owned output root"
+assert_contains "scripts/ci/full.sh" "refusing ROCS cleanup with unknown managed output" "L1 full CI must preflight external cleanup names"
+assert_contains "scripts/ci/full.sh" 'ROCS_REPO="$repo_root" "$repo_root/scripts/rocs.sh"' "L1 full CI must use the generated verified ROCS gate"
+assert_file "tests/test_ontology_receipts.py"
+for legacy_receipt in \
+  ontology/dist/.authority-receipt.lock \
+  ontology/dist/authority-receipt.json \
+  ontology/dist/authority-receipt.validate.json \
+  ontology/dist/id_index.json \
+  ontology/dist/resolve.json \
+  ontology/dist/summary.json; do
+  assert_not_file "$legacy_receipt"
+done
+printf '%s  %s\n' \
+  259e5264e9c3dc620981448a75efbad0d840d213898c9cacf87655b3980d80b7 \
+  tools/rocs-cli/VENDORED_HASHES.json | sha256sum --check --status - || fail "L1 ROCS receipt trust anchor failed"
 assert_file "scripts/materialize-ontology.py"
 assert_file "scripts/materialize-ontology.sh"
 assert_file "tests/test_ontology_materializer.py"
@@ -531,6 +563,10 @@ if ! awk '/^  smoke:/{inside=1} /^  full:/{inside=0} inside{print}' "$ci_workflo
 fi
 assert_contains "$ci_workflow" "ontology manifest may not be a symlink" "root CI must reject a symlinked ontology manifest"
 assert_contains "$ci_workflow" "if [ ! -f ontology/manifest.yaml ]" "root CI must materialize or fail when ontology is absent"
+assert_contains "$ci_workflow" "ROCS_OUTPUT_ROOT: governance/ontology-dist" "root CI must route ROCS outputs outside ontology"
+assert_contains "$ci_workflow" 'ROCS_AUTHORITY_AGGREGATE: "1"' "root CI must preserve validate/build authority receipts"
+assert_contains "$ci_workflow" "https://github.com/tryingET/core_ontology-kernel.git" "root CI must materialize the strict core dependency"
+assert_contains "$ci_workflow" "76f31bc5d42a77bc2c0fd24c8b30708f907fbd44" "root CI must verify the exact strict core dependency OID"
 assert_not_contains "$ci_workflow" "submodules: recursive" "root CI must not initialize unrelated raw gitlinks recursively"
 assert_not_contains "scripts/install-hooks.sh" "copier/template-repo" "install-hooks must not reference removed legacy template-repo path"
 assert_contains "scripts/install-hooks.sh" "scripts/bootstrap-lane-root.sh" "install-hooks must normalize executable bit for lane bootstrap helper"

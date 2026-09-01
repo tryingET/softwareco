@@ -36,6 +36,12 @@ jobs:
             exit 1
           fi
 
+      - name: Verify vendored ROCS receipt anchor
+        run: |
+          printf '%s  %s\n' \
+            259e5264e9c3dc620981448a75efbad0d840d213898c9cacf87655b3980d80b7 \
+            tools/rocs-cli/VENDORED_HASHES.json | sha256sum --check -
+
       - name: Run smoke lane
         run: bash ./scripts/ci/smoke.sh
 
@@ -64,7 +70,19 @@ jobs:
       - name: Setup uv (full lane)
         uses: astral-sh/setup-uv@v5
 
+      - name: Materialize exact strict core ontology dependency
+        run: |
+          mkdir -p "$HOME/ai-society/core"
+          git clone --quiet --depth 1 --branch v0.2.0 \
+            https://github.com/tryingET/core_ontology-kernel.git \
+            "$HOME/ai-society/core/ontology-kernel"
+          test "$(git -C "$HOME/ai-society/core/ontology-kernel" rev-parse HEAD)" = \
+            76f31bc5d42a77bc2c0fd24c8b30708f907fbd44
+
       - name: Run full lane
+        env:
+          ROCS_OUTPUT_ROOT: governance/ontology-dist
+          ROCS_AUTHORITY_AGGREGATE: "1"
         run: bash ./scripts/ci/full.sh
 
   deep:
@@ -92,5 +110,17 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
 
+      - name: Materialize exact strict core ontology dependency
+        run: |
+          mkdir -p "$HOME/ai-society/core"
+          git clone --quiet --depth 1 --branch v0.2.0 \
+            https://github.com/tryingET/core_ontology-kernel.git \
+            "$HOME/ai-society/core/ontology-kernel"
+          test "$(git -C "$HOME/ai-society/core/ontology-kernel" rev-parse HEAD)" = \
+            76f31bc5d42a77bc2c0fd24c8b30708f907fbd44
+
       - name: Run deep lane
+        env:
+          ROCS_OUTPUT_ROOT: governance/ontology-dist
+          ROCS_AUTHORITY_AGGREGATE: "1"
         run: bash ./scripts/ci/full.sh --deep

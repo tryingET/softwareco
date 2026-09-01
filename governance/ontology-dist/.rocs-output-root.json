@@ -1,0 +1,5 @@
+{
+  "path": "governance/ontology-dist",
+  "purpose": "rocs-managed-output",
+  "schema": "rocs-managed-output-root/1"
+}
