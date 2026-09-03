@@ -1,0 +1,16 @@
+{
+  "authority_from_path": false,
+  "child_pattern": "agents/agent-*",
+  "child_repository_rule": "standalone repository",
+  "company": "softwareco",
+  "dual_git_ownership": false,
+  "lane": "~/ai-society/softwareco/agents",
+  "parent_must_ignore_children": true,
+  "parent_owned_baseline": [
+    "agents/.gitignore",
+    "agents/AGENTS.md",
+    "agents/CODEOWNERS"
+  ],
+  "parent_repository": "tryingET/softwareco",
+  "schema": "softwareco.agent-lane-ownership/1"
+}
