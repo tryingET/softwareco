@@ -1,16 +1,73 @@
 {
-  "authority_from_path": false,
-  "child_pattern": "agents/agent-*",
-  "child_repository_rule": "standalone repository",
+  "schema": "softwareco.agent-lane-ownership/1",
+  "status": "candidate_owner_contract_acceptance_pending",
+  "semantic_owner": "tryingET/softwareco",
   "company": "softwareco",
-  "dual_git_ownership": false,
   "lane": "~/ai-society/softwareco/agents",
-  "parent_must_ignore_children": true,
+  "parent_repository": "tryingET/softwareco",
   "parent_owned_baseline": [
     "agents/.gitignore",
     "agents/AGENTS.md",
     "agents/CODEOWNERS"
   ],
-  "parent_repository": "tryingET/softwareco",
-  "schema": "softwareco.agent-lane-ownership/1"
+  "child_pattern": "agents/agent-*",
+  "child_repository_rule": "one standalone Git repository per company-appointed agent and canonical role",
+  "home_rule": "home follows accountable appointing jurisdiction",
+  "authority_from_path": false,
+  "stable_identity_from_path": false,
+  "parent_must_ignore_children": true,
+  "dual_git_ownership": false,
+  "appointment_required": true,
+  "activation_separate_from_placement": true,
+  "invariants": [
+    "the parent owns lane baseline files only",
+    "a child repository owns all files below its own repository root",
+    "no file may be tracked by both parent and child repositories",
+    "the same local agent name in another jurisdiction is safe only when stable agent_id and appointment differ",
+    "repository location never grants appointment, delegation, release approval, run authorization, or effect authority",
+    "persona, provider profile, runtime host, and read territory do not determine accountable home"
+  ],
+  "creation_and_migration": {
+    "mode": "inspect_plan_explicit_apply",
+    "requires_exact_owner_task": true,
+    "requires_appointment_reference": true,
+    "preserve_child_history": true,
+    "apply_during_gate_a": false,
+    "fleet_default_change_during_gate_a": false
+  },
+  "failure_semantics": {
+    "parent_child_overlap": "blocked",
+    "missing_appointment": "blocked",
+    "duplicate_agent_id": "blocked",
+    "ambiguous_jurisdiction": "blocked",
+    "path_claimed_as_authority": "rejected"
+  },
+  "compatibility": {
+    "current_parent_repository_preserved": true,
+    "current_child_repositories_preserved": true,
+    "additive_contract_only": true
+  },
+  "rollback": [
+    "close or revert the candidate change",
+    "retain current lane and child repository layout",
+    "do not move, create, retire, or activate any child as part of rollback"
+  ],
+  "acceptance_scenarios": [
+    "parent baseline files are tracked by the parent and child roots are ignored",
+    "each child root is a distinct Git repository with no tracked-file overlap",
+    "a company appointment points to the child repository without deriving authority from the path",
+    "migration planning produces a reviewable no-apply diff and preserves child history"
+  ],
+  "reversal_triggers": [
+    "Git cannot enforce non-overlapping parent and child ownership",
+    "the selected layout requires authority to be inferred from paths",
+    "an accepted appointing-jurisdiction rule places SoftwareCo agents elsewhere",
+    "a migration would overwrite child-owned history or persona content"
+  ],
+  "prohibited_authority_transfer": [
+    "no appointment authority to the parent lane",
+    "no provider authority to SoftwareCo through import or placement",
+    "no release approval or run authorization from repository existence",
+    "no runtime or effect authority from the execution host"
+  ]
 }
