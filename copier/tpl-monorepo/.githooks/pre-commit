@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+# Scan staged files with contrib UBS. Skip quietly if the scanner is not present.
+set -eu
+staged="${UBS_STAGED:-$HOME/ai-society/softwareco/scripts/ubs-staged.sh}"
+if [ -x "$staged" ]; then
+	exec "$staged"
+fi
+echo "pre-commit: $staged not found; skipping UBS" >&2
+exit 0
