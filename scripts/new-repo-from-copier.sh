@@ -521,3 +521,16 @@ if is_enabled "$COPIER_QUIET" && ! has_quiet_override "$@"; then
 fi
 
 run_copier copy --trust "$@" "$template_dir" "$dest_dir"
+
+case "$template_name" in
+  tpl-project-repo|tpl-monorepo)
+    if [ ! -d "$dest_dir/.git" ]; then
+      git init "$dest_dir" >/dev/null
+    fi
+    if [ -x "$dest_dir/scripts/install-hooks.sh" ]; then
+      "$dest_dir/scripts/install-hooks.sh"
+    else
+      echo "warning: missing $dest_dir/scripts/install-hooks.sh; UBS pre-commit not enabled" >&2
+    fi
+    ;;
+esac
