@@ -48,7 +48,7 @@
   "layers": [
     {
       "name": "core",
-      "origin": "<repo:core/ontology-kernel@v0.2.0>"
+      "origin": "<repo:core/ontology-kernel@v0.2.1>"
     },
     {
       "name": "company",

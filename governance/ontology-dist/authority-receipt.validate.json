@@ -16,7 +16,7 @@
       "kind": "ref",
       "locator_kind": "repo",
       "name": "core",
-      "origin": "<repo:core/ontology-kernel@v0.2.0>",
+      "origin": "<repo:core/ontology-kernel@v0.2.1>",
       "source": "workspace",
       "source_contract": "ontology-markdown-v1"
     }
@@ -41,7 +41,7 @@
   "schema_version": 3,
   "source_contract_conformance": {
     "complete": true,
-    "corpus_digest": "sha256:ad74052110cf74d0e7f5e465c8eb0d74df9044b01229c2823d9d7a908bf1ee2d",
+    "corpus_digest": "sha256:c3935d991ffb3d23426d329b2f3be0d31932bf5d8339a3b51ceb7b8a76575d26",
     "document_count": 52,
     "operation": "validate",
     "schema": "rocs-source-contract-conformance.v1",
