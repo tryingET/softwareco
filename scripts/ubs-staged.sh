@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 # Scan git-staged files with the contrib UBS checkout (not ~/.local/bin/ubs).
-# Exit 0 if nothing staged. Exit 1 if UBS reports criticals. Missing scanner -> 2.
+# Exit 0 if nothing staged or UBS detects no language to scan in the staged files.
+# Exit 1 if UBS reports criticals. Missing scanner -> 2.
 set -eu
 
 ubs_bin="${UBS_BIN:-$HOME/ai-society/softwareco/contrib/ultimate_bug_scanner/ubs}"
@@ -30,4 +31,19 @@ if [ "$#" -eq 0 ]; then
 fi
 
 echo "ubs-staged: scanning $# staged file(s) with $ubs_bin"
-exec "$ubs_bin" --ci "$@"
+# UBS exits 3 for "nothing scanned: no supported language detected", which for
+# staged files is the same case as nothing staged (e.g. a docs-only commit).
+# But 3 can also propagate from a failing module or tool, so pass only when
+# UBS's machine-readable result confirms that no language was detected.
+rc=0
+"$ubs_bin" --ci "$@" || rc=$?
+if [ "$rc" -eq 3 ]; then
+	result="$("$ubs_bin" --ci --format=json "$@" 2>/dev/null || true)"
+	case "$result" in
+	*'"result":"no-supported-languages"'*)
+		echo "ubs-staged: UBS detected no language to scan in the staged files; nothing to check"
+		exit 0
+		;;
+	esac
+fi
+exit "$rc"
