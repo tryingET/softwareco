@@ -8,11 +8,13 @@
 # Findings per repo (only repos with scripts/rocs.sh and ontology/manifest.yaml):
 #   stale-vendor=<ver>   tools/rocs-cli is older than the tpl-project-repo vendored copy
 #                        (old copies reject current ontology-kernel keys such as
-#                        examples/anti_examples). Fix: re-vendor the tracked files of
-#                        copier/tpl-project-repo/tools/rocs-cli. Do not just drop it:
-#                        CI runners have no ~/ai-society/core/rocs-cli to fall back to.
-#   no-workspace-root    neither scripts/rocs.sh nor scripts/ci/full.sh defaults
-#                        ROCS_WORKSPACE_ROOT, so <repo:...@ref> layers fail to resolve.
+#                        examples/anti_examples). Fix: drop tools/rocs-cli so rocs.sh
+#                        falls back to ~/ai-society/core/rocs-cli. CI runners have
+#                        neither that nor the <repo:...@ref> ontology layers; providing
+#                        the workspace in CI is AK #5901, not a vendored copy.
+#   no-workspace-root    scripts/rocs.sh does not default ROCS_WORKSPACE_ROOT, so
+#                        <repo:...@ref> layers fail to resolve on direct calls (a
+#                        default only in scripts/ci/full.sh does not cover them).
 #                        Fix: port the default block from copier/tpl-project-repo/scripts/rocs.sh.j2.
 #   unsafe-clean-build   scripts/ci/full.sh wipes ontology/dist (`rocs build --clean` or rm -rf)
 #                        without both (a) refusing to build over uncommitted tracked dist
@@ -70,7 +72,7 @@ for dir in "$@"; do
     fi
   fi
 
-  if ! grep -qs 'ROCS_WORKSPACE_ROOT=' "$dir/scripts/rocs.sh" "$dir/scripts/ci/full.sh"; then
+  if ! grep -Eqs 'ROCS_WORKSPACE_ROOT:[-=]' "$dir/scripts/rocs.sh"; then
     findings="$findings no-workspace-root"
   fi
 
