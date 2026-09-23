@@ -28,7 +28,7 @@ run_rocs() {
   if [ -x "./scripts/rocs.sh" ] && [ -f "./ontology/manifest.yaml" ]; then
     # A build overwrites ontology/dist; refuse to clobber uncommitted projection edits.
     # Receipts are excluded: every validate/build rewrites them.
-    dist_dirty="$(git status --porcelain -- ontology/dist \
+    dist_dirty="$(git status --porcelain --untracked-files=no -- ontology/dist \
       ':(exclude)ontology/dist/authority-receipt*.json' \
       ':(exclude)ontology/dist/.authority-receipt.lock')"
     if [ -n "$dist_dirty" ] && [ "${ROCS_ALLOW_DIRTY_DIST:-0}" != 1 ]; then
