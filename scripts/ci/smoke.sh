@@ -25,4 +25,6 @@ if grep -nE 'copier[[:space:]]+(copy|update)' copier.yml copier/*/copier.yml >/d
   fail "nested copier invocations are forbidden in L1 template config"
 fi
 
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.test_ubs_staged -q
+
 echo "ok: ci smoke"
