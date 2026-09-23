@@ -8,15 +8,19 @@
 # Findings per repo (only repos with scripts/rocs.sh and ontology/manifest.yaml):
 #   stale-vendor=<ver>   tools/rocs-cli is older than the tpl-project-repo vendored copy
 #                        (old copies reject current ontology-kernel keys such as
-#                        examples/anti_examples). Fix: drop tools/rocs-cli so rocs.sh
-#                        falls back to ~/ai-society/core/rocs-cli, or re-vendor.
+#                        examples/anti_examples). Fix: re-vendor the tracked files of
+#                        copier/tpl-project-repo/tools/rocs-cli. Do not just drop it:
+#                        CI runners have no ~/ai-society/core/rocs-cli to fall back to.
 #   no-workspace-root    neither scripts/rocs.sh nor scripts/ci/full.sh defaults
 #                        ROCS_WORKSPACE_ROOT, so <repo:...@ref> layers fail to resolve.
 #                        Fix: port the default block from copier/tpl-project-repo/scripts/rocs.sh.j2.
 #   unsafe-clean-build   scripts/ci/full.sh wipes ontology/dist (`rocs build --clean` or rm -rf)
 #                        without both (a) refusing to build over uncommitted tracked dist
 #                        edits (ROCS_ALLOW_DIRTY_DIST override) and (b) backing dist up and
-#                        restoring it when the build fails. Fix: port copier/tpl-project-repo/scripts/ci/full.sh.
+#                        restoring it when the build fails. Fix: the ROCS dist guard
+#                        prelude from copier/tpl-project-repo/scripts/rocs.sh.j2 (covers
+#                        every `rocs.sh build --clean` caller), or the full.sh pattern when
+#                        full.sh deletes ontology/dist itself.
 #   tracked-receipts     ROCS authority receipts under ontology/dist are committed; every
 #                        validate/build rewrites them. Fix: gitignore
 #                        ontology/dist/authority-receipt*.json and .authority-receipt.lock,
@@ -71,9 +75,12 @@ for dir in "$@"; do
   fi
 
   full="$dir/scripts/ci/full.sh"
+  launcher_guard=0
+  grep -q 'ROCS_DIST_GUARD_ACTIVE' "$dir/scripts/rocs.sh" && launcher_guard=1
   if [ -f "$full" ] \
     && grep -Eq 'build .*--clean|rm -rf .*ontology/dist' "$full" \
-    && ! { grep -Eq 'dist[-_]backup' "$full" && grep -q 'ROCS_ALLOW_DIRTY_DIST' "$full"; }; then
+    && ! { grep -Eq 'dist[-_]backup' "$full" && grep -q 'ROCS_ALLOW_DIRTY_DIST' "$full"; } \
+    && ! { [ "$launcher_guard" = 1 ] && ! grep -Eq 'rm -rf .*ontology/dist' "$full"; }; then
     findings="$findings unsafe-clean-build"
   fi
 
