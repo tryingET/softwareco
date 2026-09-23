@@ -27,8 +27,19 @@ run_task_scope_snapshots() {
 run_rocs() {
   if [ -x "./scripts/rocs.sh" ] && [ -f "./ontology/manifest.yaml" ]; then
     ./scripts/rocs.sh version
-    ./scripts/rocs.sh build --repo . --resolve-refs --clean
     ./scripts/rocs.sh validate --repo . --resolve-refs
+    # build --clean removes ontology/dist first; restore it if the build fails.
+    rm -rf "$log_dir/dist-backup"
+    if [ -d ./ontology/dist ]; then
+      cp -a ./ontology/dist "$log_dir/dist-backup"
+    fi
+    if ! ./scripts/rocs.sh build --repo . --resolve-refs --clean; then
+      if [ -d "$log_dir/dist-backup" ]; then
+        rm -rf ./ontology/dist
+        cp -a "$log_dir/dist-backup" ./ontology/dist
+      fi
+      return 1
+    fi
   fi
 }
 

@@ -15,6 +15,19 @@ fi
 
 if [ -x "./scripts/rocs.sh" ] && [ -f "./ontology/manifest.yaml" ]; then
   ./scripts/rocs.sh version
-  ./scripts/rocs.sh build --repo . --resolve-refs --clean
   ./scripts/rocs.sh validate --repo . --resolve-refs
+  # build --clean removes ontology/dist first; restore it if the build fails.
+  dist_backup="$(mktemp -d "${TMPDIR:-/tmp}/rocs-dist-backup.XXXXXX")"
+  trap 'rm -rf "$dist_backup"' EXIT INT TERM
+  if [ -d ./ontology/dist ]; then
+    cp -a ./ontology/dist "$dist_backup/dist"
+  fi
+  if ! ./scripts/rocs.sh build --repo . --resolve-refs --clean; then
+    if [ -d "$dist_backup/dist" ]; then
+      rm -rf ./ontology/dist
+      cp -a "$dist_backup/dist" ./ontology/dist
+    fi
+    echo "error: rocs build failed; ontology/dist restored" >&2
+    exit 1
+  fi
 fi

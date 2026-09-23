@@ -3,6 +3,10 @@ set -eu
 
 repo_root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 core_project_default="${ROCS_CORE_PROJECT:-$HOME/ai-society/core/rocs-cli}"
+# Manifest layers are <repo:...@ref> workspace refs; resolve them from local clones by default.
+ROCS_WORKSPACE_ROOT="${ROCS_WORKSPACE_ROOT:-$HOME/ai-society}"
+ROCS_WORKSPACE_REF_MODE="${ROCS_WORKSPACE_REF_MODE:-loose}"
+export ROCS_WORKSPACE_ROOT ROCS_WORKSPACE_REF_MODE
 
 say() {
   printf '%s\n' "$*"
@@ -188,6 +192,7 @@ doctor() {
   say "rocs launcher doctor"
   say "- repo_root: $repo_root"
   say "- core_project_default: $core_project_default"
+  say "- workspace_root: $ROCS_WORKSPACE_ROOT (ref mode: $ROCS_WORKSPACE_REF_MODE)"
   say "- has uv: $(has_cmd uv && printf yes || printf no)"
   say "- has uvx: $(has_cmd uvx && printf yes || printf no)"
   say "- has python3: $(has_cmd python3 && printf yes || printf no)"
