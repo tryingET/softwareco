@@ -26,6 +26,17 @@ run_task_scope_snapshots() {
 
 run_rocs() {
   if [ -x "./scripts/rocs.sh" ] && [ -f "./ontology/manifest.yaml" ]; then
+    # A build overwrites ontology/dist; refuse to clobber uncommitted projection edits.
+    # Receipts are excluded: every validate/build rewrites them.
+    dist_dirty="$(git status --porcelain -- ontology/dist \
+      ':(exclude)ontology/dist/authority-receipt*.json' \
+      ':(exclude)ontology/dist/.authority-receipt.lock')"
+    if [ -n "$dist_dirty" ] && [ "${ROCS_ALLOW_DIRTY_DIST:-0}" != 1 ]; then
+      err "error: ontology/dist has uncommitted changes; commit or stash them before the"
+      err "ROCS build, or set ROCS_ALLOW_DIRTY_DIST=1 to overwrite them:"
+      err "$dist_dirty"
+      return 1
+    fi
     ./scripts/rocs.sh version
     ./scripts/rocs.sh validate --repo . --resolve-refs
     # build --clean removes ontology/dist first; restore it if the build fails.

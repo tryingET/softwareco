@@ -14,7 +14,9 @@
 #                        ROCS_WORKSPACE_ROOT, so <repo:...@ref> layers fail to resolve.
 #                        Fix: port the default block from copier/tpl-project-repo/scripts/rocs.sh.j2.
 #   unsafe-clean-build   scripts/ci/full.sh wipes ontology/dist (`rocs build --clean` or rm -rf)
-#                        without backing it up and restoring it when the build fails. Fix: port copier/tpl-project-repo/scripts/ci/full.sh.
+#                        without both (a) refusing to build over uncommitted tracked dist
+#                        edits (ROCS_ALLOW_DIRTY_DIST override) and (b) backing dist up and
+#                        restoring it when the build fails. Fix: port copier/tpl-project-repo/scripts/ci/full.sh.
 #   tracked-receipts     ROCS authority receipts under ontology/dist are committed; every
 #                        validate/build rewrites them. Fix: gitignore
 #                        ontology/dist/authority-receipt*.json and .authority-receipt.lock,
@@ -71,7 +73,7 @@ for dir in "$@"; do
   full="$dir/scripts/ci/full.sh"
   if [ -f "$full" ] \
     && grep -Eq 'build .*--clean|rm -rf .*ontology/dist' "$full" \
-    && ! grep -Eq 'dist[-_]backup' "$full"; then
+    && ! { grep -Eq 'dist[-_]backup' "$full" && grep -q 'ROCS_ALLOW_DIRTY_DIST' "$full"; }; then
     findings="$findings unsafe-clean-build"
   fi
 
