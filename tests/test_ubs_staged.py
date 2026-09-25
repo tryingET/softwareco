@@ -92,6 +92,44 @@ class UbsStagedFeature(unittest.TestCase):
                 # Then only a confirmed no-language 3 becomes a pass
                 self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
 
+    def default_scanner_home(self, with_service: bool) -> dict:
+        home = self.tmp / "home"
+        contrib = home / "ai-society" / "softwareco" / "contrib"
+        for name, present in (("ultimate_bug_scanner", True), ("ultimate_bug_scanner-local", with_service)):
+            if not present:
+                continue
+            (contrib / name).mkdir(parents=True, exist_ok=True)
+            stub = contrib / name / "ubs"
+            stub.write_text(STUB.replace('"$*"', f'"{name} $*"'))
+            stub.chmod(0o755)
+        env = {k: v for k, v in os.environ.items() if k != "UBS_BIN"}
+        return {**env, "HOME": str(home), "STUB_LOG": str(self.log), "UBS_NO_AUTO_UPDATE": "1"}
+
+    def run_default(self, env: dict) -> subprocess.CompletedProcess:
+        return subprocess.run(["sh", str(WRAPPER)], cwd=self.repo, env=env, capture_output=True, text=True, timeout=60)
+
+    def test_scenario_default_scanner_is_the_service_worktree(self) -> None:
+        # Given a staged file, no UBS_BIN, and both the mirror checkout and the
+        #   ultimate_bug_scanner-local service worktree present
+        self.stage("src/app.py", "print('hi')\n")
+        env = self.default_scanner_home(with_service=True)
+        # When the wrapper runs
+        result = self.run_default(env)
+        # Then it runs the service worktree's scanner, which carries the local adoptions
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual([c.split()[0] for c in self.calls()], ["ultimate_bug_scanner-local"], self.calls())
+
+    def test_scenario_missing_service_worktree_falls_back_visibly(self) -> None:
+        # Given a staged file, no UBS_BIN, and only the mirror checkout
+        self.stage("src/app.py", "print('hi')\n")
+        env = self.default_scanner_home(with_service=False)
+        # When the wrapper runs
+        result = self.run_default(env)
+        # Then it scans with the mirror checkout and says it fell back
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual([c.split()[0] for c in self.calls()], ["ultimate_bug_scanner"], self.calls())
+        self.assertIn("ultimate_bug_scanner-local", result.stdout + result.stderr)
+
     @unittest.skipUnless(REAL_UBS.is_file(), "contrib ultimate_bug_scanner checkout not present")
     def test_scenario_docs_only_commit_passes(self) -> None:
         # Given only a markdown file is staged

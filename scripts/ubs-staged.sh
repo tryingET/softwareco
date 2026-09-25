@@ -7,7 +7,19 @@
 # Exit 1 if UBS reports criticals. Missing scanner -> 2.
 set -eu
 
-ubs_bin="${UBS_BIN:-$HOME/ai-society/softwareco/contrib/ultimate_bug_scanner/ubs}"
+# The hooks run the service worktree (branch `local`: upstream plus local
+# adoptions), a linked worktree that contrib-all-repos-pull.timer skips. The
+# primary checkout is the upstream mirror the timer keeps fresh (see
+# contrib/docs/project/2026-09-25-contrib-fork-service-branch-many-of-the-greats.md).
+contrib_dir="$HOME/ai-society/softwareco/contrib"
+if [ -n "${UBS_BIN:-}" ]; then
+	ubs_bin="$UBS_BIN"
+elif [ -x "$contrib_dir/ultimate_bug_scanner-local/ubs" ]; then
+	ubs_bin="$contrib_dir/ultimate_bug_scanner-local/ubs"
+else
+	ubs_bin="$contrib_dir/ultimate_bug_scanner/ubs"
+	echo "ubs-staged: service worktree $contrib_dir/ultimate_bug_scanner-local missing; using the upstream mirror checkout (no local adoptions)" >&2
+fi
 if [ ! -x "$ubs_bin" ]; then
 	echo "ubs-staged: scanner not executable: $ubs_bin" >&2
 	exit 2
