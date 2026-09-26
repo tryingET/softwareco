@@ -177,8 +177,13 @@ if ! gh auth status -h github.com >/dev/null 2>&1; then
   exit 1
 fi
 
-# Ensure git uses gh's credential helper (idempotent)
-if ! git config --global --get-all credential.helper | grep -q "gh auth git-credential"; then
+# Ensure git uses gh's credential helper (idempotent). `gh auth setup-git` writes
+# URL-scoped keys (credential.https://github.com.helper), so resolve the helper for
+# github.com instead of reading the plain credential.helper (AK #5930).
+gh_credential_helper_configured() {
+  git config --global --get-urlmatch credential.helper https://github.com 2>/dev/null | grep -q "gh auth git-credential"
+}
+if ! gh_credential_helper_configured; then
   gh auth setup-git >/dev/null 2>&1 || true
 fi
 
