@@ -11,7 +11,7 @@ accepted_at: "2026-07-25T19:16:40.657733779Z"
 acceptance_receipt_id: 8932
 predecessor_decision_id: 74
 predecessor_terminal_receipt_id: 8870
-mito_layers:
+placement_layers:
   - "Design & Configuration"
   - "Implementation"
   - "Operations & Evaluation"

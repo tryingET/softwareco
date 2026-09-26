@@ -4,7 +4,7 @@ read_when:
   - "Interpreting Softwareco strategy, governance, operating, or architecture terms."
   - "Adding cross-repo language that may overlap AK, FCOS, ROCS, Pi, KES, or DSPx ownership."
 type: "reference"
-mito_layers:
+placement_layers:
   - "Design & Configuration"
 ---
 
@@ -128,7 +128,10 @@ The k3s + Envoy local-first service substrate intent for running society service
 ## Structuring models
 
 **MITO**
-The required structuring lens for Strategic, Design & Configuration, Implementation, and Operations & Evaluation concerns. MITO is not a second runtime or governance authority.
+Prof. Binner's process-oriented management model: the loop Führung (Act 1) → Input (Plan) → Transformation (Do) → Output (Check) → Leitung (Act 2), applied across the strategic, tactical, dispositive and operative levels. MITO is not a second runtime or governance authority.
+
+**Placement layers**
+The required placement lens for Strategic, Design & Configuration, Implementation, and Operations & Evaluation concerns; formerly misnamed "MITO layers" and not Binner's model. The `placement_layers` front-matter key records them; AK's `mito_layer` field still uses the old name.
 
 **Sociocracy 3.0 / S3.0**
 The primary governance-semantics source for drivers, domains, agreements, consent, objections, delegation, governance, and organizational learning. It is not the execution runtime.
@@ -139,4 +142,5 @@ The primary governance-semantics source for drivers, domains, agreements, consen
 - [[holdingco/governance-kernel/docs/core/definitions/runtime-authority-matrix.md|Runtime Authority Matrix]]
 - [[holdingco/governance-kernel/docs/core/definitions/discoverability-and-truth-model.md|Discoverability and Truth Model]]
 - [[holdingco/governance-kernel/docs/core/definitions/mito-model.md|MITO Model]]
+- [[holdingco/governance-kernel/docs/core/definitions/placement-layers.md|Placement Layers]]
 - [[holdingco/governance-kernel/docs/core/definitions/s3-governance-semantics.md|S3.0 Governance Semantics]]

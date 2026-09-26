@@ -6,7 +6,7 @@ read_when:
 type: "policy"
 status: "proposed_company_policy"
 as_of: "2026-07-12"
-mito_layers:
+placement_layers:
   - "Design & Configuration"
   - "Operations & Evaluation"
 ---

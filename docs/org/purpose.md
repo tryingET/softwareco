@@ -4,7 +4,7 @@ read_when:
   - "Making a high-level Softwareco tradeoff or deciding whether an initiative belongs in the company."
   - "Explaining why Softwareco exists independently of any product or repository."
 type: "reference"
-mito_layers:
+placement_layers:
   - "Strategic"
 ---
 

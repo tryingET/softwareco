@@ -4,7 +4,7 @@ read_when:
   - "Prioritizing Softwareco work or deciding which activities are in scope now."
   - "Explaining how Softwareco advances its purpose in practice."
 type: "reference"
-mito_layers:
+placement_layers:
   - "Strategic"
   - "Implementation"
 ---

@@ -4,7 +4,7 @@ read_when:
   - "Setting Softwareco portfolio direction or evaluating whether work advances company outcomes."
   - "Preparing monthly outcome or horizon reviews."
 type: "reference"
-mito_layers:
+placement_layers:
   - "Strategic"
   - "Operations & Evaluation"
 ---

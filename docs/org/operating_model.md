@@ -12,7 +12,7 @@ accepted_at: "2026-07-25T19:16:40.657733779Z"
 acceptance_receipt_id: 8932
 predecessor_decision_id: 74
 predecessor_terminal_receipt_id: 8870
-mito_layers:
+placement_layers:
   - "Strategic"
   - "Design & Configuration"
   - "Implementation"
@@ -113,9 +113,9 @@ Decision 74 proved one bounded cycle and then terminally handed back. Decision 7
 
 Cadence produces owner-native updates, not meeting-only ledgers.
 
-## MITO placement
+## Placement layers
 
-| MITO layer | Softwareco concern | Primary docs/surfaces |
+| Placement layer | Softwareco concern | Primary docs/surfaces |
 |---|---|---|
 | Strategic | purpose, mission, vision, objectives, portfolio posture | `docs/org/`, product posture, AK strategic frames |
 | Design & Configuration | governance, ethics, architecture, contracts, templates | governance docs, ROCS, RFC/ADR, engineering-core |
@@ -134,7 +134,7 @@ AI Society uses “layer” in three different, orthogonal ways:
 
 For current operator vocabulary and workflow, prefer [[/home/tryinget/ai-society/softwareco/owned/agent-kernel/docs/project/layer-12-protocol.md|Layer-12 Protocol — Start Here]] and [[/home/tryinget/ai-society/softwareco/owned/agent-kernel/docs/project/2026-04-25-layer-12-operator-vocabulary-boundary.md|Layer-12 Operator Vocabulary Boundary]]. [[/home/tryinget/ai-society/softwareco/owned/agent-kernel/docs/project/layer-12-direction-substrate-status.md|Layer-12 Direction Substrate Status]] remains useful for shipped storage/command history, but some SG/TG/operating-slice terminology is compatibility history rather than the preferred `strategic_frame` / `implementation_wave` operator grammar.
 
-Softwareco is an **L1 company template/control-plane repo** in render lineage. Its child standalone repos remain L2 even when nested below lane-root repositories. That render classification does not determine runtime authority, organizational accountability, or MITO placement.
+Softwareco is an **L1 company template/control-plane repo** in render lineage. Its child standalone repos remain L2 even when nested below lane-root repositories. That render classification does not determine runtime authority, organizational accountability, or placement layer.
 
 ## Authority quick map
 
@@ -165,7 +165,8 @@ These are the important workspace files that should be discoverable from Softwar
 ### Governance and direction
 
 - [[/home/tryinget/ai-society/holdingco/governance-kernel/docs/core/definitions/s3-governance-semantics.md|S3.0 Governance Semantics]] — domains, agreements, consent, objections, and delegation.
-- [[/home/tryinget/ai-society/holdingco/governance-kernel/docs/core/definitions/mito-model.md|MITO Model]] — Strategic, Design & Configuration, Implementation, Operations & Evaluation.
+- [[/home/tryinget/ai-society/holdingco/governance-kernel/docs/core/definitions/placement-layers.md|Placement Layers]] — Strategic, Design & Configuration, Implementation, Operations & Evaluation (formerly misnamed MITO layers).
+- [[/home/tryinget/ai-society/holdingco/governance-kernel/docs/core/definitions/mito-model.md|MITO Model]] — Binner's five-segment management loop.
 - [[/home/tryinget/ai-society/holdingco/governance-kernel/docs/dev/decision-lifecycle.md|Decision Lifecycle]] — problem/evidence → RFC → review → ADR → rollout → learning.
 - [[/home/tryinget/ai-society/holdingco/governance-kernel/docs/dev/review-synthesis.v6.toml|Review Synthesis Contract]] — main-first ADR-closing review topology.
 - [[/home/tryinget/ai-society/softwareco/owned/agent-kernel/docs/project/direction-to-execution-model.md|Direction-to-Execution Model]] — narrative direction into governed execution.
