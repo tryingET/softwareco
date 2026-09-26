@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -28,8 +29,13 @@ exit "${STUB_RC:-0}"
 """
 
 
+def clean_env() -> dict:
+    """os.environ without GIT_*: inside a git hook these point at the enclosing repository."""
+    return {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+
+
 def git(cwd: Path, *args: str) -> None:
-    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, env=clean_env())
 
 
 class UbsStagedFeature(unittest.TestCase):
@@ -51,7 +57,7 @@ class UbsStagedFeature(unittest.TestCase):
         git(self.repo, "add", rel)
 
     def run_wrapper(self, ubs_bin: Path, **env: str) -> subprocess.CompletedProcess:
-        full_env = {**os.environ, "UBS_BIN": str(ubs_bin), "STUB_LOG": str(self.log),
+        full_env = {**clean_env(), "UBS_BIN": str(ubs_bin), "STUB_LOG": str(self.log),
                     "UBS_NO_AUTO_UPDATE": "1", **env}
         return subprocess.run(["sh", str(WRAPPER)], cwd=self.repo, env=full_env,
                               capture_output=True, text=True, timeout=300)
@@ -102,7 +108,7 @@ class UbsStagedFeature(unittest.TestCase):
             stub = contrib / name / "ubs"
             stub.write_text(STUB.replace('"$*"', f'"{name} $*"'))
             stub.chmod(0o755)
-        env = {k: v for k, v in os.environ.items() if k != "UBS_BIN"}
+        env = {k: v for k, v in clean_env().items() if k != "UBS_BIN"}
         return {**env, "HOME": str(home), "STUB_LOG": str(self.log), "UBS_NO_AUTO_UPDATE": "1"}
 
     def run_default(self, env: dict) -> subprocess.CompletedProcess:
@@ -129,6 +135,32 @@ class UbsStagedFeature(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual([c.split()[0] for c in self.calls()], ["ultimate_bug_scanner"], self.calls())
         self.assertIn("ultimate_bug_scanner-local", result.stdout + result.stderr)
+
+    def test_scenario_suite_inside_a_git_hook_leaves_the_enclosing_repo_alone(self) -> None:
+        # Given the suite runs inside a pre-commit hook of a linked worktree, where git
+        #   exports GIT_DIR / GIT_INDEX_FILE / GIT_WORK_TREE for the enclosing repository
+        enclosing = self.tmp / "enclosing"
+        subprocess.run(["git", "init", "-q", str(enclosing)], check=True, capture_output=True, env=clean_env())
+        subprocess.run(["git", "-C", str(enclosing), "commit", "-q", "--allow-empty", "-m", "init"],
+                       check=True, capture_output=True, env=clean_env())
+        subprocess.run(["git", "-C", str(enclosing), "worktree", "add", "-q", str(self.tmp / "wt"), "-b", "wt"],
+                       check=True, capture_output=True, env=clean_env())
+        wt_gitdir = subprocess.run(["git", "-C", str(self.tmp / "wt"), "rev-parse", "--absolute-git-dir"],
+                                   check=True, capture_output=True, text=True, env=clean_env()).stdout.strip()
+        hook_env = {"GIT_DIR": wt_gitdir, "GIT_INDEX_FILE": f"{wt_gitdir}/index", "GIT_WORK_TREE": str(self.tmp / "wt")}
+        # When a scenario's setup and the wrapper run with that environment inherited
+        with unittest.mock.patch.dict(os.environ, hook_env):
+            nested = UbsStagedFeature("test_scenario_staged_changes_are_scanned_through_ubs_staged_mode")
+            nested.setUp()
+            self.addCleanup(nested.doCleanups)
+            nested.test_scenario_staged_changes_are_scanned_through_ubs_staged_mode()
+        # Then the enclosing repository is still a normal, non-bare repository with a clean index
+        bare = subprocess.run(["git", "-C", str(enclosing), "config", "--get", "core.bare"],
+                              capture_output=True, text=True, env=clean_env()).stdout.strip()
+        staged = subprocess.run(["git", "-C", str(self.tmp / "wt"), "diff", "--cached", "--name-only"],
+                                capture_output=True, text=True, env=clean_env()).stdout.strip()
+        self.assertEqual(bare, "false")
+        self.assertEqual(staged, "")
 
     @unittest.skipUnless(REAL_UBS.is_file(), "contrib ultimate_bug_scanner checkout not present")
     def test_scenario_docs_only_commit_passes(self) -> None:
