@@ -6,9 +6,10 @@ read_when:
 type: "policy"
 status: "proposed_company_policy"
 as_of: "2026-07-12"
-placement_layers:
-  - "Design & Configuration"
-  - "Operations & Evaluation"
+mito_segments:
+  - "Führung"
+  - "Leitung"
+mito_level: "strategisch"
 ---
 
 # Softwareco values and ethics

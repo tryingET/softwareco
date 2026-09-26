@@ -4,8 +4,9 @@ read_when:
   - "Aligning long-term Softwareco direction or evaluating a major strategic bet."
   - "Explaining what should be true when Softwareco succeeds."
 type: "reference"
-placement_layers:
-  - "Strategic"
+mito_segments:
+  - "Führung"
+mito_level: "strategisch"
 ---
 
 # Softwareco vision

@@ -4,9 +4,10 @@ read_when:
   - "Setting Softwareco portfolio direction or evaluating whether work advances company outcomes."
   - "Preparing monthly outcome or horizon reviews."
 type: "reference"
-placement_layers:
-  - "Strategic"
-  - "Operations & Evaluation"
+mito_segments:
+  - "Führung"
+  - "Leitung"
+mito_level: "strategisch"
 ---
 
 # Softwareco strategic objectives
