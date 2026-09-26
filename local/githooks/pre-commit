@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# softwareco pre-commit addition (run by .githooks/pre-commit after the smoke lane):
+# scan staged files with the contrib UBS checkout (29c7647).
+set -eu
+exec ./scripts/ubs-staged.sh

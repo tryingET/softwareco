@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import stat
 import subprocess
 import unittest
@@ -38,8 +39,33 @@ def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+WRAPPER = ROOT / "scripts/rocs.sh"
+COMPANY_ENV = ROOT / "local/rocs.env"
+
+
+def sealed_launcher() -> bool:
+    """True while scripts/rocs.sh is the owner-generated sealed 0.4.2 wrapper.
+
+    An L1 template refresh replaces it with the L0 pinned-core launcher, which runs
+    ~/ai-society/core/rocs-cli and takes the parent contract from local/rocs.env.
+    """
+    return "_sealed_memfd" in WRAPPER.read_text(encoding="utf-8")
+
+
+def launcher_version() -> str:
+    result = subprocess.run(
+        [str(WRAPPER), "version"], cwd=ROOT, text=True, capture_output=True, check=True
+    )
+    match = re.search(r"rocs-cli (\d+\.\d+\.\d+)", result.stdout)
+    if match is None:
+        raise AssertionError(f"unexpected rocs version output: {result.stdout!r}")
+    return match.group(1)
+
+
 class TestOntologyReceipts(unittest.TestCase):
     def test_schema3_bundle_is_bound_to_reviewed_rocs_release(self) -> None:
+        if not sealed_launcher():
+            self.skipTest("pinned-core launcher: the vendored 0.4.2 bundle is no longer executed")
         lock_bytes = BUNDLE_LOCK.read_bytes()
         self.assertEqual(hashlib.sha256(lock_bytes).hexdigest(), EXPECTED_LOCK_SHA256)
         receipt = json.loads(lock_bytes)
@@ -77,7 +103,7 @@ class TestOntologyReceipts(unittest.TestCase):
         canonical_repo = str(ROOT.resolve())
         aggregate = load_json(OUTPUT / "authority-receipt.json")
         self.assertEqual(aggregate["schema_version"], 3)
-        self.assertEqual(aggregate["version"], "0.4.2")
+        self.assertEqual(aggregate["version"], "0.4.2" if sealed_launcher() else launcher_version())
         self.assertEqual(aggregate["repo"], canonical_repo)
         self.assertEqual(aggregate["output_root"], "governance/ontology-dist")
         self.assertEqual(aggregate["last_command"], "build")
@@ -114,13 +140,26 @@ class TestOntologyReceipts(unittest.TestCase):
         self.assertNotIn(".local/state/pi-quests/tmp", json.dumps(resolved))
 
     def test_parent_producers_declare_external_output_contract(self) -> None:
-        wrapper = (ROOT / "scripts/rocs.sh").read_text(encoding="utf-8")
+        wrapper = WRAPPER.read_text(encoding="utf-8")
         full = (ROOT / "scripts/ci/full.sh").read_text(encoding="utf-8")
         workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
-        for text in (wrapper, full, workflow):
+        company_env = COMPANY_ENV.read_text(encoding="utf-8")
+        for text in (company_env, workflow):
             self.assertIn("governance/ontology-dist", text)
             self.assertIn("ROCS_AUTHORITY_AGGREGATE", text)
+        self.assertIn("ROCS_OUTPUT_ROOT must be $softwareco_output_root", company_env)
+        for text in (wrapper, full, workflow, company_env):
             self.assertNotIn("$repo_root/ontology/dist", text)
+        if not sealed_launcher():
+            # Pinned-core launcher: the parent contract comes from local/rocs.env and the
+            # template full gate runs cleanup -> validate -> build through the launcher.
+            self.assertIn('. "$repo/local/rocs.env"', wrapper)
+            self.assertIn("./scripts/rocs.sh cleanup --repo .", full)
+            self.assertIn("scripts/lib/run-local-hook.sh local/ci/full.sh", full)
+            return
+        for text in (wrapper, full):
+            self.assertIn("governance/ontology-dist", text)
+            self.assertIn("ROCS_AUTHORITY_AGGREGATE", text)
         self.assertIn('ROCS_REPO="$repo_root" "$repo_root/scripts/rocs.sh"', full)
         self.assertIn("_TRUSTED_RECEIPT_SHA256 = \"259e5264e9c3dc620981448a75efbad0d840d213898c9cacf87655b3980d80b7\"", wrapper)
         self.assertIn("_private_archive", wrapper)
@@ -133,7 +172,7 @@ class TestOntologyReceipts(unittest.TestCase):
         env = os.environ.copy()
         env["ROCS_OUTPUT_ROOT"] = "governance/alternate-output"
         result = subprocess.run(
-            ["bash", str(ROOT / "scripts/rocs.sh"), "--which"],
+            [str(WRAPPER), "version"],
             cwd=ROOT,
             env=env,
             text=True,
@@ -147,8 +186,7 @@ class TestOntologyReceipts(unittest.TestCase):
     def test_generic_launcher_rejects_nonparent_repo_targets(self) -> None:
         result = subprocess.run(
             [
-                "bash",
-                str(ROOT / "scripts/rocs.sh"),
+                str(WRAPPER),
                 "validate",
                 "--repo",
                 "ontology",
@@ -166,7 +204,7 @@ class TestOntologyReceipts(unittest.TestCase):
         env = os.environ.copy()
         env["ROCS_REPO"] = str(ROOT / "ontology")
         env_result = subprocess.run(
-            ["bash", str(ROOT / "scripts/rocs.sh"), "version"],
+            [str(WRAPPER), "version"],
             cwd=ROOT,
             env=env,
             text=True,
@@ -177,6 +215,15 @@ class TestOntologyReceipts(unittest.TestCase):
         self.assertIn("ROCS_REPO must be the Softwareco parent", env_result.stderr)
 
     def test_generic_sealed_launcher_preserves_diagnostic_contract(self) -> None:
+        if not sealed_launcher():
+            doctor = subprocess.run(
+                [str(WRAPPER), "--doctor"], cwd=ROOT, text=True, capture_output=True, check=False
+            )
+            self.assertEqual(doctor.returncode, 0, doctor.stderr)
+            self.assertIn("output root: governance/ontology-dist", doctor.stdout)
+            self.assertIn("company env: local/rocs.env", doctor.stdout)
+            self.assertRegex(doctor.stdout, r"ok: rocs-cli \d+\.\d+\.\d+ satisfies pin")
+            return
         which = subprocess.run(
             ["bash", str(ROOT / "scripts/rocs.sh"), "--which"],
             cwd=ROOT,
