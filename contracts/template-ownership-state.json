@@ -1,4 +1,6 @@
 {
+  "applied_commit": "fdfff87418aa95925c85e1f348eb123fefe1e406",
+  "evidence_id": 11077,
   "inherited_transition": {
     "applied_commit": "1d71fd69cd67f92a4ecaf640ff29cff8f9dbd0b8",
     "decision_id": 144,
@@ -10,10 +12,12 @@
     "transition_task_id": 5283
   },
   "kind": "l1_contract_refresh_state",
+  "origin": "contract-refresh",
   "ownership_map_sha256": "8587f10596289d0bc6fa321e59e31557a25899657fc82404a4a1611b3d3224d0",
   "plan_sha256": "19472fdc010c8ac8900eca72909a4831d197431002078682c103e3a359b1c66b",
   "schema": "ai-society.template-ownership-state/3",
   "source_l0_commit": "782d0fcf56acade1dbd211c41307640127bd0274",
-  "state": "applied_pending_receipt",
-  "wave_id": "softwareco-rich-782d0fc-6127"
+  "state": "established",
+  "wave_id": "softwareco-rich-782d0fc-6127",
+  "wave_task_id": 6127
 }
