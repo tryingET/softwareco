@@ -11,6 +11,14 @@ from pathlib import Path
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
+# Inside a git hook (pre-commit/pre-push of a linked worktree) git exports GIT_DIR,
+# GIT_INDEX_FILE and GIT_WORK_TREE for the enclosing repository. Inherited by these
+# tests' scratch-repo git calls, they renamed branches onto the real main, committed
+# fixtures, wrote user/submodule config and set core.bare (incident 2026-09-27, AK 6127).
+# Drop them for the whole module; tests that need hostile GIT_* values set them explicitly.
+HOOK_GIT_ENV = sorted(key for key in os.environ if key.startswith("GIT_"))
+for _key in HOOK_GIT_ENV:
+    del os.environ[_key]
 SCRIPT = ROOT / "scripts/materialize-ontology.py"
 SCRATCH = Path(os.environ.get("TMPDIR", str(ROOT)))
 SPEC = importlib.util.spec_from_file_location("softwareco_ontology_materializer", SCRIPT)
@@ -20,7 +28,7 @@ SPEC.loader.exec_module(MATERIALIZER)
 
 
 def run(*args: str, cwd: Path, expect: int = 0, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
-    result = subprocess.run(args, cwd=cwd, text=True, capture_output=True, env=env)
+    result = subprocess.run(args, cwd=cwd, text=True, capture_output=True, env=env)  # ubs:ignore -- test harness: fixed argv, env built by the test itself
     if result.returncode != expect:
         raise AssertionError(
             f"command returned {result.returncode}, expected {expect}: {args}\n"
@@ -399,7 +407,7 @@ class OntologyMaterializerTests(unittest.TestCase):
                 MATERIALIZER._auth(
                     MATERIALIZER.APPROVED_SOURCE, "SOFTWARECO_ONTOLOGY_TOKEN", False
                 )
-        secret = "test-secret-token"
+        secret = "test-secret-token"  # ubs:ignore -- fixture token; the test asserts it never leaks
         with mock.patch.dict(os.environ, {"SOFTWARECO_ONTOLOGY_TOKEN": secret}):
             auth = MATERIALIZER._auth(
                 MATERIALIZER.APPROVED_SOURCE, "SOFTWARECO_ONTOLOGY_TOKEN", False
@@ -598,6 +606,17 @@ class OntologyMaterializerTests(unittest.TestCase):
                         if had_empty:
                             self.assertTrue(MATERIALIZER._empty_dir(ontology))
                         self.assertFalse(final_gitdir.exists())
+
+
+
+class HookEnvironmentIsolationTests(unittest.TestCase):
+    def test_scratch_git_calls_never_inherit_the_hook_repository(self) -> None:
+        # Given the module dropped every GIT_* variable a hook exported at import
+        self.assertEqual([key for key in os.environ if key.startswith("GIT_")], [])
+        # When a scratch command runs with the default environment
+        result = run("sh", "-c", 'printf "%s|%s" "${GIT_DIR-unset}" "${GIT_WORK_TREE-unset}"', cwd=SCRATCH)
+        # Then it cannot see (and so cannot write to) the enclosing repository
+        self.assertEqual(result.stdout, "unset|unset")
 
 
 if __name__ == "__main__":
