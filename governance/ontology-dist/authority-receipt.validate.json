@@ -48,6 +48,6 @@
     "scope": "source-contract/schema/reference",
     "source_contract": "ontology-markdown-v1"
   },
-  "version": "0.4.2",
+  "version": "0.4.5",
   "workspace_ref_mode": "strict"
 }
