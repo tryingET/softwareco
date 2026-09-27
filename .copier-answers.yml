@@ -5,10 +5,12 @@ company_slug: softwareco
 enable_community_pack: false
 enable_release_pack: false
 enable_vouch_gate: false
-l0_source_sha: 33f286e116469590ae7d3b5c9150cc1cef3a903b
+l0_source_sha: 782d0fcf56acade1dbd211c41307640127bd0274
 l1_org_docs_profile: rich
 l1_profile: custom
 l2_org_docs_default: rich
 maintainer_handle: '@template-owner'
 repo_slug: softwareco
+
+l1_ontology_layout: gitlink
 

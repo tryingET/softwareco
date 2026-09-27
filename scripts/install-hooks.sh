@@ -20,9 +20,8 @@ chmod +x \
 	"$repo_root/scripts/check-task-scope-snapshots.sh" \
 	"$repo_root/scripts/check-template-ci.sh" \
 	"$repo_root/scripts/install-hooks.sh" \
-	"$repo_root/scripts/ubs-staged.sh" \
-	"$repo_root/scripts/install-ubs-pre-commit.sh" \
 	"$repo_root/scripts/lib/check-template-ak.py" \
+	"$repo_root/scripts/lib/run-local-hook.sh" \
 	"$repo_root/scripts/ci/smoke.sh" \
 	"$repo_root/scripts/ci/full.sh" \
 	"$repo_root/.githooks/pre-commit" \
@@ -39,14 +38,14 @@ chmod +x \
 	"$repo_root/copier/tpl-org-repo/scripts/ci/smoke.sh" \
 	"$repo_root/copier/tpl-org-repo/scripts/ci/full.sh" \
 	"$repo_root/copier/tpl-project-repo/scripts/install-hooks.sh" \
-	"$repo_root/copier/tpl-project-repo/.githooks/pre-commit" \
+	"$repo_root/copier/tpl-project-repo/.githooks/pre-commit.j2" \
 	"$repo_root/copier/tpl-project-repo/scripts/check-task-scope-snapshots.sh" \
 	"$repo_root/copier/tpl-project-repo/scripts/rocs.sh.j2" \
 	"$repo_root/copier/tpl-project-repo/scripts/ci/smoke.sh" \
 	"$repo_root/copier/tpl-project-repo/scripts/ci/fast.sh" \
 	"$repo_root/copier/tpl-project-repo/scripts/ci/full.sh" \
 	"$repo_root/copier/tpl-monorepo/scripts/install-hooks.sh" \
-	"$repo_root/copier/tpl-monorepo/.githooks/pre-commit" \
+	"$repo_root/copier/tpl-monorepo/.githooks/pre-commit.j2" \
 	"$repo_root/copier/tpl-monorepo/scripts/check-task-scope-snapshots.sh" \
 	"$repo_root/copier/tpl-monorepo/scripts/rocs.sh.j2" \
 	"$repo_root/copier/tpl-monorepo/scripts/ci/smoke.sh" \
@@ -61,3 +60,6 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 else
 	echo "warning: not inside a git repository; hook path not configured" >&2
 fi
+
+# Company-owned extension point (never touched by template refresh).
+"$repo_root/scripts/lib/run-local-hook.sh" local/install-hooks.sh

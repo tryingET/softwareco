@@ -81,8 +81,7 @@ Default L2 output is intentionally split into 7 domains:
 ### E. Ontology + validation toolchain
 - `ontology/manifest.yaml`, `ontology/src/**`
   - layered defaults use workspace-only `<repo:...@main>` locators (`core/ontology-kernel` + `<company>/ontology`)
-- `scripts/rocs.sh`
-- `tools/rocs-cli/` (vendored deterministic runner source; workspace-only ref resolution, no legacy GitLab fallback)
+- `scripts/rocs.sh` (runs the workspace `core/rocs-cli` checkout pinned by `rocs_cli_version`; no vendored `tools/rocs-cli` bundle, workspace-only ref resolution)
 
 ### F. CI surface
 - plain installed `ak` (canonical AK operator path for repo-local task and task-scope flows)

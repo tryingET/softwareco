@@ -53,8 +53,8 @@ kernel_ontology_ref:
 
 company_ontology_ref:
   type: str
-  default: "<gitlab:org/ontology@v0.1.0>"
-  help: "ROCS company overlay ref (GitLab locator)"
+  default: "<repo:{{ company_slug }}/ontology@main>"
+  help: "ROCS company overlay ref (workspace repo locator)"
 
 package_owner_handle:
   type: str

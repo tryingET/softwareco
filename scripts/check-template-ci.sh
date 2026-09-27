@@ -18,39 +18,7 @@ need_cmd git
 need_cmd grep
 need_cmd mktemp
 need_cmd python3
-need_cmd sha256sum
 need_cmd sort
-
-ontology_materialized=1
-if [ -L "$repo_root/ontology/manifest.yaml" ]; then
-	echo "error: ontology manifest may not be a symlink" >&2
-	exit 1
-fi
-if [ ! -f "$repo_root/ontology/manifest.yaml" ]; then
-	ontology_materialized=0
-	[ -f "$repo_root/.gitmodules" ] && [ ! -L "$repo_root/.gitmodules" ] || {
-		echo "error: unmaterialized ontology lacks regular .gitmodules" >&2
-		exit 1
-	}
-	expected_oid=e0a046d0848f0cf901517057e02baee529a5180c
-	expected_source=https://github.com/tryingET/softwareco-ontology.git
-	[ "$(git rev-parse HEAD:.gitmodules)" = "$(git rev-parse :.gitmodules)" ] || {
-		echo "error: indexed .gitmodules differs from HEAD" >&2
-		exit 1
-	}
-	[ "$(git hash-object "$repo_root/.gitmodules")" = "$(git rev-parse HEAD:.gitmodules)" ] || {
-		echo "error: worktree .gitmodules differs from HEAD" >&2
-		exit 1
-	}
-	[ "$(git config -f "$repo_root/.gitmodules" --get submodule.ontology.path)" = ontology ] || exit 1
-	[ "$(git config -f "$repo_root/.gitmodules" --get submodule.ontology.url)" = "$expected_source" ] || exit 1
-	[ "$(git config -f "$repo_root/.gitmodules" --get submodule.ontology.branch)" = main ] || exit 1
-	expected_entry="$(printf '160000 commit %s\tontology' "$expected_oid")"
-	[ "$(git ls-tree HEAD -- ontology)" = "$expected_entry" ] || {
-		echo "error: HEAD ontology gitlink does not match the accepted OID" >&2
-		exit 1
-	}
-fi
 
 answers_lib="$repo_root/scripts/lib/copier-answers.sh"
 [ -f "$answers_lib" ] || {
@@ -64,6 +32,17 @@ fail() {
 	echo "error: $*" >&2
 	exit 1
 }
+
+# Company-owned extension point (never touched by template refresh). It runs first so
+# company preconditions (for example an owner-gitlink ontology) fail fast.
+./scripts/lib/run-local-hook.sh local/ci/check-template-ci.sh || fail "company hook local/ci/check-template-ci.sh failed"
+
+# An L1 may adopt ontology/ as an owner gitlink; it is then only present when materialized.
+[ ! -L ontology/manifest.yaml ] || fail "ontology manifest may not be a symlink"
+ontology_gitlink=0
+if [ "$(git ls-files -s -- ontology 2>/dev/null | cut -c1-6)" = "160000" ]; then
+	ontology_gitlink=1
+fi
 
 assert_file() {
 	path="$1"
@@ -362,6 +341,7 @@ scripts/rocs.sh
 scripts/check-template-ci.sh
 scripts/install-hooks.sh
 scripts/lib/check-template-ak.py
+scripts/lib/run-local-hook.sh
 scripts/lib/check-l1-ownership-state.py
 scripts/lib/check-task-scope-snapshots.py
 scripts/lib/copier-answers.sh
@@ -386,7 +366,7 @@ tests/.gitkeep
 diary/README.md
 "
 
-if [ "$ontology_materialized" = 1 ]; then
+if [ "$ontology_gitlink" = 0 ]; then
 	required_files="$required_files ontology/.gitkeep"
 fi
 
@@ -413,8 +393,8 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo tpl-package
 	assert_file "copier/$tpl/contracts/layer-contract.yml"
 	assert_file "copier/$tpl/AGENTS.md.j2"
 	assert_file "copier/$tpl/CODEOWNERS.j2"
-	assert_file "copier/$tpl/.copier-answers.yml.j2"
-	assert_contains "copier/$tpl/.copier-answers.yml.j2" "to_nice_yaml" "L2 template $tpl answers template should use canonical Copier YAML emission"
+	assert_file "copier/$tpl/{{ '.' ~ _copier_conf.sep ~ _copier_conf.answers_file }}.j2"
+	assert_contains "copier/$tpl/{{ '.' ~ _copier_conf.sep ~ _copier_conf.answers_file }}.j2" "to_nice_yaml" "L2 template $tpl answers template should use canonical Copier YAML emission"
 	if [ "$tpl" != "tpl-package" ]; then
 		assert_not_file "copier/$tpl/scripts/ak.sh"
 		assert_not_file "copier/$tpl/scripts/cargo-operator.sh"
@@ -475,20 +455,25 @@ for tpl in tpl-agent-repo tpl-org-repo; do
 	assert_contains "copier/$tpl/governance/README.md" "transitional scaffolding" "L2 template $tpl governance README should keep non-authoritative task-scope wording"
 done
 assert_not_contains "copier/tpl-project-repo/scripts/ci/full.sh" "uvx -n --from ./tools/rocs-cli rocs" "tpl-project-repo CI should not hardcode uvx vendored invocation"
-assert_yaml_default "copier/tpl-project-repo/copier.yml" kernel_ontology_ref '<repo:core/ontology-kernel@v0.2.1>' "tpl-project-repo should default core ontology refs to the protected release tag"
-assert_yaml_default "copier/tpl-monorepo/copier.yml" kernel_ontology_ref '<repo:core/ontology-kernel@v0.2.1>' "tpl-monorepo should default core ontology refs to the protected release tag"
-assert_yaml_default "copier/tpl-package/copier.yml" kernel_ontology_ref '<repo:core/ontology-kernel@v0.2.1>' "tpl-package should default core ontology refs to the protected release tag"
-assert_contains "copier/tpl-project-repo/copier.yml" 'default: "<repo:{{ company_slug }}/ontology@main>"' "tpl-project-repo should default company ontology refs to workspace repo locators"
-assert_contains "copier/tpl-project-repo/tools/rocs-cli/README.md" 'Legacy `<gitlab:...>` locators are no longer supported.' "tpl-project-repo vendored rocs-cli README should document workspace-only ref resolution"
-assert_contains "copier/tpl-project-repo/tools/rocs-cli/src/rocs_cli/layers.py" "legacy gitlab ref locators are no longer supported" "tpl-project-repo vendored rocs-cli should reject legacy gitlab locators"
-assert_file "copier/tpl-project-repo/tools/rocs-cli/src/rocs_cli/workspace.py"
-assert_not_file "copier/tpl-project-repo/tools/rocs-cli/src/rocs_cli/gitlab.py"
-assert_not_file "copier/tpl-project-repo/tools/rocs-cli/src/rocs_cli/gitlab_ci.py"
-assert_file "copier/tpl-project-repo/tools/rocs-cli/rocs.py"
-assert_contains "copier/tpl-project-repo/tools/rocs-cli/VENDORED_HASHES.json" '"schema_version": 3' "vendored rocs bundle must use receipt schema 3"
-assert_contains "copier/tpl-project-repo/tools/rocs-cli/VENDORED_HASHES.json" '"upstream_version": "0.3.0"' "vendored rocs bundle must pin release 0.3.0"
-assert_contains "copier/tpl-project-repo/tools/rocs-cli/VENDORED_HASHES.json" '"source_commit": "ecd48bbbf79c3eb8c67726ff238b70320fd4551a"' "vendored rocs bundle must bind authoritative source commit"
-python3 -I -S -B copier/tpl-project-repo/tools/rocs-cli/rocs.py vendored-check --vendored-dir copier/tpl-project-repo/tools/rocs-cli >/dev/null || fail "vendored rocs bundle integrity failed"
+for tpl in tpl-project-repo tpl-monorepo tpl-package; do
+	assert_yaml_default "copier/$tpl/copier.yml" kernel_ontology_ref '<repo:core/ontology-kernel@v0.2.1>' "$tpl should default core ontology refs to the protected release tag"
+	assert_contains "copier/$tpl/copier.yml" 'default: "<repo:{{ company_slug }}/ontology@main>"' "$tpl should default company ontology refs to workspace repo locators"
+done
+# ROCS CI gate: cleanup -> validate -> build without wiping ontology/dist; outputs ignored; LF scripts.
+for tpl in tpl-project-repo tpl-agent-repo tpl-org-repo tpl-monorepo; do
+	assert_contains "copier/$tpl/.gitignore" "/ontology/dist/" "$tpl must gitignore generated ROCS outputs"
+	assert_contains "copier/$tpl/.gitattributes" "scripts/rocs.sh text eol=lf" "$tpl must force LF on the ROCS launcher"
+	assert_contains "copier/$tpl/scripts/ci/full.sh" "./scripts/rocs.sh cleanup --repo ." "$tpl full CI must clean ROCS outputs through the launcher"
+	assert_not_contains "copier/$tpl/scripts/ci/full.sh" "--clean" "$tpl full CI must not wipe ontology/dist before validating"
+done
+# ROCS launcher: pinned workspace rocs-cli core, no vendored bundle.
+for tpl in tpl-project-repo tpl-agent-repo tpl-org-repo tpl-monorepo; do
+	assert_not_dir "copier/$tpl/tools/rocs-cli"
+	assert_contains "copier/$tpl/scripts/rocs.sh.j2" 'rocs_cli_pin="{{ rocs_cli_version }}"' "$tpl ROCS launcher must render the rocs_cli_version pin"
+	assert_contains "copier/$tpl/scripts/rocs.sh.j2" 'exec uv run --frozen --project "$core" python -m rocs_cli "$@"' "$tpl ROCS launcher must run the pinned workspace core"
+	assert_not_contains "copier/$tpl/scripts/rocs.sh.j2" "uvx" "$tpl ROCS launcher must not fall back to uvx"
+	assert_yaml_default "copier/$tpl/copier.yml" rocs_cli_version '0.4.4' "$tpl should pin rocs-cli 0.4.4"
+done
 
 check_multi_pass_suffix_policy
 
@@ -500,6 +485,7 @@ scripts/rocs.sh
 scripts/check-template-ci.sh
 scripts/install-hooks.sh
 scripts/lib/check-template-ak.py
+scripts/lib/run-local-hook.sh
 scripts/ci/smoke.sh
 scripts/ci/full.sh
 .githooks/pre-commit
@@ -612,70 +598,25 @@ assert_contains ".githooks/pre-push" "scripts/ci/full.sh" "pre-push must run ful
 assert_contains "scripts/ci/full.sh" "check-task-scope-snapshots.sh" "L1 full CI should enforce task-scope snapshot checks"
 assert_not_contains "scripts/ci/full.sh" "crates/ak-cli/Cargo.toml" "L1 full CI must not gate AK checks on vendored ak-cli"
 assert_contains "scripts/ci/full.sh" "scripts/rocs.sh" "L1 full CI should use scripts/rocs.sh when ontology is present"
-assert_file "tools/rocs-cli/VENDORED_HASHES.json"
-assert_file "tools/rocs-cli/uv.lock"
-assert_file "tools/rocs-cli/rocs.py"
-assert_contains "tools/rocs-cli/VENDORED_HASHES.json" '"schema_version": 3' "L1 ROCS bundle must use receipt schema 3"
-assert_contains "tools/rocs-cli/VENDORED_HASHES.json" '"upstream_version": "0.4.2"' "L1 ROCS bundle must pin release 0.4.2"
-assert_contains "tools/rocs-cli/VENDORED_HASHES.json" '"source_commit": "b72ce580c99eb24e30499b7e3c8502f32eb9ad67"' "L1 ROCS bundle must bind the reviewed source commit"
-assert_contains "scripts/rocs.sh" '_TRUSTED_RECEIPT_SHA256 = "259e5264e9c3dc620981448a75efbad0d840d213898c9cacf87655b3980d80b7"' "L1 ROCS wrapper must bind the generated bundle trust anchor"
-assert_contains "scripts/rocs.sh" '_run_captured_argv(sys.argv[3:])' "L1 ROCS wrapper must preserve generic command dispatch from private bytes"
-assert_contains "scripts/rocs.sh" "--doctor)" "L1 ROCS wrapper must preserve the doctor diagnostic"
-assert_contains "scripts/rocs.sh" "--which)" "L1 ROCS wrapper must preserve the runner diagnostic"
-assert_contains "scripts/rocs.sh" "_private_archive" "L1 ROCS wrapper must execute from a sealed private archive"
-assert_contains "scripts/rocs.sh" "_sealed_memfd" "L1 ROCS wrapper must seal native extension bytes"
-assert_contains "scripts/rocs.sh" 'ROCS_OUTPUT_ROOT must be $required_output_root' "L1 ROCS wrapper must enforce the exact parent-owned output root"
-assert_contains "scripts/rocs.sh" "--repo must be the Softwareco parent" "L1 ROCS wrapper must reject non-parent command targets"
-assert_contains "scripts/rocs.sh" "ROCS_REPO must be the Softwareco parent" "L1 ROCS wrapper must reject non-parent environment targets"
-assert_contains "scripts/ci/full.sh" 'ROCS_OUTPUT_ROOT must be $required_output_root' "L1 full CI must enforce the exact parent-owned output root"
-assert_contains "scripts/ci/full.sh" "refusing ROCS cleanup with unknown managed output" "L1 full CI must preflight external cleanup names"
-assert_contains "scripts/ci/full.sh" 'ROCS_REPO="$repo_root" "$repo_root/scripts/rocs.sh"' "L1 full CI must use the generated verified ROCS gate"
-assert_file "tests/test_ontology_receipts.py"
-for legacy_receipt in \
-  ontology/dist/.authority-receipt.lock \
-  ontology/dist/authority-receipt.json \
-  ontology/dist/authority-receipt.validate.json \
-  ontology/dist/id_index.json \
-  ontology/dist/resolve.json \
-  ontology/dist/summary.json; do
-  assert_not_file "$legacy_receipt"
+assert_line_precedes "scripts/ci/full.sh" "./scripts/rocs.sh cleanup --repo ." "./scripts/rocs.sh validate --repo ." "L1 full CI must clean ROCS outputs before validating"
+assert_line_precedes "scripts/ci/full.sh" "./scripts/rocs.sh validate --repo ." "./scripts/rocs.sh build --repo ." "L1 full CI must validate before building ROCS outputs"
+assert_contains "scripts/rocs.sh" 'exec uv run --frozen --project "$core" python -m rocs_cli "$@"' "L1 ROCS launcher must run the pinned workspace core"
+assert_contains "scripts/rocs.sh" '. "$repo/local/rocs.env"' "L1 ROCS launcher must source company ROCS settings from local/rocs.env"
+# Company-owned local/ extension points: each entry script hands off to its local/ counterpart.
+for local_hook in \
+	".githooks/pre-commit:local/githooks/pre-commit" \
+	".githooks/pre-push:local/githooks/pre-push" \
+	"scripts/ci/smoke.sh:local/ci/smoke.sh" \
+	"scripts/ci/full.sh:local/ci/full.sh" \
+	"scripts/check-template-ci.sh:local/ci/check-template-ci.sh" \
+	"scripts/install-hooks.sh:local/install-hooks.sh"; do
+	grep -F -- " ${local_hook#*:}" "${local_hook%%:*}" | grep -qF "scripts/lib/run-local-hook.sh" ||
+		fail "${local_hook%%:*} must call its company extension ${local_hook#*:} through scripts/lib/run-local-hook.sh"
 done
-printf '%s  %s\n' \
-  259e5264e9c3dc620981448a75efbad0d840d213898c9cacf87655b3980d80b7 \
-  tools/rocs-cli/VENDORED_HASHES.json | sha256sum --check --status - || fail "L1 ROCS receipt trust anchor failed"
-assert_file "scripts/materialize-ontology.py"
-assert_file "scripts/materialize-ontology.sh"
-assert_file "tests/test_ontology_materializer.py"
-assert_exec "scripts/materialize-ontology.py"
-assert_exec "scripts/materialize-ontology.sh"
-assert_contains "scripts/materialize-ontology.py" "submodule.ontology.path" "ontology materializer must bind the exact declared submodule path"
-assert_contains "scripts/materialize-ontology.py" "--git-common-dir" "ontology materializer must prepare metadata in the parent Git common directory"
-assert_contains "scripts/materialize-ontology.py" "softwareco-ontology-materialization.json" "ontology materializer must journal interrupted activation"
-assert_contains "scripts/materialize-ontology.py" "required=True" "ontology materializer must require independent source and OID bindings"
-assert_not_contains "scripts/materialize-ontology.py" "--recursive" "ontology materializer must never initialize unrelated raw gitlinks recursively"
-assert_contains "scripts/ci/full.sh" "ontology is not materialized" "L1 full CI must fail instead of silently skipping missing ontology"
-assert_contains "scripts/ci/full.sh" "ontology manifest may not be a symlink" "L1 full CI must reject symlinked ontology manifests"
-assert_contains "scripts/check-template-ci.sh" "ontology manifest may not be a symlink" "template CI must reject symlinked ontology manifests before materialization"
-assert_contains "scripts/ci/full.sh" "tests.test_ontology_materializer" "L1 full CI must execute ontology materializer behavior tests"
-assert_line_precedes "scripts/check-template-ci.sh" 'if [ ! -f "$repo_root/ontology/manifest.yaml" ]; then' "ontology/.gitkeep" "template checks must classify unmaterialized ontology before required-file assertions"
-assert_contains "scripts/ci/full.sh" "missing executable scripts/rocs.sh" "L1 full CI must not bypass ontology checks through launcher mode drift"
-ci_workflow=".github/workflows/ci.yml"
-assert_contains "$ci_workflow" "./scripts/materialize-ontology.sh" "root CI must use the targeted ontology materializer when declared"
-assert_contains "$ci_workflow" "SOFTWARECO_ONTOLOGY_TOKEN" "root CI must use the narrowly scoped noninteractive ontology credential"
-assert_contains "$ci_workflow" "github.ref == 'refs/heads/main'" "manual token-bearing lanes must be restricted to main"
-if awk '/^  smoke:/{inside=1} /^  full:/{inside=0} inside{print}' "$ci_workflow" | grep -qF SOFTWARECO_ONTOLOGY_TOKEN; then
-	fail "pull-request smoke job must not receive the private ontology token"
+assert_contains "scripts/install-hooks.sh" "scripts/lib/run-local-hook.sh" "install-hooks must normalize the local-hook runner executable bit"
+if grep -E '^  - local(/|$)' contracts/template-ownership.yml >/dev/null; then
+	fail "local/ must stay outside the template ownership map (company-owned, target-only)"
 fi
-if ! awk '/^  smoke:/{inside=1} /^  full:/{inside=0} inside{print}' "$ci_workflow" | grep -qF 'ontology manifest may not be a symlink'; then
-	fail "pull-request smoke job must reject a symlinked ontology manifest"
-fi
-assert_contains "$ci_workflow" "ontology manifest may not be a symlink" "root CI must reject a symlinked ontology manifest"
-assert_contains "$ci_workflow" "if [ ! -f ontology/manifest.yaml ]" "root CI must materialize or fail when ontology is absent"
-assert_contains "$ci_workflow" "ROCS_OUTPUT_ROOT: governance/ontology-dist" "root CI must route ROCS outputs outside ontology"
-assert_contains "$ci_workflow" 'ROCS_AUTHORITY_AGGREGATE: "1"' "root CI must preserve validate/build authority receipts"
-assert_contains "$ci_workflow" "https://github.com/tryingET/core_ontology-kernel.git" "root CI must materialize the strict core dependency"
-assert_contains "$ci_workflow" "0aeca17e789bc3d452ad3241da7affff0ced3813" "root CI must verify the exact strict core dependency OID"
-assert_not_contains "$ci_workflow" "submodules: recursive" "root CI must not initialize unrelated raw gitlinks recursively"
 assert_not_contains "scripts/install-hooks.sh" "copier/template-repo" "install-hooks must not reference removed legacy template-repo path"
 assert_contains "scripts/install-hooks.sh" "scripts/bootstrap-lane-root.sh" "install-hooks must normalize executable bit for lane bootstrap helper"
 assert_contains "scripts/install-hooks.sh" "scripts/rocs.sh" "install-hooks must normalize executable bit for the L1 ROCS wrapper"
@@ -988,11 +929,11 @@ fi
 l1_task_scope_id="$(create_scoped_task "$repo_root" "template-ci: generated L1 task-scope snapshot")"
 write_task_scope_snapshot "$repo_root" "$l1_task_scope_id"
 run_repo_cmd "$repo_root" ./scripts/check-task-scope-snapshots.sh >/dev/null
-if [ "$ontology_materialized" = 1 ]; then
-	run_repo_cmd "$repo_root" ./scripts/ci/full.sh >/dev/null
-else
-	assert_command_fails_with_stderr "unmaterialized root full gate must fail" "ontology is not materialized" \
+if [ "$ontology_gitlink" = 1 ] && [ ! -f ontology/manifest.yaml ]; then
+	assert_command_fails_with_stderr "unmaterialized owner-gitlink ontology must fail the root full gate" "ontology is not materialized" \
 		run_repo_cmd "$repo_root" ./scripts/ci/full.sh
+else
+	run_repo_cmd "$repo_root" ./scripts/ci/full.sh >/dev/null
 fi
 restore_l1_task_scope_dir
 assert_command_fails_with_stderr "generated L1 wrapper should reject L1 destinations" "destination already declares layer L1" ./scripts/new-repo-from-copier.sh tpl-project-repo "$repo_root" -d repo_slug=forbidden-l1-destination --defaults --overwrite
@@ -1097,13 +1038,15 @@ for tpl in tpl-agent-repo tpl-org-repo tpl-project-repo tpl-monorepo; do
 	fi
 
 	# Initialize git for smoke + idempotency test (smoke requires git repo)
+	# Scratch commits skip hooks: generated L2 copies enable the staged-file UBS pre-commit,
+	# which runs the company's real scanner when it exists (hook behaviour is tested in L0).
 	(
 		cd "$l2_dir"
 		git init -b main >/dev/null
 		git config user.name "l1-template ci" >/dev/null
 		git config user.email "ci@l1-template.local" >/dev/null
 		git add . >/dev/null
-		git commit -m "initial L2 render" >/dev/null
+		git commit --no-verify -m "initial L2 render" >/dev/null
 		./scripts/ci/smoke.sh >/dev/null
 		if [ "$tpl" = "tpl-project-repo" ] || [ "$tpl" = "tpl-monorepo" ]; then
 			ensure_registered_repo "$l2_dir"
@@ -1142,7 +1085,7 @@ bootstrap_smoke_dir="$tmp_root/tpl-project-repo-bootstrap-smoke"
 	git config user.name "l1-template ci" >/dev/null
 	git config user.email "ci@l1-template.local" >/dev/null
 	git add . >/dev/null
-	git commit -m "bootstrap smoke" >/dev/null
+	git commit --no-verify -m "bootstrap smoke" >/dev/null
 	./scripts/ci/smoke.sh >/dev/null 2>/dev/null
 )
 
@@ -1180,7 +1123,7 @@ serial_full_repo="$tmp_root/tpl-project-repo-serial-full"
 	git config user.name "l1-template ci" >/dev/null
 	git config user.email "ci@l1-template.local" >/dev/null
 	git add . >/dev/null
-	git commit -m "serial full" >/dev/null
+	git commit --no-verify -m "serial full" >/dev/null
 )
 serial_full_task_id="$(create_scoped_task "$serial_full_repo" "template-ci: serial full task-scope snapshot")"
 write_task_scope_snapshot "$serial_full_repo" "$serial_full_task_id"
