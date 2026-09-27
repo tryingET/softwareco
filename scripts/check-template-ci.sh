@@ -32,7 +32,7 @@ if [ ! -f "$repo_root/ontology/manifest.yaml" ]; then
 		echo "error: unmaterialized ontology lacks regular .gitmodules" >&2
 		exit 1
 	}
-	expected_oid=07d4b8b89f6ca436618adb42827885e9a45289c7
+	expected_oid=e0a046d0848f0cf901517057e02baee529a5180c
 	expected_source=https://github.com/tryingET/softwareco-ontology.git
 	[ "$(git rev-parse HEAD:.gitmodules)" = "$(git rev-parse :.gitmodules)" ] || {
 		echo "error: indexed .gitmodules differs from HEAD" >&2
@@ -475,9 +475,9 @@ for tpl in tpl-agent-repo tpl-org-repo; do
 	assert_contains "copier/$tpl/governance/README.md" "transitional scaffolding" "L2 template $tpl governance README should keep non-authoritative task-scope wording"
 done
 assert_not_contains "copier/tpl-project-repo/scripts/ci/full.sh" "uvx -n --from ./tools/rocs-cli rocs" "tpl-project-repo CI should not hardcode uvx vendored invocation"
-assert_yaml_default "copier/tpl-project-repo/copier.yml" kernel_ontology_ref '<repo:core/ontology-kernel@v0.2.0>' "tpl-project-repo should default core ontology refs to the protected release tag"
-assert_yaml_default "copier/tpl-monorepo/copier.yml" kernel_ontology_ref '<repo:core/ontology-kernel@v0.2.0>' "tpl-monorepo should default core ontology refs to the protected release tag"
-assert_yaml_default "copier/tpl-package/copier.yml" kernel_ontology_ref '<repo:core/ontology-kernel@v0.2.0>' "tpl-package should default core ontology refs to the protected release tag"
+assert_yaml_default "copier/tpl-project-repo/copier.yml" kernel_ontology_ref '<repo:core/ontology-kernel@v0.2.1>' "tpl-project-repo should default core ontology refs to the protected release tag"
+assert_yaml_default "copier/tpl-monorepo/copier.yml" kernel_ontology_ref '<repo:core/ontology-kernel@v0.2.1>' "tpl-monorepo should default core ontology refs to the protected release tag"
+assert_yaml_default "copier/tpl-package/copier.yml" kernel_ontology_ref '<repo:core/ontology-kernel@v0.2.1>' "tpl-package should default core ontology refs to the protected release tag"
 assert_contains "copier/tpl-project-repo/copier.yml" 'default: "<repo:{{ company_slug }}/ontology@main>"' "tpl-project-repo should default company ontology refs to workspace repo locators"
 assert_contains "copier/tpl-project-repo/tools/rocs-cli/README.md" 'Legacy `<gitlab:...>` locators are no longer supported.' "tpl-project-repo vendored rocs-cli README should document workspace-only ref resolution"
 assert_contains "copier/tpl-project-repo/tools/rocs-cli/src/rocs_cli/layers.py" "legacy gitlab ref locators are no longer supported" "tpl-project-repo vendored rocs-cli should reject legacy gitlab locators"
@@ -674,7 +674,7 @@ assert_contains "$ci_workflow" "if [ ! -f ontology/manifest.yaml ]" "root CI mus
 assert_contains "$ci_workflow" "ROCS_OUTPUT_ROOT: governance/ontology-dist" "root CI must route ROCS outputs outside ontology"
 assert_contains "$ci_workflow" 'ROCS_AUTHORITY_AGGREGATE: "1"' "root CI must preserve validate/build authority receipts"
 assert_contains "$ci_workflow" "https://github.com/tryingET/core_ontology-kernel.git" "root CI must materialize the strict core dependency"
-assert_contains "$ci_workflow" "76f31bc5d42a77bc2c0fd24c8b30708f907fbd44" "root CI must verify the exact strict core dependency OID"
+assert_contains "$ci_workflow" "0aeca17e789bc3d452ad3241da7affff0ced3813" "root CI must verify the exact strict core dependency OID"
 assert_not_contains "$ci_workflow" "submodules: recursive" "root CI must not initialize unrelated raw gitlinks recursively"
 assert_not_contains "scripts/install-hooks.sh" "copier/template-repo" "install-hooks must not reference removed legacy template-repo path"
 assert_contains "scripts/install-hooks.sh" "scripts/bootstrap-lane-root.sh" "install-hooks must normalize executable bit for lane bootstrap helper"

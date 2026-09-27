@@ -66,7 +66,7 @@ jobs:
           fi
           if [ ! -f ontology/manifest.yaml ]; then
             ./scripts/materialize-ontology.sh \
-              --expected-oid 07d4b8b89f6ca436618adb42827885e9a45289c7 \
+              --expected-oid e0a046d0848f0cf901517057e02baee529a5180c \
               --source https://github.com/tryingET/softwareco-ontology.git \
               --token-env SOFTWARECO_ONTOLOGY_TOKEN
           fi
@@ -77,11 +77,11 @@ jobs:
       - name: Materialize exact strict core ontology dependency
         run: |
           mkdir -p "$HOME/ai-society/core"
-          git clone --quiet --depth 1 --branch v0.2.0 \
+          git clone --quiet --depth 1 --branch v0.2.1 \
             https://github.com/tryingET/core_ontology-kernel.git \
             "$HOME/ai-society/core/ontology-kernel"
           test "$(git -C "$HOME/ai-society/core/ontology-kernel" rev-parse HEAD)" = \
-            76f31bc5d42a77bc2c0fd24c8b30708f907fbd44
+            0aeca17e789bc3d452ad3241da7affff0ced3813
 
       - name: Run full lane
         env:
@@ -108,7 +108,7 @@ jobs:
           fi
           if [ ! -f ontology/manifest.yaml ]; then
             ./scripts/materialize-ontology.sh \
-              --expected-oid 07d4b8b89f6ca436618adb42827885e9a45289c7 \
+              --expected-oid e0a046d0848f0cf901517057e02baee529a5180c \
               --source https://github.com/tryingET/softwareco-ontology.git \
               --token-env SOFTWARECO_ONTOLOGY_TOKEN
           fi
@@ -119,11 +119,11 @@ jobs:
       - name: Materialize exact strict core ontology dependency
         run: |
           mkdir -p "$HOME/ai-society/core"
-          git clone --quiet --depth 1 --branch v0.2.0 \
+          git clone --quiet --depth 1 --branch v0.2.1 \
             https://github.com/tryingET/core_ontology-kernel.git \
             "$HOME/ai-society/core/ontology-kernel"
           test "$(git -C "$HOME/ai-society/core/ontology-kernel" rev-parse HEAD)" = \
-            76f31bc5d42a77bc2c0fd24c8b30708f907fbd44
+            0aeca17e789bc3d452ad3241da7affff0ced3813
 
       - name: Run deep lane
         env:
