@@ -83,6 +83,24 @@ jobs:
           test "$(git -C "$HOME/ai-society/core/ontology-kernel" rev-parse HEAD)" = \
             0aeca17e789bc3d452ad3241da7affff0ced3813
 
+      - name: "Materialize pinned rocs-cli core (AK #5901)"
+        env:
+          ROCS_CLI_DEPLOY_KEY: ${{ secrets.ROCS_CLI_DEPLOY_KEY }}
+        run: |
+          # Read-only deploy key on tryingET/rocs-cli; the pinned-core launcher runs
+          # $HOME/ai-society/core/rocs-cli, so it must be this exact release.
+          key="$RUNNER_TEMP/rocs-cli-deploy-key"
+          known="$RUNNER_TEMP/github-known-hosts"
+          printf '%s\n' "$ROCS_CLI_DEPLOY_KEY" > "$key"
+          chmod 600 "$key"
+          printf '%s\n' 'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl' > "$known"
+          GIT_SSH_COMMAND="ssh -F /dev/null -i $key -o IdentitiesOnly=yes -o UserKnownHostsFile=$known -o StrictHostKeyChecking=yes" \
+            git clone -q --depth 1 --branch v0.4.4 git@github.com:tryingET/rocs-cli.git \
+            "$HOME/ai-society/core/rocs-cli"
+          rm -f "$key"
+          test "$(git -C "$HOME/ai-society/core/rocs-cli" rev-parse HEAD)" = \
+            ba73f46658ee0e06d49c2541090f0ccc65349858
+
       - name: Run full lane
         env:
           ROCS_OUTPUT_ROOT: governance/ontology-dist
@@ -124,6 +142,24 @@ jobs:
             "$HOME/ai-society/core/ontology-kernel"
           test "$(git -C "$HOME/ai-society/core/ontology-kernel" rev-parse HEAD)" = \
             0aeca17e789bc3d452ad3241da7affff0ced3813
+
+      - name: "Materialize pinned rocs-cli core (AK #5901)"
+        env:
+          ROCS_CLI_DEPLOY_KEY: ${{ secrets.ROCS_CLI_DEPLOY_KEY }}
+        run: |
+          # Read-only deploy key on tryingET/rocs-cli; the pinned-core launcher runs
+          # $HOME/ai-society/core/rocs-cli, so it must be this exact release.
+          key="$RUNNER_TEMP/rocs-cli-deploy-key"
+          known="$RUNNER_TEMP/github-known-hosts"
+          printf '%s\n' "$ROCS_CLI_DEPLOY_KEY" > "$key"
+          chmod 600 "$key"
+          printf '%s\n' 'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl' > "$known"
+          GIT_SSH_COMMAND="ssh -F /dev/null -i $key -o IdentitiesOnly=yes -o UserKnownHostsFile=$known -o StrictHostKeyChecking=yes" \
+            git clone -q --depth 1 --branch v0.4.4 git@github.com:tryingET/rocs-cli.git \
+            "$HOME/ai-society/core/rocs-cli"
+          rm -f "$key"
+          test "$(git -C "$HOME/ai-society/core/rocs-cli" rev-parse HEAD)" = \
+            ba73f46658ee0e06d49c2541090f0ccc65349858
 
       - name: Run deep lane
         env:
