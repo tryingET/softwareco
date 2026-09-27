@@ -41,14 +41,15 @@ This repo is the control plane above the child repos nested inside it. It exists
 2. Review `governance/work-items.json` and, when needed, reconcile it with AK using `ak work-items check --repo . --path governance/work-items.json`
 3. Run `./scripts/preflight-repo-census.sh .`
 4. Pick one lane-root-local slice
-5. Validate with `./scripts/ci/smoke.sh`, `./scripts/ci/fast.sh`, and, when appropriate, `./scripts/ci/full.sh`
+5. For the bounded launcher slice, use `just doctor` and `just check`. The historical CI profiles require separate authorization (see Validation).
 
 ## Key files
 
 - `AGENTS.md` — lane/root operating contract inherited by descendant repos
 - `docs/project/` — purpose, mission, vision, goals
 - `docs/project/repo-capability-map.md` — routing substrate for selecting the correct owned repo from arbitrary working directories
-- `docs/project/ghostty-ak-task-launcher.md` — how to open one Ghostty + Pi instance per AK task with a pre-submitted task prompt
+- `docs/project/ghostty-ak-task-launcher.md` — legacy launcher refusal and withdrawn affected-domain batch/preset support
+- `docs/project/2026-09-07-visible-task-session-lane-custody.md` — positive nomination/custody and safe reinstatement gates; no live domain certified
 - `docs/decisions/` — durable decisions about how this lane root should operate
 - `docs/system4d/` — boundary, outcomes, invariants, and risks
 - `governance/README.md` — AK-first work-items projection rules for this repo
@@ -61,19 +62,41 @@ This repo is the control plane above the child repos nested inside it. It exists
 ./scripts/preflight-repo-census.sh .
 ak work-items check --repo . --path governance/work-items.json
 ./scripts/check-task-scope-snapshots.sh
-./scripts/launch-pi-ak-task-ghostty.sh --justfile-rollout-pilots
-./scripts/launch-pi-ak-task-ghostty.sh --focus-last 609 610 611
-./scripts/launch-pi-ak-task-ghostty.sh --interactive 610
-./scripts/launch-pi-ak-task-ghostty.sh --print --hold-open 609
+./scripts/launch-pi-ak-task-ghostty.sh --help
 ```
+
+The legacy launcher is not the accepted visible task-session operation. It refuses
+whole affected/unknown requests before mkdir, AK, terminal or focus, including
+batches, presets and dry-run. Missing classification never enables fallback.
+The actual DB-free `identity` / `classify-installed` consumer permits legacy
+behavior only after a typed, version/digest-bound positive outside result.
+See [producer/integration status](docs/project/2026-09-07-visible-task-session-lane-implementation.md).
+Copied recipes and private aliases require positive owner support withdrawal;
+this checked-in gate cannot certify or intercept them.
 
 ## Validation
 
 ```bash
-./scripts/ci/smoke.sh
-./scripts/ci/fast.sh
-./scripts/ci/full.sh
-./scripts/preflight-repo-census.sh .
+just help
+just doctor
+just check
 ```
+
+The bounded standard surface is shell/Python syntax plus scoped whitespace
+(`lint`), isolated synthetic launcher tests (`test`), and their union (`check`).
+`doctor` checks local test tools/TMPDIR only. No real AK/Pi/Ghostty/provider calls,
+account/config/fleet inspection or enrollment occurs. Tests require owned `TMPDIR`.
+Four emitted-classifier tests are opt-in via a reviewed `TASK_SESSION_PRODUCER_DIST`
+path; otherwise they report skips. That variable is test-only. The emitted tests
+use a synthetic locator, not live account configuration or public installed proof.
+
+`just ci` intentionally exits 2: historical `scripts/ci/smoke.sh` and `fast.sh`
+can fetch Git remotes; `full.sh` also reaches AK, task scopes and ROCS. Those
+profiles remain separately gated, not hidden behind a passing bounded alias.
+Full repository validation has **not** been certified by `just check`.
+No distributable build, formatter, primary runtime or dev/watch surface is
+established here, so `build`, `fmt`, `run` and `dev` are intentionally omitted.
+The no-live-Pi task boundary supersedes spawning the usual Justfile bootstrap
+prompt; its contract was read and applied directly without invoking Pi.
 
 Use repo-local deterministic wrappers when possible and keep work in this repo limited to lane-root concerns.

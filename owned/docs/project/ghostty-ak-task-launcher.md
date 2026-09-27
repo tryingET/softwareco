@@ -1,90 +1,73 @@
 ---
-summary: "Deterministic Ghostty launcher for opening one Pi terminal per AK task with a pre-submitted `pi -p` prompt."
+summary: "Legacy Ghostty AK launcher: whole-request pre-effect refusal, withdrawn affected-domain support, and bounded outside-domain compatibility only."
 read_when:
-  - "You want to open one new terminal per AK task and start Pi already running the task-specific prompt."
-  - "You are deciding whether to use a Ghostty/niri prompt-template workflow or a deterministic script for batch AK task launches."
-  - "You are launching the standardized Justfile rollout pilot tasks in parallel."
+  - "Encountering an old Ghostty task launch recipe, alias or preset."
+  - "Understanding why the legacy launcher refuses before AK or terminal access."
 ---
 
-# Ghostty AK task launcher
+# Legacy Ghostty AK task launcher
 
-## Why this exists
+## Support boundary
 
-For batch repo/task execution, a deterministic script is better than a prompt-template-driven text-injection workflow.
+**Do not use this launcher as the Decision151 visible task-session operation.**
+Affected-domain batch/preset recipes are withdrawn from supported discovery.
+See the [accepted ADR](../../pi-extensions/docs/adr/2026-09-06-visible-task-session-authority-startup.md)
+and [positive custody/reinstatement runbook](2026-09-07-visible-task-session-lane-custody.md).
+No live domain is certified. Installation, enrollment and canaries remain gated.
 
-Why:
-- `pi -p` can submit the task prompt directly without editor typing or `wtype`
-- batch launching multiple repo/task terminals is easier to script than to drive via an interactive skill
-- the script can resolve repo paths from AK task ids directly
-- Ghostty can still be used as the terminal surface, with optional `niri` focus for the last-launched window
-
-## Canonical launcher
+Read local help without AK, namespace provisioning or terminal access:
 
 ```bash
-./scripts/launch-pi-ak-task-ghostty.sh <task-id>...
+./scripts/launch-pi-ak-task-ghostty.sh --help
 ```
 
-Current convenience preset for the standardized Justfile rollout pilot wave:
+The whole expanded request must be positively classified **outside** affected
+task/common-Git/checkout/shared-effect domains by the actual compatible DB-free
+owner producer before considering legacy behavior. Missing producer, unknown
+inventory/custody, incompatible response or any affected member refuses the
+entire batch/preset before mkdir, AK, Ghostty/Pi or niri focus. `--dry-run` does
+not bypass this gate. There is no ordinary `task show` classification fallback,
+per-task partial launch, lane registry or caller opt-out.
 
-```bash
-./scripts/launch-pi-ak-task-ghostty.sh --justfile-rollout-pilots
-```
+Current executable integration status and exact producer identity are recorded
+in [lane implementation evidence](2026-09-07-visible-task-session-lane-implementation.md).
+The actual `identity` / `classify-installed` interface is integrated in source;
+only a verified outside result reaches the legacy body. Missing installed
+identity still refuses; help remains available without a producer. Source and
+synthetic emitted-body proof are not installed/public account-bound readiness.
 
-Optional flags:
+## Legacy compatibility boundary
 
-```bash
-./scripts/launch-pi-ak-task-ghostty.sh --dry-run --justfile-rollout-pilots
-./scripts/launch-pi-ak-task-ghostty.sh --focus-last 609 610 611
-./scripts/launch-pi-ak-task-ghostty.sh --interactive 610
-./scripts/launch-pi-ak-task-ghostty.sh --print --hold-open 609
-./scripts/launch-pi-ak-task-ghostty.sh --log-dir /tmp/pi-launch-logs 609
-```
+After compatible positive outside classification, the retained legacy body:
 
-## Prompt injected per task
+- resolves task repo/title/status using the AK wrapper;
+- uses interactive Pi for a single task and print mode for a batch by default;
+- passes the historical task-specific `next_session_prompt.md` objective;
+- retains existing print logs, hold-open behavior and optional niri focus.
 
-For each task id `<N>`, the launcher starts Pi with this initial prompt:
+These are historical behaviors, **not** admission, sealed-host, provider,
+startup-custody or replacement-transport guarantees. The interactive route and
+failed print route keep debugging shells; they are never allowed as affected-
+domain fallback. A terminal or completed prompt does not retire host/effect/claim
+uncertainty. This task does not migrate/translate the legacy transport.
 
-```text
-read next_session_prompt.md and attend next ak task #<N> and then proceed with the workflow until completed and commited.
-```
+All input is parsed before classification. Task IDs must be canonical positive
+integers; duplicate tasks, unknown options, repeated/conflicting semantic options,
+empty log paths and help combined with a request refuse. Preset task IDs expand
+before validation/classification. There is no last-option-wins behavior.
 
-The task number is derived from the actual AK task id being launched.
+The gate uses Python 3 and the actual installed `pi-task-session` producer.
+Legacy dependencies (only after the gate) are Ghostty, Pi and the AK wrapper;
+niri is optional. Runtime/log overrides cannot bypass the gate. Neither
+help nor refused requests requires these live dependencies to be invoked.
 
-Launch mode defaults:
-- single-task launch -> interactive `pi "<prompt>"`
-- multi-task launch -> non-interactive `pi -p "<prompt>"`
+## Verification and non-interception
 
-You can override that with `--interactive` or `--print`.
+`just check` runs bounded static checks and isolated synthetic executable tests.
+It never opens real terminals, calls AK/Pi/providers or scans live configuration.
+It is not full CI, an installation test or positive custody proof.
 
-## Dependencies
-
-Required:
-- `ghostty`
-- `pi`
-- `python3`
-- AK wrapper at `~/ai-society/softwareco/owned/agent-kernel/scripts/ak.sh`
-
-Optional:
-- `niri` for best-effort focus of the last-launched window when `--focus-last` is used
-
-Current focus strategy:
-1. try the unique Ghostty class/app id used at launch
-2. if Ghostty/niri do not expose that identity cleanly, fall back to matching the final repo basename against the terminal title (for example `π - dspx`)
-
-Current observability behavior:
-- print-mode launches write per-task stdout/stderr logs under `~/.pi/agent/ghostty-ak-task-launches/<timestamp>/` by default
-- single-task launches default to interactive Pi so the operator can watch the live session directly
-- interactive launches now also keep the launcher shell open after Pi exits and print the interactive exit status, so startup failures do not vanish with the terminal
-- single-task print-mode launches hold the shell open after `pi -p` exits unless `--no-hold-open` is passed
-- multi-task print-mode launches close on success by default, but still keep per-task logs
-- non-zero print-mode exits keep the shell open so failures remain inspectable
-
-## Scope
-
-This launcher is intentionally narrow:
-- one Ghostty window per AK task
-- repo path resolved from AK task truth
-- prompt passed directly to `pi -p`
-
-It does **not** replace the richer Ghostty/niri text-injection procedure for workflows that must leave text in the Pi editor unsent.
-For this batch task-launch case, direct `pi -p` is the lower-drift surface.
+Private copies, aliases, existing sessions and automation are not technically
+intercepted by editing this script. The actual owners must acknowledge support
+withdrawal and provide route/effect custody evidence before any canary domain
+can be nominated as eligible. See the runbook, not a copied launch recipe.
