@@ -13,6 +13,11 @@
       "source_contract": "legacy"
     },
     {
+      "binding": {
+        "ontology_tree": "faeeea14311b20614c573ae45355e917eeef5177",
+        "requested_ref": "v0.2.1",
+        "resolved_commit": "0aeca17e789bc3d452ad3241da7affff0ced3813"
+      },
       "kind": "ref",
       "locator_kind": "repo",
       "name": "core",
