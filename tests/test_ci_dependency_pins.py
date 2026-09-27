@@ -43,13 +43,19 @@ class CIDependencyPinsTests(unittest.TestCase):
         assert match is not None
         tags = re.findall(r"git clone --quiet --depth 1 --branch (\S+)", self.workflow)
         self.assertEqual(tags, [match[1], match[1]])
-        defaults = re.findall(
-            r'assert_yaml_default "copier/tpl-(?:project-repo|monorepo|package)/copier.yml" '
-            r"kernel_ontology_ref '([^']+)'",
-            self.checker,
-        )
-        self.assertGreaterEqual(len(defaults), 3)
-        self.assertEqual(set(defaults), {core[0]["origin"]})
+        # Check the template defaults themselves: the checker's wording differs between the
+        # company and the L0-rendered template checker, but the copier.yml defaults must match.
+        defaults = []
+        for template in ("tpl-project-repo", "tpl-monorepo", "tpl-package"):
+            text = (ROOT / "copier" / template / "copier.yml").read_text()
+            block = re.search(r"^kernel_ontology_ref:\n((?:[ \t].*\n)+)", text, re.MULTILINE)
+            self.assertIsNotNone(block, template)
+            assert block is not None
+            value = re.search(r"^\s+default:\s*\"?([^\"\n]+)\"?\s*$", block[1], re.MULTILINE)
+            self.assertIsNotNone(value, template)
+            assert value is not None
+            defaults.append(value[1].strip())
+        self.assertEqual(defaults, [core[0]["origin"]] * 3)
 
     def test_core_oid_is_identical_in_both_lanes_and_checker(self) -> None:
         pins = re.findall(
