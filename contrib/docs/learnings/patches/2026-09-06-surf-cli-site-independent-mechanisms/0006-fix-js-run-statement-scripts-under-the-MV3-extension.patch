@@ -1,0 +1,179 @@
+From 17d2912c74faf8cf7fbdc1f71f3d12341a47662b Mon Sep 17 00:00:00 2001
+From: tryinget <markus@team-wangler.de>
+Date: Mon, 7 Sep 2026 02:03:56 +0200
+Subject: [PATCH 06/13] fix(js): run statement scripts under the MV3 extension
+ CSP
+
+EXECUTE_JAVASCRIPT first evaluates the code as an expression
+(`return (<code>)`) and falls back to statement mode only when
+`scriptParses` says the wrapped body does not parse. `scriptParses`
+used `new Function`, which the extension's `script-src 'self'` CSP
+turns into an EvalError inside the service worker, so the check always
+answered "parses" and the fallback never ran: any `surf js --file`
+script starting with a declaration failed with
+"SyntaxError: Unexpected token 'const'" in real Chrome while the unit
+tests (Node, eval allowed) passed.
+
+Keep `new Function` where it works and otherwise ask the page's parser
+through CDP `Runtime.compileScript`, which compiles without running
+anything. A SyntaxError thrown at runtime by the script still does not
+trigger the fallback.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PpyRJ9kNJBQ5JiqeYjxkTF
+---
+ src/cdp/controller.ts                         | 23 ++++++++
+ src/service-worker/index.ts                   | 23 ++++++--
+ .../javascript-handlers.test.ts               | 58 +++++++++++++++++++
+ 3 files changed, 100 insertions(+), 4 deletions(-)
+
+diff --git a/src/cdp/controller.ts b/src/cdp/controller.ts
+index de1607a..f6969d1 100644
+--- a/src/cdp/controller.ts
++++ b/src/cdp/controller.ts
+@@ -1283,6 +1283,29 @@ export class CDPController {
+     return this.send(tabId, "Page.stopScreencast");
+   }
+ 
++  /**
++   * Parse `expression` in the page without running it. Lets the service
++   * worker check syntax although its own CSP forbids `new Function`.
++   */
++  async compileScript(tabId: number, expression: string): Promise<{ parses: boolean; error?: string }> {
++    await this.ensureAttached(tabId);
++    try {
++      await this.send(tabId, "Runtime.enable");
++    } catch (e) {}
++    const result = await this.send(tabId, "Runtime.compileScript", {
++      expression,
++      sourceURL: "",
++      persistScript: false,
++    });
++    if (result?.exceptionDetails) {
++      return {
++        parses: false,
++        error: result.exceptionDetails.exception?.description || result.exceptionDetails.text || "SyntaxError",
++      };
++    }
++    return { parses: true };
++  }
++
+   async evaluateScript(tabId: number, expression: string): Promise<{
+     result?: { value?: any; type?: string; description?: string };
+     exceptionDetails?: { text?: string; exception?: { description?: string } };
+diff --git a/src/service-worker/index.ts b/src/service-worker/index.ts
+index b5f1127..552ef50 100644
+--- a/src/service-worker/index.ts
++++ b/src/service-worker/index.ts
+@@ -583,12 +583,24 @@ function codeWithExpressionReturn(code: string): string {
+   return `return (\n${code}\n);`;
+ }
+ 
+-function scriptParses(code: string): boolean {
++/**
++ * Whether the wrapped statement body parses. The MV3 extension CSP
++ * (`script-src 'self'`) makes `new Function` throw an EvalError inside the
++ * service worker; in that case ask the page's parser through CDP instead,
++ * which compiles without running anything.
++ */
++async function statementBodyParses(tabId: number, body: string): Promise<boolean> {
+   try {
+-    new Function(code);
++    new Function(body);
+     return true;
+   } catch (err) {
+-    return !(err instanceof SyntaxError);
++    if (err instanceof SyntaxError) return false;
++  }
++  try {
++    const compiled = await cdp.compileScript(tabId, `(async () => { 'use strict'; ${body} })()`);
++    return compiled.parses;
++  } catch {
++    return true;
+   }
+ }
+ 
+@@ -2409,7 +2421,10 @@ export async function handleMessage(
+ 
+         let result = await cdp.evaluateScript(tabId, expression);
+ 
+-        if (result.exceptionDetails && !scriptParses(body)) {
++        // Statement scripts (declarations, loops, explicit `return`) cannot be
++        // wrapped as an expression; retry them in statement mode when the
++        // expression form failed to parse.
++        if (result.exceptionDetails && !(await statementBodyParses(tabId, body))) {
+           result = await cdp.evaluateScript(tabId, `(async () => { 'use strict'; ${message.code} })()`);
+         }
+ 
+diff --git a/test/unit/service-worker/javascript-handlers.test.ts b/test/unit/service-worker/javascript-handlers.test.ts
+index 17641b4..4f5c32f 100644
+--- a/test/unit/service-worker/javascript-handlers.test.ts
++++ b/test/unit/service-worker/javascript-handlers.test.ts
+@@ -44,6 +44,64 @@ describe("JavaScript command handlers", () => {
+     resetChromeMock();
+   });
+ 
++  it("falls back to statement mode when the extension CSP blocks new Function", async () => {
++    const handleMessage = await loadHandleMessage();
++    const chrome = (globalThis as any).chrome;
++    const RealFunction = Function;
++    chrome.debugger.sendCommand.mockImplementation(
++      async (_target: any, method: string, params?: any) => {
++        if (method === "Runtime.compileScript") {
++          // The page parser is available even when the service worker cannot eval.
++          try {
++            new RealFunction(params.expression);
++            return {};
++          } catch (error) {
++            return {
++              exceptionDetails: { text: error instanceof Error ? error.message : String(error) },
++            };
++          }
++        }
++        if (method !== "Runtime.evaluate") {
++          return {};
++        }
++        if (params.expression.includes("if(!window.piHelpers)")) {
++          return { result: { value: undefined, type: "undefined" } };
++        }
++        try {
++          const evaluateExpression = new RealFunction(`return (${params.expression});`);
++          const value = await evaluateExpression();
++          return { result: { value, type: typeof value } };
++        } catch (error) {
++          return {
++            exceptionDetails: {
++              text: error instanceof Error ? error.message : String(error),
++              exception: { description: error instanceof Error ? error.toString() : String(error) },
++            },
++          };
++        }
++      },
++    );
++    // Emulate `script-src 'self'`: any attempt to compile a string throws an EvalError.
++    vi.stubGlobal("Function", function BlockedFunction() {
++      throw new EvalError(
++        "Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source",
++      );
++    });
++    try {
++      const result = await handleMessage(
++        {
++          type: "EXECUTE_JAVASCRIPT",
++          tabId: 1,
++          code: "const a = 40;\nconst b = 2;\nreturn a + b;",
++        },
++        {},
++      );
++      expect(result).toEqual({ output: "42" });
++    } finally {
++      vi.unstubAllGlobals();
++    }
++  });
++
+   it("returns final expression values", async () => {
+     const handleMessage = await loadHandleMessage();
+     const chrome = (globalThis as any).chrome;
+-- 
+2.55.0
+

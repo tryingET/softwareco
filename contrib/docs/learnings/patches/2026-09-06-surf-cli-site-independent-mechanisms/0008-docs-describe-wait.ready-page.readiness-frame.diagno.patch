@@ -1,0 +1,174 @@
+From 008f3ab85578679e729fadd94e03e3c9d8e095e3 Mon Sep 17 00:00:00 2001
+From: tryinget <markus@team-wangler.de>
+Date: Mon, 7 Sep 2026 02:06:05 +0200
+Subject: [PATCH 08/13] docs: describe wait.ready, page.readiness,
+ frame.diagnose, extract and js --options
+
+README (Iframe Support, Waiting, new Extraction section, Other, command
+groups), the surf skill, the --llm-context quick reference and the
+Unreleased changelog section.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PpyRJ9kNJBQ5JiqeYjxkTF
+---
+ CHANGELOG.md         | 10 ++++++++++
+ README.md            | 38 +++++++++++++++++++++++++++++++++++---
+ native/cli.cjs       |  5 ++++-
+ skills/surf/SKILL.md | 17 +++++++++++++++++
+ 4 files changed, 66 insertions(+), 4 deletions(-)
+
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index f250b11..c58481c 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -2,6 +2,16 @@
+ 
+ ## [Unreleased]
+ 
++### Added
++- **Typed page readiness** - `surf wait.ready` polls with a bounded budget and reports `ready`, `empty`, `login`, `challenge`, `not-found` or `error` instead of timing out silently; negative states exit with `page_login`, `page_challenge`, `page_not_found`, `page_error` or `page_timeout`, and `--accept` returns them to the caller. `surf page.readiness` classifies the page once. Detection uses visible UI state and the caller's expectations (`--selector`, `--text`, `--url-prefix`, `--empty-text`), not site-specific selectors.
++- **`surf frame.diagnose`** - DOM `<iframe>` elements, extension frames with a content-script reachability check, and the CDP frame tree side by side, with warnings for `srcdoc`/blank frames, sandboxes without `allow-scripts`, cross-origin, out-of-process and still-loading frames.
++- **`surf extract`** - Runs a read-only page-side script in an owned tab (`tab.new` -> `wait.ready` -> `js` -> `tab.close`) with bounded fresh-tab retry on transient failures, a zero-rows-is-failure invariant (`--allow-empty`, `--empty-text`), a `SURF_OPTIONS` prelude (`--options`) and Markdown or `--json` output. `--tab-id`/`--session` read an existing tab in place without retry.
++- **`surf js --options`** - Exposes a JSON object to `js`/`frame.js` scripts as a frozen `SURF_OPTIONS` constant. `piHelpers.setValue(el, value)` sets a value through the native setter and dispatches `input`/`change`.
++
++### Fixed
++- **Framework-controlled inputs** - `type --ref`, `type --into` and `form.fill` now write text inputs and textareas through the native value setter, so React, Angular and Vue trackers observe the change instead of reverting it.
++- **`js --file` statement scripts** - Scripts starting with a declaration failed with `SyntaxError: Unexpected token 'const'` in real Chrome because the statement-mode fallback relied on `new Function`, which the extension CSP blocks in the service worker. The fallback now uses CDP `Runtime.compileScript`.
++
+ ## [2.18.0] - 2026-09-04
+ 
+ ### Highlights
+diff --git a/README.md b/README.md
+index f4c05ea..3b68899 100644
+--- a/README.md
++++ b/README.md
+@@ -280,6 +280,13 @@ surf locate.role button --action click
+ surf frame.main                     # Return to main page
+ ```
+ 
++When a selector never matches, `frame.diagnose` shows the three frame views side by side (DOM `<iframe>` elements, the extension's frames with content-script reachability, and the CDP frame tree) and explains the mismatches: `srcdoc`/`about:blank` frames that can only be reached by CDP id, sandboxes without `allow-scripts`, cross-origin or out-of-process frames, and frames still loading.
++
++```bash
++surf frame.diagnose                 # Human-readable report with warnings
++surf frame.diagnose --json          # Full inventories
++```
++
+ ### Interaction
+ 
+ ```bash
+@@ -569,12 +576,36 @@ surf wait 2                         # Wait 2 seconds
+ surf wait.element ".loaded"         # Wait for element
+ surf wait.network                   # Wait for network idle
+ surf wait.url "/dashboard"          # Wait for URL pattern
++surf wait.ready --selector ".results"   # Wait for content, fail fast on a bounce
++surf page.readiness --json          # Classify the page once
+ ```
+ 
++`wait.ready` polls with a bounded budget and reports a typed state instead of timing out silently: `ready`, `empty` (the page showed its own no-results message, `--empty-text`), or one of the negative states `login`, `challenge` (anti-bot interstitial), `not-found`, `error`. A negative state exits non-zero with codes `page_login`, `page_challenge`, `page_not_found`, `page_error`; `page_timeout` reports the last observed state. Pass `--accept login` to return a state to the caller instead. Detection uses visible UI state (a rendered password field, a login-looking route, the page's own wording, `--url-prefix` bounces), never site-specific selectors.
++
++```bash
++surf wait.ready --url-prefix "https://app.example.com/" --empty-text "No results"
++surf wait.ready --accept login --json   # {"state":"login","evidence":[...]} instead of an error
++```
++
++### Extraction
++
++`surf extract` runs a read-only page-side script in a tab it owns: `tab.new -> wait.ready -> js -> tab.close`. Transient target failures, readiness timeouts and zero-row results are retried in a fresh tab (`--retry`, default 1); login bounces, challenges and not-found pages are not, because the next tab would land on the same page. Zero rows is a failure unless `--allow-empty` is set or the page showed its own empty state (`--empty-text`), which separates "no results" from "logged out, blocked, or the selectors missed". The script must `return` JSON (an array, or an object with a `rows`/`items`/`results` array) and reads its parameters from a frozen `SURF_OPTIONS` constant.
++
++```bash
++surf extract "https://example.com/list" --file rows.js --ready-selector ".item"          # Markdown table
++surf extract "https://example.com/search?q=x" --file rows.js --options '{"limit": 20}' \
++  --empty-text "No results" --json                                                         # {data, rows, rowCount, attempts, readiness}
++surf extract --tab-id 42 --code 'return [...document.querySelectorAll("h2")].map(h => ({ title: h.textContent }))'
++```
++
++With `--tab-id` or `--session` the script runs in that tab in place (navigating only when a URL is given), with no retry and no close. The command replays its whole sequence on retry, so scripts that mutate state belong in `surf js` on an explicit target, not in `extract`.
++
+ ### Other
+ 
+ ```bash
+ surf js "return document.title"     # Execute JavaScript
++surf js --file script.js --options '{"limit": 20}'   # Script reads SURF_OPTIONS.limit
++surf js "piHelpers.setValue(document.querySelector('#q'), 'hello')"  # Native value setter + input/change events
+ surf record --duration 2000 --fps 10 --output /tmp/anim.gif      # Animated GIF capture
+ surf animate-audit --selector ".thing" --duration 2000 --fps 10  # JSON animation timeline
+ surf perf-audit --duration 3000 --output /tmp/perf.json           # PerformanceObserver snapshot
+@@ -938,11 +969,12 @@ echo '{"type":"tool_request","method":"execute_tool","params":{"tool":"tab.list"
+ | `window.*` | `new`, `list`, `focus`, `close`, `resize` |
+ | `tab.*` | `list`, `new`, `switch`, `close`, `name`, `unname`, `named`, `group`, `ungroup`, `groups`, `reload` |
+ | `scroll.*` | `top`, `bottom`, `to`, `info` |
+-| `page.*` | `read`, `text`, `state` |
++| `extract` | `extract` |
++| `page.*` | `read`, `text`, `state`, `readiness` |
+ | `locate.*` | `role`, `text`, `label` |
+ | `element.*` | `styles` |
+-| `frame.*` | `list`, `switch`, `main`, `js` |
+-| `wait.*` | `element`, `network`, `url`, `dom`, `load` |
++| `frame.*` | `list`, `diagnose`, `switch`, `main`, `js` |
++| `wait.*` | `element`, `network`, `url`, `dom`, `load`, `ready` |
+ | `cookie` / `cookie.*` | `list`, `get`, `set`, `clear`, `delete` |
+ | `bookmark.*` | `add`, `remove`, `list` |
+ | `history.*` | `list`, `search` |
+diff --git a/native/cli.cjs b/native/cli.cjs
+index 383e5dc..ee9f3da 100755
+--- a/native/cli.cjs
++++ b/native/cli.cjs
+@@ -1817,6 +1817,7 @@ Purpose: control Chrome from shell. Commands are \`surf <command> [args] [option
+ Core loop: navigate -> wait/read -> act -> screenshot/read.
+ Navigate: surf navigate "https://example.com"    # alias: surf go "..."
+ Wait after navigation: surf wait 2                # or wait.load for load complete
++Wait for real content: surf wait.ready --selector ".results"   # fails fast with page_login / page_challenge / page_not_found; --accept login returns the state
+ Read DOM/refs: surf page.read --depth 3 --compact # alias: surf read
+ Refs: use e1/e2 refs from page.read; prefer refs over CSS when available.
+ Click ref: surf click e5
+@@ -1828,7 +1829,9 @@ Record animation: surf record --duration 2000 --fps 10 --output /tmp/anim.gif
+ Video recording: surf video start ./demo.webm --fps 30; surf video stop
+ Animation audit: surf animate-audit --selector ".thing" --duration 2000 --fps 10
+ Performance audit: surf perf-audit --duration 3000 --trigger "click:.cta" --output /tmp/perf.json
+-JavaScript: surf js "return document.title"
++JavaScript: surf js "return document.title"       # --file script.js --options '{"limit":20}' exposes SURF_OPTIONS
++Extract rows (read-only, owned tab): surf extract "https://example.com/list" --file rows.js --ready-selector ".item" --json
++Frames: surf frame.list | surf frame.diagnose      # diagnose explains why a selector misses inside iframes
+ Scroll: surf scroll down 800 | surf scroll up 400 | surf scroll bottom | surf scroll top
+ Find by semantics: surf locate.role button --name "Submit" --action click
+ Device/viewport: surf emulate.device "iPhone 14" | surf resize 375 812
+diff --git a/skills/surf/SKILL.md b/skills/surf/SKILL.md
+index e343dc6..a1294c9 100644
+--- a/skills/surf/SKILL.md
++++ b/skills/surf/SKILL.md
+@@ -321,6 +321,7 @@ surf page.text                 # Plain text content only
+ surf page.html --strip-scripts # Rendered HTML without scripts
+ surf page.save --selector "#artifact" --strip-scripts --output page.html # Save one static element
+ surf page.state                # Modals, loading state, scroll info
++surf frame.diagnose            # Why a selector misses: DOM iframes vs extension frames vs CDP tree, with warnings
+ ```
+ 
+ ### Export Rendered HTML
+@@ -398,8 +399,24 @@ surf wait.network              # Wait for network idle
+ surf wait.url "/success"       # Wait for URL pattern
+ surf wait.dom --stable 100     # Wait for DOM stability
+ surf wait.load                 # Wait for page load complete
++surf wait.ready --selector ".results"                 # Ready, or fail fast: login / challenge / not-found / error
++surf wait.ready --url-prefix "https://app.example.com/" --empty-text "No results"  # empty vs blocked
++surf wait.ready --accept login --json                 # Return the negative state instead of failing
++surf page.readiness --json     # Classify the current page once (state + evidence)
+ ```
+ 
++Typed readiness states replace "the selector never appeared": exit codes carry `page_login`, `page_challenge`, `page_not_found`, `page_error` or `page_timeout`. Detection uses visible UI (a rendered password field, a login route, the page's wording, a URL outside `--url-prefix`), not site selectors.
++
++## Extraction (owned tab, read-only)
++
++```bash
++surf extract "https://example.com/list" --file rows.js --ready-selector ".item"   # tab.new -> wait.ready -> js -> tab.close
++surf extract "<url>" --file rows.js --options '{"limit": 20}' --empty-text "No results" --json
++surf extract --tab-id 42 --code 'return [...document.querySelectorAll("h2")].map(h => ({ title: h.textContent }))'
++```
++
++Rules: the script must `return` JSON and reads parameters from `SURF_OPTIONS`; zero rows fails unless `--allow-empty` or the page showed its own empty state; transient tab failures and timeouts retry in a fresh tab (`--retry`), login/challenge/not-found never do; only run read-only scripts here (the sequence may replay). Mutations go through `surf js` on an explicit target.
++
+ ## Dialog Handling
+ 
+ ```bash
+-- 
+2.55.0
+

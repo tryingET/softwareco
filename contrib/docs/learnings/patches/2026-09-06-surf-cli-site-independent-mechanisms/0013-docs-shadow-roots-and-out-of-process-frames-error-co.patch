@@ -1,0 +1,89 @@
+From dfc7408f404ceb6d06814ae16bc362f116aef8ce Mon Sep 17 00:00:00 2001
+From: tryinget <markus@team-wangler.de>
+Date: Mon, 7 Sep 2026 02:53:17 +0200
+Subject: [PATCH 13/13] docs: shadow roots and out-of-process frames, error
+ codes, background-tab js latency
+
+Document the frame.diagnose additions, the [code] suffix and --json error
+object, the stripped transport keys, and the observed multi-second js
+latency on non-active tabs in Brave (content-script tools are
+unaffected; tab.switch first or use extract).
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PpyRJ9kNJBQ5JiqeYjxkTF
+---
+ CHANGELOG.md         | 6 ++++++
+ README.md            | 9 ++++++++-
+ skills/surf/SKILL.md | 4 +++-
+ 3 files changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index c58481c..ef533e7 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -8,7 +8,13 @@
+ - **`surf extract`** - Runs a read-only page-side script in an owned tab (`tab.new` -> `wait.ready` -> `js` -> `tab.close`) with bounded fresh-tab retry on transient failures, a zero-rows-is-failure invariant (`--allow-empty`, `--empty-text`), a `SURF_OPTIONS` prelude (`--options`) and Markdown or `--json` output. `--tab-id`/`--session` read an existing tab in place without retry.
+ - **`surf js --options`** - Exposes a JSON object to `js`/`frame.js` scripts as a frozen `SURF_OPTIONS` constant. `piHelpers.setValue(el, value)` sets a value through the native setter and dispatches `input`/`change`.
+ 
++### Changed
++- **Error codes in CLI output** - The first line of every `Error:` message ends with the error code (`... [page_login]`), and `--json` also prints `{"error": {"code", "message", "details"}}` on stdout, the shape `surf extract` already used. `page.readiness`, `wait.ready`, `frame.diagnose` and `extract --json` no longer include the extension message `id` or `_resolved*` keys.
++- **`frame.diagnose` on real pages** - The DOM inventory walks open shadow roots (custom elements that render iframes inside their shadow tree were reported as "0 iframes"), `srcdoc`/`about:blank` iframes are matched to their CDP frame by `name`/`id`, out-of-process iframes get an explicit warning that `frame.js` cannot reach them while `frame.switch`/`page.read` can, the count-mismatch warning names nested and shadow-hosted frames, and the text report abbreviates kilobyte-long embed URLs.
++
+ ### Fixed
++- **Native host stalled replies** - The host stopped reading its stdin buffer after an `EXTENSION_HELLO` or `TARGET_EVENT` frame, so a tool reply that arrived in the same chunk sat unread until the next message from the extension (typically the 60 s client timeout). Every complete frame in a chunk is now processed.
++- **Readable CDP errors** - `chrome.debugger` failures surfaced as a JSON blob (`{"code":-32000,"message":"Inspected target navigated or closed"}`); the message is now unwrapped and the CDP code kept on the error.
+ - **Framework-controlled inputs** - `type --ref`, `type --into` and `form.fill` now write text inputs and textareas through the native value setter, so React, Angular and Vue trackers observe the change instead of reverting it.
+ - **`js --file` statement scripts** - Scripts starting with a declaration failed with `SyntaxError: Unexpected token 'const'` in real Chrome because the statement-mode fallback relied on `new Function`, which the extension CSP blocks in the service worker. The fallback now uses CDP `Runtime.compileScript`.
+ 
+diff --git a/README.md b/README.md
+index 3b68899..658aed2 100644
+--- a/README.md
++++ b/README.md
+@@ -280,7 +280,7 @@ surf locate.role button --action click
+ surf frame.main                     # Return to main page
+ ```
+ 
+-When a selector never matches, `frame.diagnose` shows the three frame views side by side (DOM `<iframe>` elements, the extension's frames with content-script reachability, and the CDP frame tree) and explains the mismatches: `srcdoc`/`about:blank` frames that can only be reached by CDP id, sandboxes without `allow-scripts`, cross-origin or out-of-process frames, and frames still loading.
++When a selector never matches, `frame.diagnose` shows the three frame views side by side (DOM `<iframe>` elements, the extension's frames with content-script reachability, and the CDP frame tree) and explains the mismatches: `srcdoc`/`about:blank` frames (matched to their CDP frame by `name`/`id`), sandboxes without `allow-scripts`, cross-origin frames, out-of-process frames that the CDP tree does not list (`frame.js` cannot reach them; `frame.switch` and `page.read` can when the content script answers), and frames still loading. The DOM inventory walks open shadow roots, so frames rendered by custom elements are listed with their `shadowHost` path. The text report abbreviates long frame URLs; `--json` keeps them whole.
+ 
+ ```bash
+ surf frame.diagnose                 # Human-readable report with warnings
+@@ -587,6 +587,13 @@ surf wait.ready --url-prefix "https://app.example.com/" --empty-text "No results
+ surf wait.ready --accept login --json   # {"state":"login","evidence":[...]} instead of an error
+ ```
+ 
++Errors from any command end their first line with the error code (`Error: Page is not ready: login at ... [page_login]`); with `--json` the same error is also printed to stdout as `{"error": {"code", "message", "details"}}`, so a script can branch on the code without parsing prose.
++
++Note that `js` on a tab that is not the active tab of its window can take many seconds in Brave (background-tab throttling of the DevTools session); `page.read`, `page.readiness` and `frame.diagnose` are unaffected because they run in the content script. Switch to the tab first (`surf tab.switch <id>`) or let `extract` open its own tab.
++
++```bash
++```
++
+ ### Extraction
+ 
+ `surf extract` runs a read-only page-side script in a tab it owns: `tab.new -> wait.ready -> js -> tab.close`. Transient target failures, readiness timeouts and zero-row results are retried in a fresh tab (`--retry`, default 1); login bounces, challenges and not-found pages are not, because the next tab would land on the same page. Zero rows is a failure unless `--allow-empty` is set or the page showed its own empty state (`--empty-text`), which separates "no results" from "logged out, blocked, or the selectors missed". The script must `return` JSON (an array, or an object with a `rows`/`items`/`results` array) and reads its parameters from a frozen `SURF_OPTIONS` constant.
+diff --git a/skills/surf/SKILL.md b/skills/surf/SKILL.md
+index a1294c9..05b2103 100644
+--- a/skills/surf/SKILL.md
++++ b/skills/surf/SKILL.md
+@@ -321,7 +321,7 @@ surf page.text                 # Plain text content only
+ surf page.html --strip-scripts # Rendered HTML without scripts
+ surf page.save --selector "#artifact" --strip-scripts --output page.html # Save one static element
+ surf page.state                # Modals, loading state, scroll info
+-surf frame.diagnose            # Why a selector misses: DOM iframes vs extension frames vs CDP tree, with warnings
++surf frame.diagnose            # Why a selector misses: DOM iframes (incl. open shadow roots) vs extension frames vs CDP tree, with warnings; out-of-process frames need frame.switch, not frame.js
+ ```
+ 
+ ### Export Rendered HTML
+@@ -402,6 +402,8 @@ surf wait.load                 # Wait for page load complete
+ surf wait.ready --selector ".results"                 # Ready, or fail fast: login / challenge / not-found / error
+ surf wait.ready --url-prefix "https://app.example.com/" --empty-text "No results"  # empty vs blocked
+ surf wait.ready --accept login --json                 # Return the negative state instead of failing
++# Errors carry their code on the first line ("... [page_login]"); with --json they are also printed as {"error": {code, message}} on stdout.
++# js on a background tab can stall for seconds in Brave; run surf tab.switch <id> first, or use extract (owns an active tab).
+ surf page.readiness --json     # Classify the current page once (state + evidence)
+ ```
+ 
+-- 
+2.55.0
+

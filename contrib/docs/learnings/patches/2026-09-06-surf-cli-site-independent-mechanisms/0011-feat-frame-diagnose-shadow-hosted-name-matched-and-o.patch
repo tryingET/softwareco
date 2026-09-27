@@ -1,0 +1,349 @@
+From 78702b5e5878fee8ceba227ce62cbe7803a0f13d Mon Sep 17 00:00:00 2001
+From: tryinget <markus@team-wangler.de>
+Date: Mon, 7 Sep 2026 02:53:17 +0200
+Subject: [PATCH 11/13] feat(frame): diagnose shadow-hosted, name-matched and
+ out-of-process iframes
+
+Dogfooding frame.diagnose on real pages showed three blind spots:
+
+- The DOM inventory used document.querySelectorAll("iframe"), which
+  never sees frames rendered inside a custom element's shadow tree; on
+  MDN it reported 0 iframes against 6 extension frames and blamed
+  "nested or detached frames". Walk open shadow roots and report the
+  host path as shadowHost.
+- srcdoc and about:blank iframes were never correlated with the CDP
+  tree although CDP names a frame after the iframe's name or id. Match
+  on that, and warn only about blank frames that still have no handle.
+- Out-of-process iframes (YouTube embeds, cross-site widgets) are absent
+  from Page.getFrameTree on the tab's own target, so frame.js cannot
+  reach them; the report showed "cdp -" without saying so. Add a
+  warning that names the working alternative (frame.switch, page.read
+  and click by ref when the content script answers).
+
+The count-mismatch warning now states how many frames are nested and
+how many sit in shadow roots, and the text renderer abbreviates
+kilobyte-long embed runner URLs (--json keeps them). The real-Chrome
+e2e fixture gains a shadow-hosted iframe and asserts the id-based
+srcdoc match.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PpyRJ9kNJBQ5JiqeYjxkTF
+---
+ native/cli.cjs                   | 20 ++++++--
+ src/utils/frame-diagnose.ts      | 68 ++++++++++++++++++++++++---
+ test/e2e/real-chrome.mjs         | 12 ++++-
+ test/unit/frame-diagnose.test.ts | 79 +++++++++++++++++++++++++++++++-
+ 4 files changed, 166 insertions(+), 13 deletions(-)
+
+diff --git a/native/cli.cjs b/native/cli.cjs
+index ee9f3da..0a7401f 100755
+--- a/native/cli.cjs
++++ b/native/cli.cjs
+@@ -1831,7 +1831,7 @@ Animation audit: surf animate-audit --selector ".thing" --duration 2000 --fps 10
+ Performance audit: surf perf-audit --duration 3000 --trigger "click:.cta" --output /tmp/perf.json
+ JavaScript: surf js "return document.title"       # --file script.js --options '{"limit":20}' exposes SURF_OPTIONS
+ Extract rows (read-only, owned tab): surf extract "https://example.com/list" --file rows.js --ready-selector ".item" --json
+-Frames: surf frame.list | surf frame.diagnose      # diagnose explains why a selector misses inside iframes
++Frames: surf frame.list | surf frame.diagnose      # diagnose explains why a selector misses inside iframes (shadow roots, srcdoc, out-of-process)
+ Scroll: surf scroll down 800 | surf scroll up 400 | surf scroll bottom | surf scroll top
+ Find by semantics: surf locate.role button --name "Submit" --action click
+ Device/viewport: surf emulate.device "iPhone 14" | surf resize 375 812
+@@ -4048,6 +4048,18 @@ async function handleResponse(response) {
+     console.log("\nUsage: surf emulate.device \"<device name>\"");
+     console.log('Reset:  surf emulate.device "reset"');
+   } else if (tool === "frame.diagnose" && data?.counts) {
++    // Keep frame URLs readable: embed runners carry kilobyte-long state
++    // parameters that bury the report (use --json for the full URLs).
++    const abbreviateUrl = (url, max = 100) => {
++      if (typeof url !== "string" || url.length <= max) return url;
++      try {
++        const parsed = new URL(url);
++        const base = `${parsed.origin}${parsed.pathname}`;
++        const trailing = url.length - base.length;
++        if (trailing > 0 && base.length <= max - 12) return `${base}?...(+${trailing} chars)`;
++      } catch {}
++      return `${url.slice(0, max - 3)}...`;
++    };
+     const lines = [];
+     lines.push(`Frame diagnosis for ${data.mainPage?.href ?? "?"}${data.mainPage?.title ? ` (${data.mainPage.title})` : ""}`);
+     lines.push(`DOM iframes: ${data.counts.domIframes}, extension frames: ${data.counts.extensionFrames} (incl. main), CDP frames: ${data.counts.cdpFrames}`);
+@@ -4064,20 +4076,20 @@ async function handleResponse(response) {
+           f.extensionFrameIds?.length ? `ext ${f.extensionFrameIds.join("/")}` : "ext -",
+           f.cdpFrameIds?.length ? `cdp ${f.cdpFrameIds.join("/")}` : "cdp -",
+         ].join(", ");
+-        lines.push(`  [${f.domIndex}] ${f.srcdoc ? "srcdoc" : (f.src || "about:blank")} ${Math.round(f.rect?.width ?? 0)}x${Math.round(f.rect?.height ?? 0)}${f.name ? ` name=${f.name}` : ""}${f.sandbox !== null && f.sandbox !== undefined ? ` sandbox="${f.sandbox}"` : ""}${flags ? ` [${flags}]` : ""} -> ${links}`);
++        lines.push(`  [${f.domIndex}] ${f.srcdoc ? "srcdoc" : abbreviateUrl(f.src || "about:blank")} ${Math.round(f.rect?.width ?? 0)}x${Math.round(f.rect?.height ?? 0)}${f.name ? ` name=${f.name}` : f.id ? ` id=${f.id}` : ""}${f.sandbox !== null && f.sandbox !== undefined ? ` sandbox="${f.sandbox}"` : ""}${f.shadowHost ? ` in shadow root of ${f.shadowHost}` : ""}${flags ? ` [${flags}]` : ""} -> ${links}`);
+       }
+     }
+     if (Array.isArray(data.extensionFrames) && data.extensionFrames.length > 0) {
+       lines.push("", "Extension frames (frame.switch ids):");
+       for (const f of data.extensionFrames) {
+         const reach = f.contentScriptReachable ? "content-script ok" : `content-script unreachable${f.contentScriptError ? ` (${f.contentScriptError})` : ""}`;
+-        lines.push(`  #${f.frameId}${f.isMain ? " main" : ` parent ${f.parentFrameId}`} ${f.url}${f.crossOrigin ? " [cross-origin]" : ""} - ${reach}`);
++        lines.push(`  #${f.frameId}${f.isMain ? " main" : ` parent ${f.parentFrameId}`} ${abbreviateUrl(f.url)}${f.crossOrigin ? " [cross-origin]" : ""} - ${reach}`);
+       }
+     }
+     if (Array.isArray(data.cdpFrames) && data.cdpFrames.length > 0) {
+       lines.push("", "CDP frames (frame.js ids):");
+       for (const f of data.cdpFrames) {
+-        lines.push(`  ${f.frameId}${f.isMain ? " main" : ` parent ${f.parentId}`} ${f.url}${f.name ? ` name=${f.name}` : ""}${f.extensionFrameIds?.length ? ` -> ext ${f.extensionFrameIds.join("/")}` : ""}`);
++        lines.push(`  ${f.frameId}${f.isMain ? " main" : ` parent ${f.parentId}`} ${abbreviateUrl(f.url)}${f.name ? ` name=${f.name}` : ""}${f.extensionFrameIds?.length ? ` -> ext ${f.extensionFrameIds.join("/")}` : ""}`);
+       }
+     }
+     lines.push("", Array.isArray(data.warnings) && data.warnings.length > 0 ? "Warnings:" : "No warnings.");
+diff --git a/src/utils/frame-diagnose.ts b/src/utils/frame-diagnose.ts
+index 18075ce..dc4d1e9 100644
+--- a/src/utils/frame-diagnose.ts
++++ b/src/utils/frame-diagnose.ts
+@@ -37,6 +37,12 @@ export interface DomIframeEntry {
+   sandbox: string | null;
+   allow: string;
+   rect: FrameRect;
++  /**
++   * Path of shadow hosts the iframe sits under (`div#host > x-widget`), or
++   * null when it is in the light DOM. `document.querySelectorAll("iframe")`
++   * never sees the former.
++   */
++  shadowHost?: string | null;
+ }
+ 
+ export interface ExtensionFrameEntry {
+@@ -124,6 +130,11 @@ function short(url: string, max = 80): string {
+   return `${url.slice(0, max - 3)}...`;
+ }
+ 
++/** The name CDP reports for a frame is the iframe's `name`, else its `id`. */
++function frameName(iframe: DomIframeEntry): string {
++  return iframe.name || iframe.id || "";
++}
++
+ export function buildFrameDiagnosis(input: FrameDiagnosisInput): FrameDiagnosis {
+   const mainOrigin = originOf(input.mainPage.href);
+   const childExtensionFrames = input.extensionFrames.filter((frame) => frame.parentFrameId !== -1);
+@@ -156,22 +167,28 @@ export function buildFrameDiagnosis(input: FrameDiagnosisInput): FrameDiagnosis
+     const blank = iframe.srcdoc || isBlankFrameUrl(iframe.src);
+     const origin = blank ? null : originOf(iframe.src);
+     const matchesUrl = (url: string): boolean => !blank && sameUrl(url, iframe.src);
++    const name = frameName(iframe);
++    // CDP names frames after the iframe's name/id, which is the only handle a
++    // srcdoc or about:blank frame has.
++    const matchesCdp = (frame: CdpFrameEntry): boolean =>
++      frame.parentId !== undefined && (matchesUrl(frame.url) || (name !== "" && frame.name === name));
+     return {
+       ...iframe,
++      shadowHost: iframe.shadowHost ?? null,
+       origin,
+       crossOrigin: origin !== null && mainOrigin !== null && origin !== mainOrigin,
+       blank,
+       zeroSize: iframe.rect.width <= 0 || iframe.rect.height <= 0,
+       scriptsBlocked: sandboxBlocksScripts(iframe.sandbox),
+       extensionFrameIds: childExtensionFrames.filter((frame) => matchesUrl(frame.url)).map((frame) => frame.frameId),
+-      cdpFrameIds: input.cdpFrames.filter((frame) => frame.parentId !== undefined && matchesUrl(frame.url)).map((frame) => frame.frameId),
++      cdpFrameIds: input.cdpFrames.filter(matchesCdp).map((frame) => frame.frameId),
+     };
+   });
+ 
+-  const blankIframes = domIframes.filter((iframe) => iframe.blank);
+-  if (blankIframes.length > 0) {
++  const unmatchedBlank = domIframes.filter((iframe) => iframe.blank && iframe.cdpFrameIds.length === 0);
++  if (unmatchedBlank.length > 0) {
+     warnings.push(
+-      `${blankIframes.length} iframe(s) have no URL (about:blank or srcdoc): DOM indexes ${blankIframes.map((iframe) => iframe.domIndex).join(", ")}. Their content cannot be matched by URL; reach it through frame.list / frame.js with the CDP frame id, or frame.switch --index.`,
++      `${unmatchedBlank.length} iframe(s) have no URL (about:blank or srcdoc): DOM indexes ${unmatchedBlank.map((iframe) => iframe.domIndex).join(", ")}. No CDP frame carries their name or id, so their content cannot be matched; give them a name or id attribute, or use frame.switch --index.`,
+     );
+   }
+ 
+@@ -188,6 +205,24 @@ export function buildFrameDiagnosis(input: FrameDiagnosisInput): FrameDiagnosis
+     if (iframe.extensionFrameIds.length > 1) {
+       warnings.push(`iframe ${iframe.domIndex} (${short(iframe.src)}) matches ${iframe.extensionFrameIds.length} extension frames by URL (${iframe.extensionFrameIds.join(", ")}); use frame.switch --index to pick one.`);
+     }
++    if (!iframe.blank && iframe.extensionFrameIds.length > 0 && iframe.cdpFrameIds.length === 0) {
++      const reachable = iframe.extensionFrameIds.every(
++        (id) => input.extensionFrames.find((frame) => frame.frameId === id)?.contentScriptReachable === true,
++      );
++      if (iframe.crossOrigin) {
++        warnings.push(
++          `iframe ${iframe.domIndex} (${short(iframe.src)}) is out-of-process: it is missing from this tab's CDP frame tree, so frame.js cannot reach it; ${
++            reachable
++              ? "its content script answers, so frame.switch, page.read and click by ref work there."
++              : "its content script is unreachable too, so nothing in this tab can drive it."
++          }`,
++        );
++      } else {
++        warnings.push(
++          `iframe ${iframe.domIndex} (${short(iframe.src)}) has an extension frame but no CDP frame: it is still loading, navigated, or runs out of process; retry, or use frame.switch.`,
++        );
++      }
++    }
+   }
+ 
+   for (const frame of extensionFrames) {
+@@ -214,7 +249,16 @@ export function buildFrameDiagnosis(input: FrameDiagnosisInput): FrameDiagnosis
+   }
+ 
+   if (domIframes.length !== childExtensionFrames.length) {
+-    warnings.push(`DOM lists ${domIframes.length} iframe(s) but the extension sees ${childExtensionFrames.length} child frame(s); nested or detached frames account for the difference.`);
++    const nested = childExtensionFrames.filter((frame) => frame.parentFrameId !== 0).length;
++    const shadowed = domIframes.filter((iframe) => iframe.shadowHost).length;
++    const explained = domIframes.length === childExtensionFrames.length - nested;
++    warnings.push(
++      `DOM lists ${domIframes.length} iframe(s)${shadowed > 0 ? ` (${shadowed} inside open shadow roots)` : ""} but the extension sees ${childExtensionFrames.length} child frame(s)${nested > 0 ? `, ${nested} of them nested below another frame` : ""}; ${
++        explained
++          ? "the nested frames account for the difference."
++          : "the rest live in closed shadow roots, were created after the snapshot, or are detached."
++      }`,
++    );
+   }
+ 
+   return {
+@@ -233,10 +277,22 @@ export function buildFrameDiagnosis(input: FrameDiagnosisInput): FrameDiagnosis
+ 
+ /** Page-side expression that returns the DOM iframe inventory as a plain object. */
+ export const DOM_IFRAME_INVENTORY_EXPRESSION = `(() => {
+-  const iframes = Array.from(document.querySelectorAll("iframe")).map((el, domIndex) => {
++  const describe = (el) => el.tagName.toLowerCase() + (el.id ? "#" + el.id : "") + (el.classList.length ? "." + Array.from(el.classList).slice(0, 2).join(".") : "");
++  const found = [];
++  // Walk open shadow roots too: querySelectorAll("iframe") on the document
++  // misses every frame a custom element renders inside its shadow tree.
++  const walk = (root, hostPath) => {
++    for (const el of root.querySelectorAll("iframe")) found.push({ el, hostPath });
++    for (const host of root.querySelectorAll("*")) {
++      if (host.shadowRoot) walk(host.shadowRoot, hostPath ? hostPath + " > " + describe(host) : describe(host));
++    }
++  };
++  walk(document, "");
++  const iframes = found.map(({ el, hostPath }, domIndex) => {
+     const rect = el.getBoundingClientRect();
+     return {
+       domIndex,
++      shadowHost: hostPath || null,
+       src: el.hasAttribute("srcdoc") ? "" : el.src || "",
+       srcAttribute: el.getAttribute("src") || "",
+       srcdoc: el.hasAttribute("srcdoc"),
+diff --git a/test/e2e/real-chrome.mjs b/test/e2e/real-chrome.mjs
+index d8e2be6..b5ed178 100644
+--- a/test/e2e/real-chrome.mjs
++++ b/test/e2e/real-chrome.mjs
+@@ -147,6 +147,8 @@ function fixturePages(request, { crossOriginBase }) {
+ <iframe id="inline" srcdoc="<p>inline</p>" width="200" height="60"></iframe>
+ <iframe id="cross-origin" src="${crossOriginBase}/fixture" width="300" height="120"></iframe>
+ <iframe id="sandboxed" src="/fixture?sandboxed" sandbox="allow-forms" width="200" height="60"></iframe>
++<div id="host"></div>
++<script>document.getElementById("host").attachShadow({ mode: "open" }).innerHTML = '<iframe id="shadowed" src="/fixture?shadowed" width="200" height="60"></iframe>';</script>
+ </body></html>`;
+   }
+   if (url.pathname === "/list") {
+@@ -462,12 +464,18 @@ try {
+   await runSurf("wait.dom", "--tab-id", String(framesTab.tabId), "--json");
+   const diagnosis = unwrapJson(await runSurf("frame.diagnose", "--json", "--tab-id", String(framesTab.tabId)));
+   const byId = Object.fromEntries(diagnosis.domIframes.map((frame) => [frame.id, frame]));
+-  if (diagnosis.counts.domIframes !== 4 || !byId["same-origin"] || !byId["inline"] || !byId["cross-origin"] || !byId["sandboxed"]) {
+-    throw new Error(`frame.diagnose did not list the four fixture iframes: ${JSON.stringify(diagnosis)}`);
++  if (diagnosis.counts.domIframes !== 5 || !byId["same-origin"] || !byId["inline"] || !byId["cross-origin"] || !byId["sandboxed"] || !byId["shadowed"]) {
++    throw new Error(`frame.diagnose did not list the five fixture iframes: ${JSON.stringify(diagnosis)}`);
+   }
+   if (byId["same-origin"].extensionFrameIds.length !== 1 || byId["same-origin"].cdpFrameIds.length !== 1) {
+     throw new Error(`same-origin iframe was not correlated: ${JSON.stringify(byId["same-origin"])}`);
+   }
++  if (byId["shadowed"].shadowHost !== "div#host" || byId["shadowed"].extensionFrameIds.length !== 1) {
++    throw new Error(`shadow-hosted iframe was not inventoried: ${JSON.stringify(byId["shadowed"])}`);
++  }
++  if (byId["inline"].cdpFrameIds.length !== 1) {
++    throw new Error(`srcdoc iframe was not matched to its CDP frame by id: ${JSON.stringify(byId["inline"])}`);
++  }
+   if (!byId["inline"].blank || byId["cross-origin"].crossOrigin !== true || byId["sandboxed"].scriptsBlocked !== true) {
+     throw new Error(`frame flags are wrong: ${JSON.stringify(byId)}`);
+   }
+diff --git a/test/unit/frame-diagnose.test.ts b/test/unit/frame-diagnose.test.ts
+index 6e7c243..67e471f 100644
+--- a/test/unit/frame-diagnose.test.ts
++++ b/test/unit/frame-diagnose.test.ts
+@@ -200,7 +200,84 @@ describe("buildFrameDiagnosis", () => {
+     expect(result.warnings).toEqual([
+       "iframe 0 (https://late.example.com/) has no matching extension frame: it may still be loading, be blocked, or have navigated elsewhere.",
+       "1 cross-origin iframe(s): selectors from the main page do not reach them; switch with frame.switch first.",
+-      "DOM lists 1 iframe(s) but the extension sees 0 child frame(s); nested or detached frames account for the difference.",
++      "DOM lists 1 iframe(s) but the extension sees 0 child frame(s); the rest live in closed shadow roots, were created after the snapshot, or are detached.",
++    ]);
++  });
++
++  it("matches srcdoc and about:blank iframes to CDP frames by name or id", () => {
++    const result = buildFrameDiagnosis({
++      mainPage: { href: MAIN, title: "Page" },
++      domIframes: [
++        iframe({ src: "", srcdoc: true, id: "inline" }),
++        iframe({ domIndex: 1, src: "about:blank", name: "hidden" }),
++        iframe({ domIndex: 2, src: "about:blank" }),
++      ],
++      extensionFrames: [
++        mainExt,
++        extFrame({ frameId: 3, url: "about:srcdoc" }),
++        extFrame({ frameId: 4, url: "about:blank" }),
++      ],
++      cdpFrames: [
++        mainCdp,
++        cdpFrame({ frameId: "F3", url: "about:srcdoc", name: "inline" }),
++        cdpFrame({ frameId: "F4", url: "about:blank", name: "hidden" }),
++      ],
++    });
++    expect(result.domIframes.map((entry) => entry.cdpFrameIds)).toEqual([["F3"], ["F4"], []]);
++    expect(result.warnings[0]).toBe(
++      "1 iframe(s) have no URL (about:blank or srcdoc): DOM indexes 2. No CDP frame carries their name or id, so their content cannot be matched; give them a name or id attribute, or use frame.switch --index.",
++    );
++  });
++
++  it("explains out-of-process iframes that the CDP frame tree does not list", () => {
++    const result = buildFrameDiagnosis({
++      mainPage: { href: MAIN, title: "Page" },
++      domIframes: [
++        iframe({ src: "https://www.youtube.com/embed/x" }),
++        iframe({ domIndex: 1, src: "https://example.org/", sandbox: "" }),
++      ],
++      extensionFrames: [
++        mainExt,
++        extFrame({ frameId: 54, url: "https://www.youtube.com/embed/x" }),
++        extFrame({
++          frameId: 57,
++          url: "https://example.org/",
++          contentScriptReachable: false,
++          contentScriptError: "Receiving end does not exist.",
++        }),
++      ],
++      cdpFrames: [mainCdp],
++    });
++    expect(result.domIframes.map((entry) => entry.cdpFrameIds)).toEqual([[], []]);
++    expect(result.warnings).toContain(
++      "iframe 0 (https://www.youtube.com/embed/x) is out-of-process: it is missing from this tab's CDP frame tree, so frame.js cannot reach it; its content script answers, so frame.switch, page.read and click by ref work there.",
++    );
++    expect(result.warnings).toContain(
++      "iframe 1 (https://example.org/) is out-of-process: it is missing from this tab's CDP frame tree, so frame.js cannot reach it; its content script is unreachable too, so nothing in this tab can drive it.",
++    );
++    expect(result.warnings.some((line) => line.includes("DOM lists"))).toBe(false);
++  });
++
++  it("reports shadow-hosted iframes and nested frames in the count mismatch", () => {
++    const result = buildFrameDiagnosis({
++      mainPage: { href: MAIN, title: "Page" },
++      domIframes: [
++        iframe({ src: "https://app.example.com/inner", shadowHost: "div#host > x-widget" }),
++      ],
++      extensionFrames: [
++        mainExt,
++        extFrame({ frameId: 5, url: "https://app.example.com/inner" }),
++        extFrame({ frameId: 6, parentFrameId: 5, url: "https://app.example.com/inner/nested" }),
++      ],
++      cdpFrames: [
++        mainCdp,
++        cdpFrame({ frameId: "F5", url: "https://app.example.com/inner" }),
++        cdpFrame({ frameId: "F6", parentId: "F5", url: "https://app.example.com/inner/nested" }),
++      ],
++    });
++    expect(result.domIframes[0].shadowHost).toBe("div#host > x-widget");
++    expect(result.warnings).toEqual([
++      "DOM lists 1 iframe(s) (1 inside open shadow roots) but the extension sees 2 child frame(s), 1 of them nested below another frame; the nested frames account for the difference.",
+     ]);
+   });
+ });
+-- 
+2.55.0
+

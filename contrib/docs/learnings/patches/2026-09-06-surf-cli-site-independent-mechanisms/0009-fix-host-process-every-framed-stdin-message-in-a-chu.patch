@@ -1,0 +1,687 @@
+From 89073e8af9d74adca34979990f7586e88210fb9e Mon Sep 17 00:00:00 2001
+From: tryinget <markus@team-wangler.de>
+Date: Mon, 7 Sep 2026 02:53:17 +0200
+Subject: [PATCH 09/13] fix(host): process every framed stdin message in a
+ chunk
+
+The stdin reader parsed frames in a loop, but the EXTENSION_HELLO and
+TARGET_EVENT branches returned from the whole function instead of moving
+to the next frame. Native messaging delivers several frames per chunk (a
+TARGET_EVENT followed by the reply to a tool request is the common case),
+so the reply behind such a frame stayed in the buffer until the extension
+sent something else: in practice the first request after host start, and
+any request whose reply shared a chunk with a tab event, took the full
+client timeout (60 s) although the extension had answered in
+milliseconds.
+
+Move the framing into native/stdin-frames.cjs (takeFrames/encodeFrame),
+drain every complete frame per chunk, and dispatch each one through
+handleExtensionFrame, where the early returns are correct. Unit-tested
+with multi-frame chunks, split frames and multi-byte payloads.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PpyRJ9kNJBQ5JiqeYjxkTF
+---
+ native/host.cjs                | 510 +++++++++++++++++----------------
+ native/stdin-frames.cjs        |  42 +++
+ test/unit/stdin-frames.test.ts |  60 ++++
+ 3 files changed, 359 insertions(+), 253 deletions(-)
+ create mode 100644 native/stdin-frames.cjs
+ create mode 100644 test/unit/stdin-frames.test.ts
+
+diff --git a/native/host.cjs b/native/host.cjs
+index 9dc4c17..5e1666b 100755
+--- a/native/host.cjs
++++ b/native/host.cjs
+@@ -20,6 +20,7 @@ const { createOracleHost } = require("./oracle-host.cjs");
+ 
+ const IS_WIN = process.platform === "win32";
+ const { SOCKET_PATH, SURF_TMP } = require("./socket-path.cjs");
++const { takeFrames } = require("./stdin-frames.cjs");
+ const { parseListenEndpoint } = require("./listener.cjs");
+ const { getStateDir } = require("./remote-auth.cjs");
+ const { createFrameParser, createServerAuthSession, createSocketWriter, isClientAuthorized, writeFrame, MAX_FRAME_BYTES } = require("./remote-transport.cjs");
+@@ -2804,270 +2805,273 @@ function writeMessage(msg) {
+ 
+ let inputBuffer = Buffer.alloc(0);
+ 
++/**
++ * Drain every complete frame from the stdin buffer. The per-message early
++ * returns below must not skip frames that arrived in the same chunk, so the
++ * dispatch lives in its own function.
++ */
+ function processInput() {
+-  while (inputBuffer.length >= 4) {
+-    const msgLen = inputBuffer.readUInt32LE(0);
+-    if (inputBuffer.length < 4 + msgLen) break;
+-    
+-    const jsonStr = inputBuffer.slice(4, 4 + msgLen).toString("utf8");
+-    inputBuffer = inputBuffer.slice(4 + msgLen);
+-    
+-    try {
+-      const msg = JSON.parse(jsonStr);
+-      log(`Received from extension: ${msg.type || "unknown"}${msg.id !== undefined ? ` id=${msg.id}` : ""}`);
++  const { frames, rest } = takeFrames(inputBuffer);
++  inputBuffer = rest;
++  for (const jsonStr of frames) handleExtensionFrame(jsonStr);
++}
+ 
+-      if (msg.type === "EXTENSION_HELLO") {
+-        setBrowserIdentity(msg);
+-        return;
+-      }
++function handleExtensionFrame(jsonStr) {
++  try {
++    const msg = JSON.parse(jsonStr);
++    log(`Received from extension: ${msg.type || "unknown"}${msg.id !== undefined ? ` id=${msg.id}` : ""}`);
+ 
+-      if (msg.type === "TARGET_EVENT") {
+-        handleTargetEvent(msg);
+-        return;
+-      }
+-      
+-      if (msg.type === "GET_AUTH") {
+-        log("Handling GET_AUTH from extension");
+-        try {
+-          if (fs.existsSync(AUTH_FILE)) {
+-            const authData = JSON.parse(fs.readFileSync(AUTH_FILE, "utf8"));
+-            writeMessage({ id: msg.id, auth: authData, hint: null });
+-          } else {
+-            writeMessage({ 
+-              id: msg.id, 
+-              auth: null, 
+-              hint: "No OAuth credentials found. Run 'pi --login anthropic' in terminal to authenticate with Claude Max."
+-            });
+-          }
+-        } catch (e) {
+-          log(`Error reading auth file: ${e.message}`);
++    if (msg.type === "EXTENSION_HELLO") {
++      setBrowserIdentity(msg);
++      return;
++    }
++
++    if (msg.type === "TARGET_EVENT") {
++      handleTargetEvent(msg);
++      return;
++    }
++    
++    if (msg.type === "GET_AUTH") {
++      log("Handling GET_AUTH from extension");
++      try {
++        if (fs.existsSync(AUTH_FILE)) {
++          const authData = JSON.parse(fs.readFileSync(AUTH_FILE, "utf8"));
++          writeMessage({ id: msg.id, auth: authData, hint: null });
++        } else {
+           writeMessage({ 
+             id: msg.id, 
+             auth: null, 
+-            hint: "Failed to read auth credentials. Run 'pi --login anthropic' in terminal to authenticate."
++            hint: "No OAuth credentials found. Run 'pi --login anthropic' in terminal to authenticate with Claude Max."
+           });
+         }
+-        return;
+-      }
+-      
+-      if (msg.type === "API_REQUEST") {
+-        handleApiRequest(msg, writeMessage);
+-        return;
+-      }
+-
+-      if (msg.type === "PLAYBOOK_WATCH_EVENT") {
+-        appendRecordEvent({
+-          type: "browser.event",
+-          event: msg.event,
+-          selector: msg.selector,
+-          value: msg.value,
+-          url: redactUrlSecrets(msg.url),
+-          tabId: msg.tabId,
+-          timestamp: msg.timestamp || new Date().toISOString(),
++      } catch (e) {
++        log(`Error reading auth file: ${e.message}`);
++        writeMessage({ 
++          id: msg.id, 
++          auth: null, 
++          hint: "Failed to read auth credentials. Run 'pi --login anthropic' in terminal to authenticate."
+         });
+-        return;
+       }
+-
+-      if (msg.type === "VIDEO_FRAME") {
+-        if (activeVideoRecorder && msg.recorderId === activeVideoRecorder.recorderId && msg.tabId === activeVideoRecorder.tabId) {
+-          activeVideoRecorder.recorder.addFrame(msg.data, Number.isFinite(msg.receivedAt) ? msg.receivedAt : Date.now());
+-        }
+-        return;
+-      }
+-
+-      if (msg.type === "VIDEO_ERROR") {
+-        if (activeVideoRecorder && (!msg.recorderId || msg.recorderId === activeVideoRecorder.recorderId)) {
+-          void settleVideoFailure(activeVideoRecorder, new VideoRecorderError(
+-            typeof msg.errorCode === "string" ? msg.errorCode : "video_extension_error",
+-            msg.error || "Video screencast failed",
+-          ));
+-        }
+-        return;
+-      }
+-      
+-      if (msg.type === "STREAM_EVENT") {
+-        const stream = activeStreams.get(msg.streamId);
+-        if (stream) {
+-          sendSocket(stream.socket, msg.event, { stream: true }).catch((error) => {
+-            log(`Error forwarding stream event: ${error.message}`);
+-            stopActiveStream(msg.streamId);
+-            stream.socket.destroy(error);
+-          });
+-        }
+-        return;
+-      }
+-
+-      if (msg.type === "STREAM_ERROR") {
+-        const stream = activeStreams.get(msg.streamId);
+-        if (stream) {
+-          sendSocket(stream.socket, { error: msg.error }, { stream: true })
+-            .catch((error) => {
+-              log(`Error forwarding stream error: ${error.message}`);
+-              stream.socket.destroy(error);
+-            })
+-            .finally(() => stopActiveStream(msg.streamId));
+-        }
+-        return;
+-      }
+-      
+-      
+-      if (msg.id && pendingToolRequests.has(msg.id)) {
+-        const pending = pendingToolRequests.get(msg.id);
+-        if (pending.request?.signal.aborted || pending.request?.tombstoned) {
+-          const request = pending.request;
+-          const topLevelResponse = !pending.resolve && !pending.onComplete;
+-          pendingToolRequests.resolve(msg.id, msg);
+-          if (topLevelResponse && request?.context) {
+-            completeOwnedRequest(request.context, request.id, "cleanup-settled");
+-          }
+-          return;
+-        }
+-        handleFrameContextFailure(pending.request, msg);
+-        updateFrameContextFromResult(pending.request, pending.tool, msg);
+-        if (pending.resolve || pending.onComplete) {
+-          pendingToolRequests.resolve(msg.id, msg);
+-          return;
+-        }
+-        pendingToolRequests.delete(msg.id);
+-        {
+-
+-          const { socket, originalId, savePath, autoScreenshot, tabId: storedTabId } = pending;
+-          const tabId = storedTabId || msg._resolvedTabId;
+-          const failAutoScreenshot = (message) => pending.autoScreenshotOutput
+-            ? sendToolResponse(socket, originalId, null, `Auto-screenshot failed: ${message}`)
+-            : sendToolResponse(socket, originalId, { ...msg, autoScreenshotError: message }, null);
+-          
+-          if (pending.networkExport && Array.isArray(msg.entries)) {
+-            try {
+-              const exportResult = writeNetworkExport(pending.networkExportPath, msg.entries, pending.networkExportFormat);
+-              sendToolResponse(socket, originalId, exportResult, null);
+-            } catch (error) {
+-              sendToolResponse(socket, originalId, null, `Failed to export network requests: ${error.message}`);
+-            }
+-          } else if (pending.persistNetwork && Array.isArray(msg.entries)) {
+-            try {
+-              for (const entry of msg.entries) networkStore.appendEntrySync(entry, pending.networkPath);
+-              networkStore.maybeAutoCleanup();
+-              sendToolResponse(socket, originalId, msg, null);
+-            } catch (error) {
+-              sendToolResponse(socket, originalId, null, `Failed to persist network requests: ${error.message}`);
+-            }
+-          } else if (savePath && msg.base64) {
+-            try {
+-              const dir = path.dirname(savePath);
+-              if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+-              fs.writeFileSync(savePath, Buffer.from(msg.base64, "base64"), { mode: 0o600 });
+-              try { fs.chmodSync(savePath, 0o600); } catch {}
+-              const origWidth = msg.width || 0;
+-              const origHeight = msg.height || 0;
+-              const maxSize = pending.maxSize || 1200;
+-              const skipResize = pending.fullRes;
+-              
+-              let finalDims = origWidth && origHeight ? `${origWidth}x${origHeight}` : "";
+-              if (!skipResize && (origWidth > maxSize || origHeight > maxSize)) {
+-                const result = resizeImage(savePath, maxSize);
+-                if (result.success) {
+-                  finalDims = `${result.width}x${result.height}, from ${origWidth}x${origHeight}`;
+-                }
+-              }
+-              sendToolResponse(socket, originalId, { 
+-                message: `Saved to ${savePath} (${finalDims})`,
+-                path: savePath,
+-                screenshotId: msg.screenshotId,  // Preserve for upload_image workflow
+-              }, null);
+-            } catch (e) {
+-              sendToolResponse(socket, originalId, null, `Failed to save: ${e.message}`);
+-            }
+-          } else if (autoScreenshot && tabId && !msg.error && !msg.base64) {
+-            
+-            const screenshotPath = pending.autoScreenshotOutput || path.join(SURF_TMP, `pi-auto-${Date.now()}.png`);
+-            
+-            const autoFiles = fs.readdirSync(SURF_TMP)
+-              .filter(f => f.startsWith("pi-auto-") && f.endsWith(".png"))
+-              .map(f => ({ name: f, time: parseInt(f.match(/pi-auto-(\d+)\.png/)?.[1] || "0", 10) }))
+-              .sort((a, b) => b.time - a.time);
+-            if (autoFiles.length >= 10) {
+-              autoFiles.slice(9).forEach(f => {
+-                try { fs.unlinkSync(path.join(SURF_TMP, f.name)); } catch (e) {}
+-              });
+-            }
+-            require("./abort.cjs").abortableDelay(500, pending.request?.signal)
+-              .then(() => requestCallExtension(
+-                pending.request,
+-                "screenshot",
+-                { type: "EXECUTE_SCREENSHOT", tabId, strictTarget: pending.request?.target?.strict === true },
+-              ))
+-              .then((screenshotMsg) => {
+-                if (screenshotMsg.base64) {
+-                  try {
+-                    fs.writeFileSync(screenshotPath, Buffer.from(screenshotMsg.base64, "base64"), { mode: 0o600 });
+-                    try { fs.chmodSync(screenshotPath, 0o600); } catch {}
+-                    const origW = screenshotMsg.width || 0;
+-                    const origH = screenshotMsg.height || 0;
+-                    let finalW = origW, finalH = origH;
+-                    const maxSize = 1200;
+-                    if (origW > maxSize || origH > maxSize) {
+-                      const result = resizeImage(screenshotPath, maxSize);
+-                      if (result.success) {
+-                        finalW = result.width;
+-                        finalH = result.height;
+-                      }
+-                    }
+-                    sendToolResponse(socket, originalId, {
+-                      ...msg,
+-                      autoScreenshot: { path: screenshotPath, width: finalW, height: finalH, originalWidth: origW, originalHeight: origH }
+-                    }, null);
+-                  } catch (e) {
+-                    failAutoScreenshot(e.message);
+-                  }
+-                } else {
+-                  const errMsg = screenshotMsg.error || "Failed to capture";
+-                  failAutoScreenshot(errMsg);
+-                }
+-              })
+-              .catch((error) => failAutoScreenshot(error.message));
+-            return;
+-          } else if (autoScreenshot && pending.autoScreenshotOutput && !msg.error) {
+-            failAutoScreenshot(tabId ? "screenshot response was invalid" : "no tab available");
+-          } else if (msg.results && msg.savePath) {
+-            try {
+-              const dir = msg.savePath;
+-              if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+-              
+-              for (const result of msg.results) {
+-                if (result.screenshotBase64 && result.hostname) {
+-                  const ssPath = path.join(dir, `${result.hostname}.png`);
+-                  fs.writeFileSync(ssPath, Buffer.from(result.screenshotBase64, "base64"));
+-                  result.screenshot = ssPath;
+-                  delete result.screenshotBase64;
+-                  delete result.hostname;
+-                }
+-              }
+-              delete msg.savePath;
+-              sendToolResponse(socket, originalId, msg, null);
+-            } catch (e) {
+-              sendToolResponse(socket, originalId, null, `Failed to save screenshots: ${e.message}`);
+-            }
+-          } else {
+-            const isPureError = msg.error && !msg.success && !msg.base64 && 
+-                                !msg.pageContent && !msg.tabs && !msg.text &&
+-                                !msg.output && !msg.messages && !msg.requests;
+-            
+-            if (isPureError) {
+-              sendToolResponse(socket, originalId, null, fromExtensionError(msg) || msg.error);
+-            } else {
+-              sendToolResponse(socket, originalId, msg, null);
+-            }
+-          }
+-        }
+-      } else if (msg.id && pendingRequests.has(msg.id)) {
+-        const { socket } = pendingRequests.get(msg.id);
+-        sendSocket(socket, msg).catch((error) => log(`Error writing to CLI socket: ${error.message}`));
+-        pendingRequests.delete(msg.id);
+-      }
+-    } catch (e) {
+-      log(`Error parsing message: ${e.message}`);
++      return;
+     }
++    
++    if (msg.type === "API_REQUEST") {
++      handleApiRequest(msg, writeMessage);
++      return;
++    }
++
++    if (msg.type === "PLAYBOOK_WATCH_EVENT") {
++      appendRecordEvent({
++        type: "browser.event",
++        event: msg.event,
++        selector: msg.selector,
++        value: msg.value,
++        url: redactUrlSecrets(msg.url),
++        tabId: msg.tabId,
++        timestamp: msg.timestamp || new Date().toISOString(),
++      });
++      return;
++    }
++
++    if (msg.type === "VIDEO_FRAME") {
++      if (activeVideoRecorder && msg.recorderId === activeVideoRecorder.recorderId && msg.tabId === activeVideoRecorder.tabId) {
++        activeVideoRecorder.recorder.addFrame(msg.data, Number.isFinite(msg.receivedAt) ? msg.receivedAt : Date.now());
++      }
++      return;
++    }
++
++    if (msg.type === "VIDEO_ERROR") {
++      if (activeVideoRecorder && (!msg.recorderId || msg.recorderId === activeVideoRecorder.recorderId)) {
++        void settleVideoFailure(activeVideoRecorder, new VideoRecorderError(
++          typeof msg.errorCode === "string" ? msg.errorCode : "video_extension_error",
++          msg.error || "Video screencast failed",
++        ));
++      }
++      return;
++    }
++    
++    if (msg.type === "STREAM_EVENT") {
++      const stream = activeStreams.get(msg.streamId);
++      if (stream) {
++        sendSocket(stream.socket, msg.event, { stream: true }).catch((error) => {
++          log(`Error forwarding stream event: ${error.message}`);
++          stopActiveStream(msg.streamId);
++          stream.socket.destroy(error);
++        });
++      }
++      return;
++    }
++
++    if (msg.type === "STREAM_ERROR") {
++      const stream = activeStreams.get(msg.streamId);
++      if (stream) {
++        sendSocket(stream.socket, { error: msg.error }, { stream: true })
++          .catch((error) => {
++            log(`Error forwarding stream error: ${error.message}`);
++            stream.socket.destroy(error);
++          })
++          .finally(() => stopActiveStream(msg.streamId));
++      }
++      return;
++    }
++    
++    
++    if (msg.id && pendingToolRequests.has(msg.id)) {
++      const pending = pendingToolRequests.get(msg.id);
++      if (pending.request?.signal.aborted || pending.request?.tombstoned) {
++        const request = pending.request;
++        const topLevelResponse = !pending.resolve && !pending.onComplete;
++        pendingToolRequests.resolve(msg.id, msg);
++        if (topLevelResponse && request?.context) {
++          completeOwnedRequest(request.context, request.id, "cleanup-settled");
++        }
++        return;
++      }
++      handleFrameContextFailure(pending.request, msg);
++      updateFrameContextFromResult(pending.request, pending.tool, msg);
++      if (pending.resolve || pending.onComplete) {
++        pendingToolRequests.resolve(msg.id, msg);
++        return;
++      }
++      pendingToolRequests.delete(msg.id);
++      {
++
++        const { socket, originalId, savePath, autoScreenshot, tabId: storedTabId } = pending;
++        const tabId = storedTabId || msg._resolvedTabId;
++        const failAutoScreenshot = (message) => pending.autoScreenshotOutput
++          ? sendToolResponse(socket, originalId, null, `Auto-screenshot failed: ${message}`)
++          : sendToolResponse(socket, originalId, { ...msg, autoScreenshotError: message }, null);
++        
++        if (pending.networkExport && Array.isArray(msg.entries)) {
++          try {
++            const exportResult = writeNetworkExport(pending.networkExportPath, msg.entries, pending.networkExportFormat);
++            sendToolResponse(socket, originalId, exportResult, null);
++          } catch (error) {
++            sendToolResponse(socket, originalId, null, `Failed to export network requests: ${error.message}`);
++          }
++        } else if (pending.persistNetwork && Array.isArray(msg.entries)) {
++          try {
++            for (const entry of msg.entries) networkStore.appendEntrySync(entry, pending.networkPath);
++            networkStore.maybeAutoCleanup();
++            sendToolResponse(socket, originalId, msg, null);
++          } catch (error) {
++            sendToolResponse(socket, originalId, null, `Failed to persist network requests: ${error.message}`);
++          }
++        } else if (savePath && msg.base64) {
++          try {
++            const dir = path.dirname(savePath);
++            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
++            fs.writeFileSync(savePath, Buffer.from(msg.base64, "base64"), { mode: 0o600 });
++            try { fs.chmodSync(savePath, 0o600); } catch {}
++            const origWidth = msg.width || 0;
++            const origHeight = msg.height || 0;
++            const maxSize = pending.maxSize || 1200;
++            const skipResize = pending.fullRes;
++            
++            let finalDims = origWidth && origHeight ? `${origWidth}x${origHeight}` : "";
++            if (!skipResize && (origWidth > maxSize || origHeight > maxSize)) {
++              const result = resizeImage(savePath, maxSize);
++              if (result.success) {
++                finalDims = `${result.width}x${result.height}, from ${origWidth}x${origHeight}`;
++              }
++            }
++            sendToolResponse(socket, originalId, { 
++              message: `Saved to ${savePath} (${finalDims})`,
++              path: savePath,
++              screenshotId: msg.screenshotId,  // Preserve for upload_image workflow
++            }, null);
++          } catch (e) {
++            sendToolResponse(socket, originalId, null, `Failed to save: ${e.message}`);
++          }
++        } else if (autoScreenshot && tabId && !msg.error && !msg.base64) {
++          
++          const screenshotPath = pending.autoScreenshotOutput || path.join(SURF_TMP, `pi-auto-${Date.now()}.png`);
++          
++          const autoFiles = fs.readdirSync(SURF_TMP)
++            .filter(f => f.startsWith("pi-auto-") && f.endsWith(".png"))
++            .map(f => ({ name: f, time: parseInt(f.match(/pi-auto-(\d+)\.png/)?.[1] || "0", 10) }))
++            .sort((a, b) => b.time - a.time);
++          if (autoFiles.length >= 10) {
++            autoFiles.slice(9).forEach(f => {
++              try { fs.unlinkSync(path.join(SURF_TMP, f.name)); } catch (e) {}
++            });
++          }
++          require("./abort.cjs").abortableDelay(500, pending.request?.signal)
++            .then(() => requestCallExtension(
++              pending.request,
++              "screenshot",
++              { type: "EXECUTE_SCREENSHOT", tabId, strictTarget: pending.request?.target?.strict === true },
++            ))
++            .then((screenshotMsg) => {
++              if (screenshotMsg.base64) {
++                try {
++                  fs.writeFileSync(screenshotPath, Buffer.from(screenshotMsg.base64, "base64"), { mode: 0o600 });
++                  try { fs.chmodSync(screenshotPath, 0o600); } catch {}
++                  const origW = screenshotMsg.width || 0;
++                  const origH = screenshotMsg.height || 0;
++                  let finalW = origW, finalH = origH;
++                  const maxSize = 1200;
++                  if (origW > maxSize || origH > maxSize) {
++                    const result = resizeImage(screenshotPath, maxSize);
++                    if (result.success) {
++                      finalW = result.width;
++                      finalH = result.height;
++                    }
++                  }
++                  sendToolResponse(socket, originalId, {
++                    ...msg,
++                    autoScreenshot: { path: screenshotPath, width: finalW, height: finalH, originalWidth: origW, originalHeight: origH }
++                  }, null);
++                } catch (e) {
++                  failAutoScreenshot(e.message);
++                }
++              } else {
++                const errMsg = screenshotMsg.error || "Failed to capture";
++                failAutoScreenshot(errMsg);
++              }
++            })
++            .catch((error) => failAutoScreenshot(error.message));
++          return;
++        } else if (autoScreenshot && pending.autoScreenshotOutput && !msg.error) {
++          failAutoScreenshot(tabId ? "screenshot response was invalid" : "no tab available");
++        } else if (msg.results && msg.savePath) {
++          try {
++            const dir = msg.savePath;
++            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
++            
++            for (const result of msg.results) {
++              if (result.screenshotBase64 && result.hostname) {
++                const ssPath = path.join(dir, `${result.hostname}.png`);
++                fs.writeFileSync(ssPath, Buffer.from(result.screenshotBase64, "base64"));
++                result.screenshot = ssPath;
++                delete result.screenshotBase64;
++                delete result.hostname;
++              }
++            }
++            delete msg.savePath;
++            sendToolResponse(socket, originalId, msg, null);
++          } catch (e) {
++            sendToolResponse(socket, originalId, null, `Failed to save screenshots: ${e.message}`);
++          }
++        } else {
++          const isPureError = msg.error && !msg.success && !msg.base64 && 
++                              !msg.pageContent && !msg.tabs && !msg.text &&
++                              !msg.output && !msg.messages && !msg.requests;
++          
++          if (isPureError) {
++            sendToolResponse(socket, originalId, null, fromExtensionError(msg) || msg.error);
++          } else {
++            sendToolResponse(socket, originalId, msg, null);
++          }
++        }
++      }
++    } else if (msg.id && pendingRequests.has(msg.id)) {
++      const { socket } = pendingRequests.get(msg.id);
++      sendSocket(socket, msg).catch((error) => log(`Error writing to CLI socket: ${error.message}`));
++      pendingRequests.delete(msg.id);
++    }
++  } catch (e) {
++    log(`Error parsing message: ${e.message}`);
+   }
+ }
+ 
+diff --git a/native/stdin-frames.cjs b/native/stdin-frames.cjs
+new file mode 100644
+index 0000000..3781f09
+--- /dev/null
++++ b/native/stdin-frames.cjs
+@@ -0,0 +1,42 @@
++/**
++ * Native messaging framing: every message from the extension arrives as a
++ * 4-byte little-endian length followed by that many bytes of UTF-8 JSON.
++ *
++ * One stdin chunk routinely carries several complete frames (a TARGET_EVENT
++ * followed by the reply to a tool request is the common case), so a reader
++ * must take every complete frame out of the buffer before waiting for more
++ * input. Leaving one behind stalls that reply until the extension sends
++ * something else.
++ */
++
++const HEADER_BYTES = 4;
++
++/**
++ * Split `buffer` into complete frames and the unread remainder.
++ *
++ * @param {Buffer} buffer
++ * @returns {{ frames: string[], rest: Buffer }} decoded frame payloads in
++ *   arrival order, and the bytes of any trailing partial frame.
++ */
++function takeFrames(buffer) {
++  const frames = [];
++  let offset = 0;
++  while (buffer.length - offset >= HEADER_BYTES) {
++    const length = buffer.readUInt32LE(offset);
++    if (buffer.length - offset < HEADER_BYTES + length) break;
++    frames.push(buffer.subarray(offset + HEADER_BYTES, offset + HEADER_BYTES + length).toString("utf8"));
++    offset += HEADER_BYTES + length;
++  }
++  return { frames, rest: offset === 0 ? buffer : buffer.subarray(offset) };
++}
++
++/** Encode one message the way the extension does, for tests and tools. */
++function encodeFrame(message) {
++  const json = Buffer.from(typeof message === "string" ? message : JSON.stringify(message), "utf8");
++  const frame = Buffer.alloc(HEADER_BYTES + json.length);
++  frame.writeUInt32LE(json.length, 0);
++  json.copy(frame, HEADER_BYTES);
++  return frame;
++}
++
++module.exports = { HEADER_BYTES, encodeFrame, takeFrames };
+diff --git a/test/unit/stdin-frames.test.ts b/test/unit/stdin-frames.test.ts
+new file mode 100644
+index 0000000..c0f1d01
+--- /dev/null
++++ b/test/unit/stdin-frames.test.ts
+@@ -0,0 +1,60 @@
++import { describe, expect, it } from "vitest";
++
++const Buffer: any = require("node:buffer").Buffer;
++const { encodeFrame, takeFrames } = require("../../native/stdin-frames.cjs") as {
++  encodeFrame(message: unknown): any;
++  takeFrames(buffer: any): { frames: string[]; rest: any };
++};
++
++describe("takeFrames", () => {
++  it("returns nothing for an empty or header-only buffer", () => {
++    expect(takeFrames(Buffer.alloc(0))).toEqual({ frames: [], rest: Buffer.alloc(0) });
++    const header = Buffer.alloc(3);
++    const partial = takeFrames(header);
++    expect(partial.frames).toEqual([]);
++    expect(partial.rest).toBe(header);
++  });
++
++  it("decodes one complete frame", () => {
++    const { frames, rest } = takeFrames(encodeFrame({ type: "TARGET_EVENT" }));
++    expect(frames).toEqual(['{"type":"TARGET_EVENT"}']);
++    expect(rest.length).toBe(0);
++  });
++
++  it("drains every complete frame that arrived in one chunk", () => {
++    // A TARGET_EVENT followed by a tool reply is the common shape; both
++    // must come out of a single chunk or the reply waits for the next one.
++    const chunk = Buffer.concat([
++      encodeFrame({ type: "EXTENSION_HELLO" }),
++      encodeFrame({ type: "TARGET_EVENT", event: "updated" }),
++      encodeFrame({ id: 12, output: '"done"' }),
++    ]);
++    const { frames, rest } = takeFrames(chunk);
++    expect(frames.map((frame: string) => JSON.parse(frame))).toEqual([
++      { type: "EXTENSION_HELLO" },
++      { type: "TARGET_EVENT", event: "updated" },
++      { id: 12, output: '"done"' },
++    ]);
++    expect(rest.length).toBe(0);
++  });
++
++  it("keeps a trailing partial frame for the next chunk", () => {
++    const whole = encodeFrame({ id: 1, ok: true });
++    const next = encodeFrame({ id: 2, ok: true });
++    const cut = next.subarray(0, 7);
++    const first = takeFrames(Buffer.concat([whole, cut]));
++    expect(first.frames).toEqual(['{"id":1,"ok":true}']);
++    expect(first.rest.equals(cut)).toBe(true);
++    const second = takeFrames(Buffer.concat([first.rest, next.subarray(7)]));
++    expect(second.frames).toEqual(['{"id":2,"ok":true}']);
++    expect(second.rest.length).toBe(0);
++  });
++
++  it("decodes multi-byte UTF-8 payloads by byte length", () => {
++    const { frames } = takeFrames(
++      Buffer.concat([encodeFrame({ title: "ünïcödé ✓" }), encodeFrame({ id: 3 })]),
++    );
++    expect(JSON.parse(frames[0])).toEqual({ title: "ünïcödé ✓" });
++    expect(JSON.parse(frames[1])).toEqual({ id: 3 });
++  });
++});
+-- 
+2.55.0
+

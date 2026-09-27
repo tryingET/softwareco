@@ -1,0 +1,1710 @@
+From 0e82d465968633f40db0e1230627cbb54c415db4 Mon Sep 17 00:00:00 2001
+From: tryinget <markus@team-wangler.de>
+Date: Sun, 6 Sep 2026 23:59:45 +0200
+Subject: [PATCH 02/13] feat(page): typed page readiness (page.readiness,
+ wait.ready)
+
+Waiting for a selector on a page that bounced to a login form, hit an
+anti-bot interstitial or rendered a 404 only times out and hides the
+cause. This adds a readiness classifier that reports a typed state and
+a bounded poll that fails fast with a typed error code.
+
+States: ready, empty, loading, login, challenge, not-found, error.
+Every rule is site-independent: browser error URLs, vendor-neutral
+challenge markup, generic title/heading wording, visible password
+fields (visible UI state, not DOM presence), login-looking routes, and
+the caller's own expectations (--selector, --text, --url-prefix,
+--empty-text). An explicit empty render is a positive state so callers
+can tell "no results" from "blocked".
+
+- src/utils/page-readiness.ts: pure classifier and patterns.
+- src/utils/readiness-poll.ts: bounded poll loop (timeout <= 120 s,
+  interval >= 50 ms, always one probe, never sleeps past the deadline).
+- src/content/page-readiness-probe.ts: DOM snapshot adapter; the
+  content script answers PAGE_READINESS and PING.
+- Service worker: PAGE_READINESS (one probe) and WAIT_FOR_READY, which
+  throws BrowserCommandError page_login / page_challenge /
+  page_not_found / page_error / page_timeout unless --accept lists the
+  state. A blank tab is loading, a restricted page is error, an
+  unreachable content script is loading.
+- Host mapping for wait.ready and page.readiness (CLI and socket API
+  spellings), CLI help entries and plain-text output.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PpyRJ9kNJBQ5JiqeYjxkTF
+---
+ native/cli.cjs                                |  44 ++-
+ native/host-helpers.cjs                       |  37 ++-
+ native/mcp-server.cjs                         |  21 ++
+ native/tool-scope.cjs                         |   2 +-
+ src/content/accessibility-tree.ts             |  13 +
+ src/content/page-readiness-probe.ts           | 129 ++++++++
+ src/service-worker/index.ts                   | 104 ++++++
+ src/utils/page-readiness.ts                   | 272 ++++++++++++++++
+ src/utils/readiness-poll.ts                   | 157 +++++++++
+ test/unit/host-helpers.test.ts                |  59 ++++
+ test/unit/page-readiness.test.ts              | 300 ++++++++++++++++++
+ test/unit/readiness-poll.test.ts              | 151 +++++++++
+ .../service-worker/readiness-handlers.test.ts | 170 ++++++++++
+ test/unit/tool-scope.test.ts                  |  13 +
+ 14 files changed, 1468 insertions(+), 4 deletions(-)
+ create mode 100644 src/content/page-readiness-probe.ts
+ create mode 100644 src/utils/page-readiness.ts
+ create mode 100644 src/utils/readiness-poll.ts
+ create mode 100644 test/unit/page-readiness.test.ts
+ create mode 100644 test/unit/readiness-poll.test.ts
+ create mode 100644 test/unit/service-worker/readiness-handlers.test.ts
+
+diff --git a/native/cli.cjs b/native/cli.cjs
+index 3e39162..20c9e52 100755
+--- a/native/cli.cjs
++++ b/native/cli.cjs
+@@ -721,6 +721,17 @@ const TOOLS = {
+         examples: [{ cmd: "page.save --output page.html", desc: "Save current document HTML" }],
+       },
+       "page.state": { desc: "Get page state (modals, loading, etc.)", args: [] },
++      "page.readiness": {
++        desc: "Classify the page once: ready, empty, loading, login, challenge, not-found, error",
++        args: [],
++        opts: {
++          selector: "Visible CSS selector that marks a ready page",
++          text: "Page text that marks a ready page",
++          "url-prefix": "Expected URL prefix",
++          "empty-text": "Text of an explicit no-results render",
++        },
++        examples: [{ cmd: "page.readiness --json", desc: "State plus evidence as JSON" }]
++      },
+     }
+   },
+   locate: {
+@@ -824,6 +835,24 @@ const TOOLS = {
+       },
+       "wait.dom": { desc: "Wait for DOM to stabilize", args: [], opts: { stable: "Stability window in ms (default: 100)", timeout: "Max wait time in ms" } },
+       "wait.load": { desc: "Wait for page to fully load", args: [], opts: { timeout: "Max wait time in ms (default: 30000)" } },
++      "wait.ready": {
++        desc: "Wait until the page is ready, or fail fast with a typed state (challenge, login, not-found, error)",
++        args: [],
++        opts: {
++          selector: "Visible CSS selector that marks a ready page",
++          text: "Page text that marks a ready page",
++          "url-prefix": "Expected URL prefix; anything else is a bounce",
++          "empty-text": "Text of an explicit no-results render (reports state 'empty')",
++          accept: "Negative states to return instead of fail (comma list)",
++          timeout: "Max wait time in ms (default: 20000, max: 120000)",
++          interval: "Poll interval in ms (default: 400)",
++        },
++        examples: [
++          { cmd: 'wait.ready --selector ".results"', desc: "Wait for content; fail fast on a login bounce" },
++          { cmd: 'wait.ready --url-prefix "https://app.example.com/" --empty-text "No results"', desc: "Distinguish empty from blocked" },
++          { cmd: "wait.ready --accept login --json", desc: "Return the login state to the caller" },
++        ]
++      },
+     }
+   },
+   input: {
+@@ -1614,7 +1643,8 @@ const ALL_SOCKET_TOOLS = [
+   "tab.list", "tab.new", "tab.switch", "tab.close", "tab.move", "tab.name", "tab.unname", "tab.named",
+   "tab.group", "tab.ungroup", "tab.groups", "tab.reload",
+   "scroll.top", "scroll.bottom", "scroll.to", "scroll.info",
+-  "wait.element", "wait.network", "wait.url", "wait.dom", "wait.load",
++  "wait.element", "wait.network", "wait.url", "wait.dom", "wait.load", "wait.ready",
++  "page.readiness",
+   "click", "hover", "drag",
+   "js", "console", "network",
+   "network.get", "network.body", "network.curl", "network.origins",
+@@ -1668,7 +1698,9 @@ const SEE_ALSO = {
+   "animate-audit": ["screenshot", "record", "perf-audit", "js"],
+   "perf-audit": ["record", "animate-audit", "perf.metrics", "console"],
+   "search": ["locate.text", "page.read"],
+-  "wait.element": ["wait.load", "wait.network"],
++  "wait.element": ["wait.load", "wait.network", "wait.ready"],
++  "wait.ready": ["page.readiness", "wait.element", "wait.url"],
++  "page.readiness": ["wait.ready", "page.state"],
+   "wait.load": ["wait.element", "wait.network"],
+   "wait.network": ["wait.load", "wait.element"],
+   "scroll.to": ["click", "page.read"],
+@@ -3822,6 +3854,14 @@ async function handleResponse(response) {
+     }
+     console.log("\nUsage: surf emulate.device \"<device name>\"");
+     console.log('Reset:  surf emulate.device "reset"');
++  } else if (tool === "wait.ready" || tool === "page.readiness") {
++    const lines = [`state: ${data?.state ?? "unknown"}`];
++    if (data?.href) lines.push(`url: ${data.href}`);
++    if (data?.title) lines.push(`title: ${data.title}`);
++    if (typeof data?.waited === "number") lines.push(`waited: ${data.waited}ms (${data.polls} poll${data.polls === 1 ? "" : "s"})`);
++    if (data?.accepted) lines.push("accepted: negative state returned because of --accept");
++    for (const item of Array.isArray(data?.evidence) ? data.evidence : []) lines.push(`- ${item}`);
++    console.log(lines.join("\n"));
+   } else if (tool === "js") {
+     if (data?.result !== undefined) {
+       const val = data.result.value ?? data.result;
+diff --git a/native/host-helpers.cjs b/native/host-helpers.cjs
+index 1f1c56c..dace7ae 100644
+--- a/native/host-helpers.cjs
++++ b/native/host-helpers.cjs
+@@ -469,6 +469,30 @@ function formatToolContent(result, log = () => {}, options = {}) {
+   return text(JSON.stringify(cleanResult));
+ }
+ 
++/**
++ * Readiness expectations accept both CLI flag spelling (--url-prefix) and
++ * socket API spelling (urlPrefix). Empty values are dropped.
++ */
++function readinessExpectations(a) {
++  const pick = (...keys) => {
++    for (const key of keys) {
++      const value = a[key];
++      if (typeof value === "string" && value.trim() !== "") return value;
++    }
++    return undefined;
++  };
++  const expect = {
++    selector: pick("selector"),
++    text: pick("text"),
++    urlPrefix: pick("urlPrefix", "url-prefix"),
++    emptyText: pick("emptyText", "empty-text"),
++  };
++  for (const key of Object.keys(expect)) {
++    if (expect[key] === undefined) delete expect[key];
++  }
++  return expect;
++}
++
+ /**
+  * Map computer action to extension message
+  */
+@@ -871,6 +895,17 @@ function mapToolToMessage(tool, args, tabId) {
+       return { type: "WAIT_FOR_URL", pattern: a.pattern || a.url, timeout: a.timeout, ...baseMsg };
+     case "wait.dom":
+       return { type: "WAIT_FOR_DOM_STABLE", stable: a.stable || 100, timeout: a.timeout || 5000, ...baseMsg };
++    case "wait.ready":
++      return {
++        type: "WAIT_FOR_READY",
++        expect: readinessExpectations(a),
++        timeout: a.timeout,
++        interval: a.interval,
++        accept: a.accept,
++        ...baseMsg,
++      };
++    case "page.readiness":
++      return { type: "PAGE_READINESS", expect: readinessExpectations(a), ...baseMsg };
+     case "wait.load":
+       return { type: "WAIT_FOR_LOAD", timeout: a.timeout || 30000, ...baseMsg };
+     case "frame.list":
+@@ -1280,4 +1315,4 @@ function mapToolToMessage(tool, args, tabId) {
+   }
+ }
+ 
+-module.exports = { mapToolToMessage, mapComputerAction, formatToolContent, formatToolError, buildProviderUploadMessage };
++module.exports = { mapToolToMessage, mapComputerAction, formatToolContent, formatToolError, buildProviderUploadMessage, readinessExpectations };
+diff --git a/native/mcp-server.cjs b/native/mcp-server.cjs
+index 82432c0..2b9a69f 100644
+--- a/native/mcp-server.cjs
++++ b/native/mcp-server.cjs
+@@ -159,6 +159,27 @@ const TOOL_SCHEMAS = {
+       timeout: z.number().optional().describe("Max wait time in ms")
+     }
+   },
++  "wait.ready": {
++    desc: "Wait until the page is ready, or fail fast with a typed state (login, challenge, not-found, error)",
++    schema: {
++      selector: z.string().optional().describe("Visible CSS selector that marks a ready page"),
++      text: z.string().optional().describe("Page text that marks a ready page"),
++      urlPrefix: z.string().optional().describe("Expected URL prefix; anything else is a bounce"),
++      emptyText: z.string().optional().describe("Text of an explicit no-results render (state 'empty')"),
++      accept: z.string().optional().describe("Negative states to return instead of fail, comma-separated"),
++      timeout: z.number().optional().describe("Max wait time in ms (default 20000, max 120000)"),
++      interval: z.number().optional().describe("Poll interval in ms (default 400)")
++    }
++  },
++  "page.readiness": {
++    desc: "Classify the page once: ready, empty, loading, login, challenge, not-found, error",
++    schema: {
++      selector: z.string().optional().describe("Visible CSS selector that marks a ready page"),
++      text: z.string().optional().describe("Page text that marks a ready page"),
++      urlPrefix: z.string().optional().describe("Expected URL prefix"),
++      emptyText: z.string().optional().describe("Text of an explicit no-results render")
++    }
++  },
+   "wait.load": {
+     desc: "Wait for page to fully load",
+     schema: { timeout: z.number().optional().describe("Max wait time in ms") }
+diff --git a/native/tool-scope.cjs b/native/tool-scope.cjs
+index aa7d1a3..0799d36 100644
+--- a/native/tool-scope.cjs
++++ b/native/tool-scope.cjs
+@@ -45,7 +45,7 @@ const TAB_TOOLS = new Set([
+   "scroll", "scroll.top", "scroll.bottom", "scroll.to", "scroll.info", "scroll_to_position",
+   "search", "locate.role", "locate.text", "locate.label", "element.styles",
+   "js", "javascript_tool", "eval",
+-  "wait.element", "wait.url", "wait.network", "wait.dom", "wait.load", "health",
++  "wait.element", "wait.url", "wait.network", "wait.dom", "wait.load", "wait.ready", "page.readiness", "health",
+   "frame.list", "frame.switch", "frame.main", "frame.js",
+   "dialog.accept", "dialog.dismiss", "dialog.info",
+   "console", "network", "network.get", "network.body", "network.curl", "network.path",
+diff --git a/src/content/accessibility-tree.ts b/src/content/accessibility-tree.ts
+index 8fd16ab..e0fc03f 100644
+--- a/src/content/accessibility-tree.ts
++++ b/src/content/accessibility-tree.ts
+@@ -1,4 +1,5 @@
+ import { setNativeValue } from "./native-value";
++import { createDomProbe, probePageReadiness } from "./page-readiness-probe";
+ import type { VisualIndicatorMessageType } from "./visual-indicator.ts";
+ 
+ export {};
+@@ -1568,6 +1569,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+       sendResponse(result);
+       break;
+     }
++    case "PING": {
++      sendResponse({ success: true, href: location.href, readyState: document.readyState });
++      break;
++    }
++    case "PAGE_READINESS": {
++      try {
++        sendResponse(probePageReadiness(createDomProbe(document, window), message.expect || {}));
++      } catch (err) {
++        sendResponse({ error: err instanceof Error ? err.message : String(err) });
++      }
++      break;
++    }
+     case "EVAL_IN_PAGE": {
+       try {
+         const script = document.createElement('script');
+diff --git a/src/content/page-readiness-probe.ts b/src/content/page-readiness-probe.ts
+new file mode 100644
+index 0000000..525816e
+--- /dev/null
++++ b/src/content/page-readiness-probe.ts
+@@ -0,0 +1,129 @@
++import {
++  CAPTCHA_FRAME_SELECTORS,
++  CHALLENGE_MARKER_SELECTORS,
++  type ReadinessExpectations,
++  type ReadinessSnapshot,
++  type ReadinessVerdict,
++  classifyReadiness,
++  normalizeText,
++} from "../utils/page-readiness";
++
++/**
++ * The minimal view of a document the snapshot collector needs. Real pages
++ * go through `createDomProbe`; tests can hand in a plain object.
++ */
++export interface ReadinessProbeDom {
++  href: string;
++  title: string;
++  readyState: string;
++  /** Full normalized visible text of the body. */
++  bodyText(): string;
++  /** Number of elements matching `selector` that are rendered and visible. */
++  countVisible(selector: string): number;
++  /** Visible h1/h2 texts in document order. */
++  visibleHeadings(): string[];
++}
++
++export const BODY_TEXT_SAMPLE_LENGTH = 4000;
++
++const TEXT_INPUT_SELECTOR =
++  "input:not([type]), input[type='text'], input[type='email'], input[type='tel'], input[type='search'], input[type='url'], textarea";
++
++function safeCount(dom: ReadinessProbeDom, selector: string): number {
++  try {
++    return dom.countVisible(selector);
++  } catch {
++    return 0;
++  }
++}
++
++/** Gather the facts the classifier needs. Never throws on a bad selector. */
++export function collectReadinessSnapshot(
++  dom: ReadinessProbeDom,
++  expect: ReadinessExpectations = {},
++): ReadinessSnapshot {
++  const bodyText = dom.bodyText();
++  const lowerBody = bodyText.toLowerCase();
++  const snapshot: ReadinessSnapshot = {
++    href: dom.href,
++    title: normalizeText(dom.title),
++    readyState: dom.readyState,
++    bodyTextSample: bodyText.slice(0, BODY_TEXT_SAMPLE_LENGTH),
++    bodyTextLength: bodyText.length,
++    headings: dom.visibleHeadings().map(normalizeText).filter(Boolean).slice(0, 5),
++    visiblePasswordInputs: safeCount(dom, "input[type='password']"),
++    visibleTextInputs: safeCount(dom, TEXT_INPUT_SELECTOR),
++    challengeMarkers: CHALLENGE_MARKER_SELECTORS.filter((selector) => safeCount(dom, selector) > 0),
++    captchaFrames: CAPTCHA_FRAME_SELECTORS.reduce((sum, selector) => sum + safeCount(dom, selector), 0),
++  };
++
++  if (expect.selector) {
++    snapshot.selector = { expected: expect.selector, matched: safeCount(dom, expect.selector) > 0 };
++  }
++  if (expect.text) {
++    snapshot.text = {
++      expected: expect.text,
++      matched: lowerBody.includes(normalizeText(expect.text).toLowerCase()),
++    };
++  }
++  if (expect.urlPrefix) {
++    snapshot.urlPrefix = { expected: expect.urlPrefix, matched: dom.href.startsWith(expect.urlPrefix) };
++  }
++  if (expect.emptyText) {
++    snapshot.emptyText = {
++      expected: expect.emptyText,
++      matched: lowerBody.includes(normalizeText(expect.emptyText).toLowerCase()),
++    };
++  }
++  return snapshot;
++}
++
++export interface PageReadinessReport extends ReadinessVerdict {
++  href: string;
++  title: string;
++  readyState: string;
++  snapshot: Omit<ReadinessSnapshot, "bodyTextSample">;
++}
++
++/** Collect and classify in one step; this is what the content script returns. */
++export function probePageReadiness(
++  dom: ReadinessProbeDom,
++  expect: ReadinessExpectations = {},
++): PageReadinessReport {
++  const snapshot = collectReadinessSnapshot(dom, expect);
++  const verdict = classifyReadiness(snapshot);
++  const { bodyTextSample: _sample, ...rest } = snapshot;
++  return {
++    ...verdict,
++    href: snapshot.href,
++    title: snapshot.title,
++    readyState: snapshot.readyState,
++    snapshot: rest,
++  };
++}
++
++/** Adapter over a live document. Visibility follows the same rules as wait.element. */
++export function createDomProbe(doc: Document, win: Window): ReadinessProbeDom {
++  const isVisible = (element: Element): boolean => {
++    const style = win.getComputedStyle(element);
++    const box = element as HTMLElement;
++    return (
++      style.display !== "none" &&
++      style.visibility !== "hidden" &&
++      style.opacity !== "0" &&
++      box.offsetWidth > 0 &&
++      box.offsetHeight > 0
++    );
++  };
++  return {
++    href: win.location.href,
++    title: doc.title,
++    readyState: doc.readyState,
++    bodyText: () => normalizeText(doc.body?.innerText ?? doc.body?.textContent ?? ""),
++    countVisible: (selector) => Array.from(doc.querySelectorAll(selector)).filter(isVisible).length,
++    visibleHeadings: () =>
++      Array.from(doc.querySelectorAll("h1, h2"))
++        .filter(isVisible)
++        .map((element) => normalizeText(element.textContent)),
++  };
++}
+diff --git a/src/service-worker/index.ts b/src/service-worker/index.ts
+index f362803..4e9d607 100644
+--- a/src/service-worker/index.ts
++++ b/src/service-worker/index.ts
+@@ -1,5 +1,14 @@
+ import { CDPController } from "../cdp/controller";
+ import { debugLog } from "../utils/debug";
++import type { ReadinessExpectations } from "../utils/page-readiness";
++import {
++  type ReadinessProbeResult,
++  type ReadinessState,
++  clampReadinessBudget,
++  parseAcceptStates,
++  pollReadiness,
++  readinessErrorCode,
++} from "../utils/readiness-poll";
+ import { initNativeMessaging, postToNativeHost } from "../native/port-manager";
+ 
+ debugLog("Service worker loaded");
+@@ -153,6 +162,55 @@ async function labelSessionTab(tabId: number, name: string): Promise<number | un
+   }
+ }
+ 
++function readinessExpectationsFrom(input: unknown): ReadinessExpectations {
++  const raw = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
++  const expect: ReadinessExpectations = {};
++  for (const key of ["selector", "text", "urlPrefix", "emptyText"] as const) {
++    const value = raw[key];
++    if (typeof value === "string" && value.trim() !== "") expect[key] = value;
++  }
++  return expect;
++}
++
++/**
++ * One readiness probe of a tab. A blank tab is `loading` (a navigation is
++ * usually pending), other restricted pages are `error`, and an unreachable
++ * content script (mid-navigation, or not injected yet) is `loading`, so the
++ * poll loop needs no special cases.
++ */
++async function probeTabReadiness(tabId: number, expect: ReadinessExpectations): Promise<ReadinessProbeResult> {
++  let tabStatus: string | undefined;
++  let tabUrl: string | undefined;
++  try {
++    const tab = await chrome.tabs.get(tabId);
++    tabStatus = tab.status;
++    tabUrl = tab.pendingUrl || tab.url;
++  } catch {}
++  if (!tabUrl || tabUrl === "about:blank") {
++    return { state: "loading", evidence: [`tab URL is ${tabUrl || "empty"}`], href: tabUrl, tabStatus };
++  }
++  if (isRestrictedTabUrl(tabUrl)) {
++    return { state: "error", evidence: [`restricted browser or extension page ${tabUrl}`], href: tabUrl, tabStatus };
++  }
++  try {
++    const report = await chrome.tabs.sendMessage(tabId, { type: "PAGE_READINESS", expect }, { frameId: 0 });
++    if (report?.state) {
++      return { ...report, tabStatus };
++    }
++    const reason = report?.error ? String(report.error) : "content script returned no verdict";
++    return { state: "loading", evidence: [reason], href: tabUrl, tabStatus };
++  } catch (err) {
++    const reason = err instanceof Error ? err.message : String(err);
++    return { state: "loading", evidence: [`content script unreachable: ${reason}`], href: tabUrl, tabStatus };
++  }
++}
++
++function describeReadiness(result: ReadinessProbeResult): string {
++  const where = result.href ? ` at ${result.href}` : "";
++  const evidence = result.evidence.length > 0 ? ` (${result.evidence.join("; ")})` : "";
++  return `${result.state}${where}${evidence}`;
++}
++
+ const screenshotCache = new Map<string, { base64: string; width: number; height: number }>();
+ let screenshotCounter = 0;
+ 
+@@ -1855,6 +1913,52 @@ export async function handleMessage(
+       }
+     }
+ 
++    case "PAGE_READINESS": {
++      if (!tabId) throw new Error("No tabId provided");
++      return await probeTabReadiness(tabId, readinessExpectationsFrom(message.expect));
++    }
++
++    case "WAIT_FOR_READY": {
++      if (!tabId) throw new Error("No tabId provided");
++      const expect = readinessExpectationsFrom(message.expect);
++      const budget = clampReadinessBudget({ timeoutMs: message.timeout, intervalMs: message.interval });
++      const accept: ReadinessState[] = parseAcceptStates(message.accept);
++      const outcome = await pollReadiness({
++        ...budget,
++        accept,
++        probe: () => probeTabReadiness(tabId, expect),
++      });
++      const summary = {
++        state: outcome.result.state,
++        evidence: outcome.result.evidence,
++        href: outcome.result.href,
++        title: outcome.result.title,
++        readyState: outcome.result.readyState,
++        tabStatus: outcome.result.tabStatus,
++        polls: outcome.polls,
++        waited: outcome.waitedMs,
++        timeout: budget.timeoutMs,
++        interval: budget.intervalMs,
++      };
++      if (outcome.kind === "settled" || outcome.kind === "accepted") {
++        // No `success` key on purpose: formatToolContent renders any
++        // {success, readyState} result as a fixed "Page loaded" line.
++        return { accepted: outcome.kind === "accepted", ...summary };
++      }
++      if (outcome.kind === "timeout") {
++        throw new BrowserCommandError(
++          "page_timeout",
++          `Page did not become ready within ${budget.timeoutMs}ms; last state ${describeReadiness(outcome.result)}`,
++          { ...summary, tabId },
++        );
++      }
++      throw new BrowserCommandError(
++        readinessErrorCode(outcome.result.state) ?? "page_not_ready",
++        `Page is not ready: ${describeReadiness(outcome.result)}`,
++        { ...summary, tabId },
++      );
++    }
++
+     case "WAIT_FOR_DOM_STABLE": {
+       if (!tabId) throw new Error("No tabId provided");
+ 
+diff --git a/src/utils/page-readiness.ts b/src/utils/page-readiness.ts
+new file mode 100644
+index 0000000..7229fa4
+--- /dev/null
++++ b/src/utils/page-readiness.ts
+@@ -0,0 +1,272 @@
++/**
++ * Page readiness classification.
++ *
++ * A navigation can settle in states other than "the page you wanted": an
++ * anti-bot interstitial, a bounce to a login form, a not-found page, a
++ * browser error page, or an explicit "no results" render. Waiting for a
++ * selector on such a page only times out and hides the cause. This module
++ * turns a DOM snapshot into a typed verdict so callers can branch on the
++ * state instead of on a timeout.
++ *
++ * The classifier is pure: it only looks at the `ReadinessSnapshot` it is
++ * given. The snapshot is collected in the content script (see
++ * `src/content/page-readiness-probe.ts`), and every rule below is
++ * site-independent: it relies on browser behaviour, vendor-neutral markup
++ * conventions and generic wording, never on a particular site's layout.
++ *
++ * This module is bundled into the content script only. The service worker
++ * side (state lists, error codes, the poll loop) lives in
++ * `./readiness-poll.ts`; the two share only types, so the extension build
++ * does not emit a chunk that a classic content script could not import.
++ */
++
++import type { ReadinessState } from "./readiness-poll";
++
++export interface ReadinessExpectations {
++  /** CSS selector that must be present and visible before the page counts as ready. */
++  selector?: string;
++  /** Text that must appear in the page before it counts as ready. */
++  text?: string;
++  /** The page URL must start with this prefix; a different URL is a bounce. */
++  urlPrefix?: string;
++  /** Text that marks an explicit "no results" render (state `empty`). */
++  emptyText?: string;
++}
++
++export interface ExpectationOutcome<T> {
++  expected: T;
++  matched: boolean;
++}
++
++export interface ReadinessSnapshot {
++  href: string;
++  title: string;
++  readyState: string;
++  /** `chrome.tabs.Tab.status` when the caller knows it. */
++  tabStatus?: string;
++  /** Normalized visible body text, truncated to a few thousand characters. */
++  bodyTextSample: string;
++  /** Length of the full normalized body text. */
++  bodyTextLength: number;
++  /** Visible h1/h2 texts, document order. */
++  headings: string[];
++  visiblePasswordInputs: number;
++  visibleTextInputs: number;
++  /** Selectors from CHALLENGE_MARKER_SELECTORS that matched. */
++  challengeMarkers: string[];
++  /** Visible captcha or challenge iframes. */
++  captchaFrames: number;
++  selector?: ExpectationOutcome<string>;
++  text?: ExpectationOutcome<string>;
++  urlPrefix?: ExpectationOutcome<string>;
++  emptyText?: ExpectationOutcome<string>;
++}
++
++export interface ReadinessVerdict {
++  state: ReadinessState;
++  /** Human-readable reasons, most decisive first. */
++  evidence: string[];
++}
++
++/**
++ * Vendor-neutral markup left by common anti-bot interstitials. These are
++ * markers of the challenge vendors themselves, not of any target site.
++ */
++export const CHALLENGE_MARKER_SELECTORS: readonly string[] = [
++  "#challenge-running",
++  "#challenge-form",
++  "#challenge-stage",
++  "#cf-challenge-running",
++  "form[action*='captcha' i]",
++  "[data-sitekey][data-callback]",
++];
++
++/** iframes that host captcha widgets. Only decisive on otherwise empty pages. */
++export const CAPTCHA_FRAME_SELECTORS: readonly string[] = [
++  "iframe[src*='captcha' i]",
++  "iframe[src*='challenge' i]",
++  "iframe[title*='captcha' i]",
++];
++
++export const CHALLENGE_TITLE_PATTERN =
++  /just a moment|attention required|access denied|verify(?:ing)? (?:that )?you are (?:a )?human|security check|checking your browser|are you a robot|bot (?:detection|check|protection)|captcha|one more step|please wait while we verify/i;
++
++export const CHALLENGE_TEXT_PATTERN =
++  /verify(?:ing)? (?:that )?you are (?:a )?human|checking (?:your|the) browser|enable javascript and cookies|unusual traffic|automated (?:access|requests|queries)|complete the security check|prove you are human/i;
++
++export const NOT_FOUND_PATTERN =
++  /\b404\b|\bnot found\b|page (?:doesn.t|does not|cannot be|could not be|can.t be) (?:exist|found)|no longer (?:available|exists)|(?:doesn.t|does not) exist\b/i;
++
++export const LOGIN_PATH_PATTERN =
++  /(?:^|\/)(?:log-?in|sign-?in|sign-?on|auth|authenticate|authorize|sso|oauth2?|session\/new|users\/sign_in|account\/login)(?:\/|$|\?|#)/i;
++
++export const LOGIN_TITLE_PATTERN = /\b(?:log ?in|sign ?in|sign ?on|authenticate|authentication)\b/i;
++
++export const BROWSER_ERROR_PATTERN =
++  /this site can.t be reached|took too long to respond|ERR_[A-Z_]{4,}|no internet|connection (?:was )?(?:reset|refused)/i;
++
++/** Body text shorter than this is treated as an interstitial or error page, not content. */
++export const SHORT_PAGE_TEXT_LENGTH = 800;
++
++export function normalizeText(value: string | null | undefined): string {
++  return (value ?? "").replace(/\s+/g, " ").trim();
++}
++
++export function pathnameOf(href: string): string {
++  try {
++    return new URL(href).pathname;
++  } catch {
++    return "";
++  }
++}
++
++function isBlankHref(href: string): boolean {
++  return href === "" || href === "about:blank" || href.startsWith("about:blank?");
++}
++
++function classifyError(snapshot: ReadinessSnapshot): ReadinessVerdict | null {
++  if (snapshot.href.startsWith("chrome-error://")) {
++    return { state: "error", evidence: [`browser error page ${snapshot.href}`] };
++  }
++  if (snapshot.bodyTextLength < SHORT_PAGE_TEXT_LENGTH) {
++    const match = snapshot.bodyTextSample.match(BROWSER_ERROR_PATTERN);
++    if (match) {
++      return { state: "error", evidence: [`page text reads like a browser error: "${match[0]}"`] };
++    }
++  }
++  return null;
++}
++
++function classifyChallenge(snapshot: ReadinessSnapshot): ReadinessVerdict | null {
++  const evidence: string[] = [];
++  if (snapshot.challengeMarkers.length > 0) {
++    evidence.push(`challenge markup present: ${snapshot.challengeMarkers.join(", ")}`);
++  }
++  const titleMatch = snapshot.title.match(CHALLENGE_TITLE_PATTERN);
++  if (titleMatch) {
++    evidence.push(`title "${snapshot.title}" matches challenge wording`);
++  }
++  const shortPage = snapshot.bodyTextLength < SHORT_PAGE_TEXT_LENGTH;
++  if (shortPage) {
++    const headingMatch = snapshot.headings.find((heading) => CHALLENGE_TITLE_PATTERN.test(heading));
++    if (headingMatch) {
++      evidence.push(`heading "${headingMatch}" matches challenge wording`);
++    }
++    const textMatch = snapshot.bodyTextSample.match(CHALLENGE_TEXT_PATTERN);
++    if (textMatch) {
++      evidence.push(`short page text contains "${textMatch[0]}"`);
++    }
++    if (snapshot.captchaFrames > 0) {
++      evidence.push(`${snapshot.captchaFrames} captcha frame(s) on a short page`);
++    }
++  }
++  if (evidence.length === 0) {
++    return null;
++  }
++  // A lone captcha frame on a short page is weak on its own (cookie banners,
++  // tiny login forms); require a second signal for it.
++  if (evidence.length === 1 && snapshot.captchaFrames > 0 && snapshot.challengeMarkers.length === 0 && !titleMatch) {
++    return null;
++  }
++  return { state: "challenge", evidence };
++}
++
++function classifyNotFound(snapshot: ReadinessSnapshot): ReadinessVerdict | null {
++  const titleMatch = snapshot.title.match(NOT_FOUND_PATTERN);
++  if (titleMatch) {
++    return { state: "not-found", evidence: [`title "${snapshot.title}" matches not-found wording`] };
++  }
++  const heading = snapshot.headings.find((text) => NOT_FOUND_PATTERN.test(text));
++  if (heading) {
++    return { state: "not-found", evidence: [`heading "${heading}" matches not-found wording`] };
++  }
++  return null;
++}
++
++function classifyLogin(snapshot: ReadinessSnapshot): ReadinessVerdict | null {
++  const evidence: string[] = [];
++  const passwordVisible = snapshot.visiblePasswordInputs > 0;
++  const urlLooksLogin = LOGIN_PATH_PATTERN.test(pathnameOf(snapshot.href));
++  const titleLooksLogin = LOGIN_TITLE_PATTERN.test(snapshot.title);
++  const bounced = snapshot.urlPrefix !== undefined && !snapshot.urlPrefix.matched;
++
++  if (passwordVisible) evidence.push(`${snapshot.visiblePasswordInputs} visible password field(s)`);
++  if (urlLooksLogin) evidence.push(`URL path ${pathnameOf(snapshot.href)} looks like a login route`);
++  if (titleLooksLogin) evidence.push(`title "${snapshot.title}" mentions signing in`);
++  if (bounced && snapshot.urlPrefix) {
++    evidence.push(`URL ${snapshot.href} left the expected prefix ${snapshot.urlPrefix.expected}`);
++  }
++
++  const isLogin =
++    (passwordVisible && (urlLooksLogin || titleLooksLogin || bounced)) ||
++    (urlLooksLogin && (titleLooksLogin || bounced));
++  return isLogin ? { state: "login", evidence } : null;
++}
++
++function describeExpectation(name: string, outcome: ExpectationOutcome<string> | undefined): string | null {
++  if (!outcome) return null;
++  return `${name} "${outcome.expected}" ${outcome.matched ? "found" : "not found"}`;
++}
++
++/**
++ * Classify a snapshot. Negative states win over loading so a bounce is
++ * reported as soon as it renders instead of after a timeout; an explicit
++ * empty render wins over a missing content selector; expectations gate
++ * `ready`.
++ */
++export function classifyReadiness(snapshot: ReadinessSnapshot): ReadinessVerdict {
++  const negative =
++    classifyError(snapshot) ??
++    classifyChallenge(snapshot) ??
++    classifyNotFound(snapshot) ??
++    classifyLogin(snapshot);
++  if (negative) {
++    return negative;
++  }
++
++  const evidence: string[] = [];
++  const blank = isBlankHref(snapshot.href);
++  const expectsBlank = snapshot.urlPrefix?.expected.startsWith("about:blank") === true;
++  if (blank && !expectsBlank) {
++    return { state: "loading", evidence: [`URL is ${snapshot.href || "empty"}`] };
++  }
++  if (snapshot.urlPrefix && !snapshot.urlPrefix.matched) {
++    return {
++      state: "loading",
++      evidence: [`URL ${snapshot.href} does not start with ${snapshot.urlPrefix.expected}`],
++    };
++  }
++
++  const contentPresent = snapshot.selector?.matched === true || snapshot.text?.matched === true;
++  if (snapshot.readyState !== "complete" && !contentPresent) {
++    evidence.push(`document.readyState is ${snapshot.readyState}`);
++    if (snapshot.tabStatus && snapshot.tabStatus !== "complete") {
++      evidence.push(`tab status is ${snapshot.tabStatus}`);
++    }
++    return { state: "loading", evidence };
++  }
++
++  if (snapshot.emptyText?.matched) {
++    return { state: "empty", evidence: [`empty-state text "${snapshot.emptyText.expected}" found`] };
++  }
++
++  const missing = [
++    snapshot.selector && !snapshot.selector.matched ? describeExpectation("selector", snapshot.selector) : null,
++    snapshot.text && !snapshot.text.matched ? describeExpectation("text", snapshot.text) : null,
++  ].filter((entry): entry is string => entry !== null);
++  if (missing.length > 0) {
++    return { state: "loading", evidence: missing };
++  }
++
++  const matched = [
++    describeExpectation("selector", snapshot.selector),
++    describeExpectation("text", snapshot.text),
++  ].filter((entry): entry is string => entry !== null);
++  if (matched.length === 0) {
++    matched.push(`document.readyState is ${snapshot.readyState}`);
++  }
++  if (snapshot.visiblePasswordInputs > 0) {
++    matched.push(`${snapshot.visiblePasswordInputs} visible password field(s), page otherwise looks ready`);
++  }
++  return { state: "ready", evidence: matched };
++}
+diff --git a/src/utils/readiness-poll.ts b/src/utils/readiness-poll.ts
+new file mode 100644
+index 0000000..229b342
+--- /dev/null
++++ b/src/utils/readiness-poll.ts
+@@ -0,0 +1,157 @@
++/**
++ * Host-side half of page readiness: the state vocabulary, error codes,
++ * `--accept` parsing and the bounded poll loop. Bundled into the service
++ * worker only; the DOM classifier in `./page-readiness.ts` is content-script
++ * only and imports nothing but types from here.
++ */
++
++export type ReadinessState =
++  | "ready"
++  | "empty"
++  | "loading"
++  | "login"
++  | "challenge"
++  | "not-found"
++  | "error";
++
++/** States that mean "stop waiting, the page will not become ready". */
++export const NEGATIVE_READINESS_STATES: readonly ReadinessState[] = [
++  "challenge",
++  "login",
++  "not-found",
++  "error",
++];
++
++/** States that mean "the page has settled and can be read". */
++export const SETTLED_READINESS_STATES: readonly ReadinessState[] = ["ready", "empty"];
++
++/** Error code for a negative state, or null for states that are not errors. */
++export function readinessErrorCode(state: ReadinessState): string | null {
++  switch (state) {
++    case "challenge":
++      return "page_challenge";
++    case "login":
++      return "page_login";
++    case "not-found":
++      return "page_not_found";
++    case "error":
++      return "page_error";
++    default:
++      return null;
++  }
++}
++
++export function isReadinessState(value: unknown): value is ReadinessState {
++  return (
++    value === "ready" ||
++    value === "empty" ||
++    value === "loading" ||
++    NEGATIVE_READINESS_STATES.includes(value as ReadinessState)
++  );
++}
++
++/** Parse `--accept login,challenge` style input into a state list. */
++export function parseAcceptStates(input: unknown): ReadinessState[] {
++  const raw: unknown[] = Array.isArray(input)
++    ? input
++    : typeof input === "string"
++      ? input.split(",")
++      : [];
++  const states: ReadinessState[] = [];
++  for (const entry of raw) {
++    const trimmed = typeof entry === "string" ? entry.trim() : "";
++    if (!isReadinessState(trimmed)) {
++      throw new Error(
++        `Unknown readiness state "${String(entry)}". Expected one of: challenge, login, not-found, error`,
++      );
++    }
++    if (!states.includes(trimmed)) states.push(trimmed);
++  }
++  return states;
++}
++
++/** What one probe of the page reports. */
++export interface ReadinessProbeResult {
++  state: ReadinessState;
++  evidence: string[];
++  href?: string;
++  title?: string;
++  readyState?: string;
++  tabStatus?: string;
++}
++
++export interface ReadinessBudget {
++  timeoutMs: number;
++  intervalMs: number;
++}
++
++export const DEFAULT_READINESS_TIMEOUT_MS = 20_000;
++export const MAX_READINESS_TIMEOUT_MS = 120_000;
++export const DEFAULT_READINESS_INTERVAL_MS = 400;
++export const MIN_READINESS_INTERVAL_MS = 50;
++
++/** Clamp caller-supplied numbers into a bounded polling budget. */
++export function clampReadinessBudget(input: { timeoutMs?: unknown; intervalMs?: unknown }): ReadinessBudget {
++  const timeoutRaw = Number(input.timeoutMs);
++  const intervalRaw = Number(input.intervalMs);
++  const timeoutMs = Number.isFinite(timeoutRaw) && timeoutRaw > 0
++    ? Math.min(timeoutRaw, MAX_READINESS_TIMEOUT_MS)
++    : DEFAULT_READINESS_TIMEOUT_MS;
++  const intervalBase = Number.isFinite(intervalRaw) && intervalRaw > 0 ? intervalRaw : DEFAULT_READINESS_INTERVAL_MS;
++  const intervalMs = Math.min(Math.max(intervalBase, MIN_READINESS_INTERVAL_MS), timeoutMs);
++  return { timeoutMs, intervalMs };
++}
++
++export interface ReadinessPollOptions extends ReadinessBudget {
++  probe: () => Promise<ReadinessProbeResult>;
++  /** Negative states that end the wait successfully instead of failing it. */
++  accept?: readonly ReadinessState[];
++  sleep?: (ms: number) => Promise<void>;
++  now?: () => number;
++  /** Called after every probe; useful for debug lines. */
++  onPoll?: (result: ReadinessProbeResult, poll: number, waitedMs: number) => void;
++}
++
++export type ReadinessPollKind = "settled" | "accepted" | "negative" | "timeout";
++
++export interface ReadinessPollOutcome {
++  kind: ReadinessPollKind;
++  result: ReadinessProbeResult;
++  polls: number;
++  waitedMs: number;
++}
++
++const defaultSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
++
++/**
++ * Probe until the page settles, a negative state appears, or the budget is
++ * spent. The loop never spins faster than `intervalMs` and always makes at
++ * least one probe.
++ */
++export async function pollReadiness(options: ReadinessPollOptions): Promise<ReadinessPollOutcome> {
++  const sleep = options.sleep ?? defaultSleep;
++  const now = options.now ?? Date.now;
++  const accept = options.accept ?? [];
++  const startedAt = now();
++  let polls = 0;
++  let last: ReadinessProbeResult = { state: "loading", evidence: ["no probe completed"] };
++
++  for (;;) {
++    last = await options.probe();
++    polls += 1;
++    const waitedMs = now() - startedAt;
++    options.onPoll?.(last, polls, waitedMs);
++
++    if (SETTLED_READINESS_STATES.includes(last.state)) {
++      return { kind: "settled", result: last, polls, waitedMs };
++    }
++    if (NEGATIVE_READINESS_STATES.includes(last.state)) {
++      return { kind: accept.includes(last.state) ? "accepted" : "negative", result: last, polls, waitedMs };
++    }
++    const remaining = options.timeoutMs - (now() - startedAt);
++    if (remaining <= 0) {
++      return { kind: "timeout", result: last, polls, waitedMs: now() - startedAt };
++    }
++    await sleep(Math.min(options.intervalMs, remaining));
++  }
++}
+diff --git a/test/unit/host-helpers.test.ts b/test/unit/host-helpers.test.ts
+index 170cc4f..0f770a2 100644
+--- a/test/unit/host-helpers.test.ts
++++ b/test/unit/host-helpers.test.ts
+@@ -543,3 +543,62 @@ describe("formatToolContent", () => {
+     });
+   });
+ });
++
++describe("readiness tools", () => {
++  it("maps wait.ready with CLI flag spelling", () => {
++    const msg = helpers.mapToolToMessage(
++      "wait.ready",
++      {
++        selector: ".x",
++        "url-prefix": "https://a/",
++        "empty-text": "None",
++        timeout: 5000,
++        interval: 200,
++        accept: "login",
++      },
++      7,
++    );
++    expect(msg).toEqual({
++      type: "WAIT_FOR_READY",
++      expect: { selector: ".x", urlPrefix: "https://a/", emptyText: "None" },
++      timeout: 5000,
++      interval: 200,
++      accept: "login",
++      tabId: 7,
++    });
++  });
++
++  it("maps page.readiness with socket API spelling and drops empty values", () => {
++    const msg = helpers.mapToolToMessage(
++      "page.readiness",
++      { urlPrefix: "https://a/", text: "  ", selector: "" },
++      7,
++    );
++    expect(msg).toEqual({ type: "PAGE_READINESS", expect: { urlPrefix: "https://a/" }, tabId: 7 });
++  });
++
++  it("renders wait.ready results as JSON rather than the generic page-loaded line", () => {
++    const content = helpers.formatToolContent({
++      state: "ready",
++      evidence: ["document.readyState is complete"],
++      readyState: "complete",
++      polls: 2,
++      waited: 410,
++      _resolvedTabId: 7,
++    });
++    expect(content).toHaveLength(1);
++    expect(JSON.parse(content[0].text)).toEqual({
++      state: "ready",
++      evidence: ["document.readyState is complete"],
++      readyState: "complete",
++      polls: 2,
++      waited: 410,
++    });
++  });
++
++  it("prefers camelCase over hyphenated spelling when both are present", () => {
++    expect(helpers.readinessExpectations({ urlPrefix: "a", "url-prefix": "b" })).toEqual({
++      urlPrefix: "a",
++    });
++  });
++});
+diff --git a/test/unit/page-readiness.test.ts b/test/unit/page-readiness.test.ts
+new file mode 100644
+index 0000000..ebf32fd
+--- /dev/null
++++ b/test/unit/page-readiness.test.ts
+@@ -0,0 +1,300 @@
++import { describe, expect, it } from "vitest";
++import {
++  collectReadinessSnapshot,
++  probePageReadiness,
++  type ReadinessProbeDom,
++} from "../../src/content/page-readiness-probe";
++import { classifyReadiness, type ReadinessSnapshot } from "../../src/utils/page-readiness";
++import { parseAcceptStates, readinessErrorCode } from "../../src/utils/readiness-poll";
++
++function snapshot(overrides: Partial<ReadinessSnapshot> = {}): ReadinessSnapshot {
++  const body =
++    overrides.bodyTextSample ??
++    "Welcome to the dashboard. Here are your projects and recent activity across the workspace.";
++  return {
++    href: "https://app.example.com/projects",
++    title: "Projects - Example",
++    readyState: "complete",
++    bodyTextSample: body,
++    bodyTextLength: body.length,
++    headings: ["Projects"],
++    visiblePasswordInputs: 0,
++    visibleTextInputs: 1,
++    challengeMarkers: [],
++    captchaFrames: 0,
++    ...overrides,
++  };
++}
++
++describe("classifyReadiness", () => {
++  it("reports ready for a loaded page without expectations", () => {
++    const verdict = classifyReadiness(snapshot());
++    expect(verdict.state).toBe("ready");
++    expect(verdict.evidence).toEqual(["document.readyState is complete"]);
++  });
++
++  it("reports loading while the document is still parsing", () => {
++    const verdict = classifyReadiness(
++      snapshot({ readyState: "interactive", tabStatus: "loading" }),
++    );
++    expect(verdict.state).toBe("loading");
++    expect(verdict.evidence).toEqual([
++      "document.readyState is interactive",
++      "tab status is loading",
++    ]);
++  });
++
++  it("treats a blank URL as loading", () => {
++    expect(classifyReadiness(snapshot({ href: "about:blank" })).state).toBe("loading");
++    expect(classifyReadiness(snapshot({ href: "" })).state).toBe("loading");
++  });
++
++  it("accepts about:blank when that is the expected prefix", () => {
++    const verdict = classifyReadiness(
++      snapshot({ href: "about:blank", urlPrefix: { expected: "about:blank", matched: true } }),
++    );
++    expect(verdict.state).toBe("ready");
++  });
++
++  it("detects an anti-bot interstitial by title", () => {
++    const verdict = classifyReadiness(
++      snapshot({
++        title: "Just a moment...",
++        bodyTextSample: "Checking your browser before accessing the site.",
++      }),
++    );
++    expect(verdict.state).toBe("challenge");
++    expect(verdict.evidence[0]).toContain("Just a moment");
++  });
++
++  it("detects an anti-bot interstitial by vendor markup", () => {
++    const verdict = classifyReadiness(snapshot({ challengeMarkers: ["#challenge-running"] }));
++    expect(verdict.state).toBe("challenge");
++    expect(verdict.evidence).toEqual(["challenge markup present: #challenge-running"]);
++  });
++
++  it("does not flag an article that merely mentions captchas", () => {
++    const body = `${"How captcha systems verify you are human. ".repeat(40)}`;
++    const verdict = classifyReadiness(
++      snapshot({
++        title: "Blog - Example",
++        bodyTextSample: body,
++        bodyTextLength: body.length,
++        captchaFrames: 1,
++      }),
++    );
++    expect(verdict.state).toBe("ready");
++  });
++
++  it("does not treat a lone captcha badge on a short page as a challenge", () => {
++    const body = "Subscribe to our newsletter. Email address. Subscribe.";
++    const verdict = classifyReadiness(
++      snapshot({ bodyTextSample: body, bodyTextLength: body.length, captchaFrames: 1 }),
++    );
++    expect(verdict.state).toBe("ready");
++  });
++
++  it("detects not-found pages by title or heading", () => {
++    expect(classifyReadiness(snapshot({ title: "404 Not Found" })).state).toBe("not-found");
++    expect(classifyReadiness(snapshot({ headings: ["This page doesn't exist"] })).state).toBe(
++      "not-found",
++    );
++  });
++
++  it("detects a login bounce: password field plus URL prefix mismatch", () => {
++    const verdict = classifyReadiness(
++      snapshot({
++        href: "https://accounts.example.com/session?next=%2Fprojects",
++        title: "Example",
++        visiblePasswordInputs: 1,
++        urlPrefix: { expected: "https://app.example.com/", matched: false },
++      }),
++    );
++    expect(verdict.state).toBe("login");
++    expect(verdict.evidence).toContain("1 visible password field(s)");
++    expect(verdict.evidence.some((line) => line.includes("left the expected prefix"))).toBe(true);
++  });
++
++  it("detects a login page by route and title without a password field", () => {
++    const verdict = classifyReadiness(
++      snapshot({
++        href: "https://app.example.com/login",
++        title: "Sign in - Example",
++        visiblePasswordInputs: 0,
++      }),
++    );
++    expect(verdict.state).toBe("login");
++  });
++
++  it("keeps a page with a visible password field ready when nothing else points at login", () => {
++    const verdict = classifyReadiness(snapshot({ visiblePasswordInputs: 1 }));
++    expect(verdict.state).toBe("ready");
++    expect(verdict.evidence.some((line) => line.includes("password field"))).toBe(true);
++  });
++
++  it("detects browser error pages", () => {
++    expect(classifyReadiness(snapshot({ href: "chrome-error://chromewebdata/" })).state).toBe(
++      "error",
++    );
++    const body = "This site can't be reached. ERR_CONNECTION_REFUSED";
++    expect(
++      classifyReadiness(snapshot({ bodyTextSample: body, bodyTextLength: body.length })).state,
++    ).toBe("error");
++  });
++
++  it("reports loading until an expected selector or text appears", () => {
++    const missingSelector = classifyReadiness(
++      snapshot({ selector: { expected: ".results", matched: false } }),
++    );
++    expect(missingSelector.state).toBe("loading");
++    expect(missingSelector.evidence).toEqual(['selector ".results" not found']);
++
++    const found = classifyReadiness(
++      snapshot({ selector: { expected: ".results", matched: true } }),
++    );
++    expect(found.state).toBe("ready");
++    expect(found.evidence).toEqual(['selector ".results" found']);
++  });
++
++  it("lets present content override a non-complete readyState", () => {
++    const verdict = classifyReadiness(
++      snapshot({ readyState: "interactive", text: { expected: "Projects", matched: true } }),
++    );
++    expect(verdict.state).toBe("ready");
++  });
++
++  it("reports empty for an explicit no-results render even when the content selector is missing", () => {
++    const verdict = classifyReadiness(
++      snapshot({
++        selector: { expected: ".result-card", matched: false },
++        emptyText: { expected: "No results found", matched: true },
++      }),
++    );
++    expect(verdict.state).toBe("empty");
++  });
++
++  it("reports loading while the URL is outside the expected prefix and no login signal exists", () => {
++    const verdict = classifyReadiness(
++      snapshot({
++        href: "https://app.example.com/redirecting",
++        urlPrefix: { expected: "https://app.example.com/projects", matched: false },
++      }),
++    );
++    expect(verdict.state).toBe("loading");
++  });
++
++  it("prefers a negative state over loading", () => {
++    const verdict = classifyReadiness(
++      snapshot({
++        readyState: "loading",
++        title: "Attention Required!",
++        challengeMarkers: ["#challenge-form"],
++      }),
++    );
++    expect(verdict.state).toBe("challenge");
++  });
++});
++
++describe("readinessErrorCode", () => {
++  it("maps negative states to error codes and others to null", () => {
++    expect(readinessErrorCode("challenge")).toBe("page_challenge");
++    expect(readinessErrorCode("login")).toBe("page_login");
++    expect(readinessErrorCode("not-found")).toBe("page_not_found");
++    expect(readinessErrorCode("error")).toBe("page_error");
++    expect(readinessErrorCode("ready")).toBeNull();
++    expect(readinessErrorCode("loading")).toBeNull();
++  });
++});
++
++describe("parseAcceptStates", () => {
++  it("parses comma lists and arrays, de-duplicating", () => {
++    expect(parseAcceptStates("login, challenge,login")).toEqual(["login", "challenge"]);
++    expect(parseAcceptStates(["not-found"])).toEqual(["not-found"]);
++    expect(parseAcceptStates(undefined)).toEqual([]);
++  });
++
++  it("rejects unknown states", () => {
++    expect(() => parseAcceptStates("blocked")).toThrow(/Unknown readiness state "blocked"/);
++  });
++});
++
++function fakeDom(
++  overrides: Partial<ReadinessProbeDom> & { counts?: Record<string, number> } = {},
++): ReadinessProbeDom {
++  const counts = overrides.counts ?? {};
++  return {
++    href: "https://app.example.com/projects",
++    title: "  Projects   -  Example ",
++    readyState: "complete",
++    bodyText: () => "Projects Alpha Beta No results found",
++    countVisible: (selector) => counts[selector] ?? 0,
++    visibleHeadings: () => [" Projects "],
++    ...overrides,
++  };
++}
++
++describe("collectReadinessSnapshot", () => {
++  it("counts visible fields, markers and captcha frames", () => {
++    const dom = fakeDom({
++      counts: {
++        "input[type='password']": 1,
++        "#challenge-running": 1,
++        "iframe[src*='captcha' i]": 2,
++        "iframe[title*='captcha' i]": 1,
++      },
++    });
++    const result = collectReadinessSnapshot(dom);
++    expect(result.title).toBe("Projects - Example");
++    expect(result.headings).toEqual(["Projects"]);
++    expect(result.visiblePasswordInputs).toBe(1);
++    expect(result.challengeMarkers).toEqual(["#challenge-running"]);
++    expect(result.captchaFrames).toBe(3);
++    expect(result.bodyTextLength).toBe("Projects Alpha Beta No results found".length);
++  });
++
++  it("evaluates expectations case-insensitively and never throws on bad selectors", () => {
++    const dom = fakeDom({
++      counts: { ".card": 2 },
++      countVisible: (selector) => {
++        if (selector === "!!bad") {
++          throw new Error("invalid selector");
++        }
++        return selector === ".card" ? 2 : 0;
++      },
++    });
++    const result = collectReadinessSnapshot(dom, {
++      selector: ".card",
++      text: "no RESULTS found",
++      urlPrefix: "https://app.example.com/",
++      emptyText: "  no results  ",
++    });
++    expect(result.selector).toEqual({ expected: ".card", matched: true });
++    expect(result.text).toEqual({ expected: "no RESULTS found", matched: true });
++    expect(result.urlPrefix).toEqual({ expected: "https://app.example.com/", matched: true });
++    expect(result.emptyText).toEqual({ expected: "  no results  ", matched: true });
++    expect(collectReadinessSnapshot(dom, { selector: "!!bad" }).selector).toEqual({
++      expected: "!!bad",
++      matched: false,
++    });
++  });
++
++  it("omits expectation fields that were not requested", () => {
++    const result = collectReadinessSnapshot(fakeDom());
++    expect(result.selector).toBeUndefined();
++    expect(result.text).toBeUndefined();
++    expect(result.urlPrefix).toBeUndefined();
++    expect(result.emptyText).toBeUndefined();
++  });
++});
++
++describe("probePageReadiness", () => {
++  it("returns a verdict with page identity and a snapshot without the text sample", () => {
++    const report = probePageReadiness(fakeDom(), { selector: ".card" });
++    expect(report.state).toBe("loading");
++    expect(report.href).toBe("https://app.example.com/projects");
++    expect(report.title).toBe("Projects - Example");
++    expect(report.readyState).toBe("complete");
++    expect("bodyTextSample" in report.snapshot).toBe(false);
++    expect(report.snapshot.selector).toEqual({ expected: ".card", matched: false });
++  });
++});
+diff --git a/test/unit/readiness-poll.test.ts b/test/unit/readiness-poll.test.ts
+new file mode 100644
+index 0000000..ed34216
+--- /dev/null
++++ b/test/unit/readiness-poll.test.ts
+@@ -0,0 +1,151 @@
++import { describe, expect, it } from "vitest";
++import {
++  clampReadinessBudget,
++  DEFAULT_READINESS_INTERVAL_MS,
++  DEFAULT_READINESS_TIMEOUT_MS,
++  MAX_READINESS_TIMEOUT_MS,
++  MIN_READINESS_INTERVAL_MS,
++  pollReadiness,
++  type ReadinessProbeResult,
++  type ReadinessState,
++} from "../../src/utils/readiness-poll";
++
++function fakeClock() {
++  let time = 0;
++  const sleeps: number[] = [];
++  return {
++    now: () => time,
++    sleep: async (ms: number) => {
++      sleeps.push(ms);
++      time += ms;
++    },
++    advance: (ms: number) => {
++      time += ms;
++    },
++    sleeps,
++  };
++}
++
++function sequence(states: ReadinessState[]): () => Promise<ReadinessProbeResult> {
++  let index = 0;
++  return async () => {
++    const state = states[Math.min(index, states.length - 1)];
++    index += 1;
++    return { state, evidence: [`probe ${index}`] };
++  };
++}
++
++describe("clampReadinessBudget", () => {
++  it("applies defaults for missing or invalid input", () => {
++    expect(clampReadinessBudget({})).toEqual({
++      timeoutMs: DEFAULT_READINESS_TIMEOUT_MS,
++      intervalMs: DEFAULT_READINESS_INTERVAL_MS,
++    });
++    expect(clampReadinessBudget({ timeoutMs: "abc", intervalMs: -5 })).toEqual({
++      timeoutMs: DEFAULT_READINESS_TIMEOUT_MS,
++      intervalMs: DEFAULT_READINESS_INTERVAL_MS,
++    });
++  });
++
++  it("caps the timeout, floors the interval and keeps the interval within the timeout", () => {
++    expect(clampReadinessBudget({ timeoutMs: 10_000_000, intervalMs: 1 })).toEqual({
++      timeoutMs: MAX_READINESS_TIMEOUT_MS,
++      intervalMs: MIN_READINESS_INTERVAL_MS,
++    });
++    expect(clampReadinessBudget({ timeoutMs: 200, intervalMs: 5000 })).toEqual({
++      timeoutMs: 200,
++      intervalMs: 200,
++    });
++  });
++});
++
++describe("pollReadiness", () => {
++  it("keeps polling through loading and settles on ready", async () => {
++    const clock = fakeClock();
++    const outcome = await pollReadiness({
++      timeoutMs: 5000,
++      intervalMs: 400,
++      probe: sequence(["loading", "loading", "ready"]),
++      sleep: clock.sleep,
++      now: clock.now,
++    });
++    expect(outcome.kind).toBe("settled");
++    expect(outcome.result.state).toBe("ready");
++    expect(outcome.polls).toBe(3);
++    expect(clock.sleeps).toEqual([400, 400]);
++    expect(outcome.waitedMs).toBe(800);
++  });
++
++  it("treats empty as settled", async () => {
++    const clock = fakeClock();
++    const outcome = await pollReadiness({
++      timeoutMs: 5000,
++      intervalMs: 100,
++      probe: sequence(["empty"]),
++      sleep: clock.sleep,
++      now: clock.now,
++    });
++    expect(outcome.kind).toBe("settled");
++    expect(outcome.polls).toBe(1);
++  });
++
++  it("stops on a negative state without waiting for the timeout", async () => {
++    const clock = fakeClock();
++    const outcome = await pollReadiness({
++      timeoutMs: 60_000,
++      intervalMs: 400,
++      probe: sequence(["loading", "login"]),
++      sleep: clock.sleep,
++      now: clock.now,
++    });
++    expect(outcome.kind).toBe("negative");
++    expect(outcome.result.state).toBe("login");
++    expect(outcome.polls).toBe(2);
++  });
++
++  it("returns accepted when the negative state is in the accept list", async () => {
++    const clock = fakeClock();
++    const outcome = await pollReadiness({
++      timeoutMs: 1000,
++      intervalMs: 100,
++      accept: ["login"],
++      probe: sequence(["login"]),
++      sleep: clock.sleep,
++      now: clock.now,
++    });
++    expect(outcome.kind).toBe("accepted");
++  });
++
++  it("times out with the last loading result and never sleeps past the deadline", async () => {
++    const clock = fakeClock();
++    const seen: number[] = [];
++    const outcome = await pollReadiness({
++      timeoutMs: 1000,
++      intervalMs: 400,
++      probe: sequence(["loading"]),
++      sleep: clock.sleep,
++      now: clock.now,
++      onPoll: (_result, poll) => seen.push(poll),
++    });
++    expect(outcome.kind).toBe("timeout");
++    expect(outcome.result.state).toBe("loading");
++    expect(clock.sleeps).toEqual([400, 400, 200]);
++    expect(outcome.polls).toBe(4);
++    expect(seen).toEqual([1, 2, 3, 4]);
++    expect(outcome.waitedMs).toBe(1000);
++  });
++
++  it("always makes at least one probe even with a spent budget", async () => {
++    const clock = fakeClock();
++    const outcome = await pollReadiness({
++      timeoutMs: 0,
++      intervalMs: 50,
++      probe: sequence(["loading"]),
++      sleep: clock.sleep,
++      now: clock.now,
++    });
++    expect(outcome.kind).toBe("timeout");
++    expect(outcome.polls).toBe(1);
++    expect(clock.sleeps).toEqual([]);
++  });
++});
+diff --git a/test/unit/service-worker/readiness-handlers.test.ts b/test/unit/service-worker/readiness-handlers.test.ts
+new file mode 100644
+index 0000000..7a907dc
+--- /dev/null
++++ b/test/unit/service-worker/readiness-handlers.test.ts
+@@ -0,0 +1,170 @@
++import { beforeEach, describe, expect, it, vi } from "vitest";
++import { createChromeMock, resetChromeMock } from "../../mocks/chrome";
++
++vi.mock("../../../src/native/port-manager", () => ({
++  initNativeMessaging: vi.fn(),
++  postToNativeHost: vi.fn(),
++}));
++
++async function loadHandleMessage() {
++  vi.resetModules();
++  (globalThis as any).chrome = createChromeMock();
++  const mod = await import("../../../src/service-worker/index");
++  return mod.handleMessage;
++}
++
++function report(state: string, extra: Record<string, unknown> = {}) {
++  return {
++    state,
++    evidence: [`${state} evidence`],
++    href: "https://example.com/page",
++    title: "Page",
++    readyState: "complete",
++    ...extra,
++  };
++}
++
++describe("readiness handlers", () => {
++  beforeEach(() => {
++    resetChromeMock();
++  });
++
++  it("PAGE_READINESS forwards expectations to the content script and adds the tab status", async () => {
++    const handleMessage = await loadHandleMessage();
++    const chrome = (globalThis as any).chrome;
++    chrome.tabs.get.mockResolvedValue({
++      id: 5,
++      url: "https://example.com/page",
++      status: "complete",
++    });
++    chrome.tabs.sendMessage.mockResolvedValue(report("ready"));
++
++    const result = await handleMessage(
++      {
++        type: "PAGE_READINESS",
++        tabId: 5,
++        expect: { selector: ".x", urlPrefix: "https://example.com/", bogus: 1, text: "" },
++      },
++      {},
++    );
++
++    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
++      5,
++      { type: "PAGE_READINESS", expect: { selector: ".x", urlPrefix: "https://example.com/" } },
++      { frameId: 0 },
++    );
++    expect(result).toEqual({ ...report("ready"), tabStatus: "complete" });
++  });
++
++  it("PAGE_READINESS reports loading for a blank tab and error for restricted pages", async () => {
++    const handleMessage = await loadHandleMessage();
++    const chrome = (globalThis as any).chrome;
++
++    chrome.tabs.get.mockResolvedValue({ id: 5, url: "about:blank", status: "loading" });
++    const blank = await handleMessage({ type: "PAGE_READINESS", tabId: 5 }, {});
++    expect(blank.state).toBe("loading");
++    expect(chrome.tabs.sendMessage).not.toHaveBeenCalled();
++
++    chrome.tabs.get.mockResolvedValue({ id: 5, url: "chrome://settings/", status: "complete" });
++    const restricted = await handleMessage({ type: "PAGE_READINESS", tabId: 5 }, {});
++    expect(restricted.state).toBe("error");
++    expect(restricted.evidence[0]).toContain("chrome://settings/");
++  });
++
++  it("PAGE_READINESS treats an unreachable content script as loading", async () => {
++    const handleMessage = await loadHandleMessage();
++    const chrome = (globalThis as any).chrome;
++    chrome.tabs.get.mockResolvedValue({ id: 5, url: "https://example.com/", status: "loading" });
++    chrome.tabs.sendMessage.mockRejectedValue(new Error("Receiving end does not exist"));
++
++    const result = await handleMessage({ type: "PAGE_READINESS", tabId: 5 }, {});
++    expect(result.state).toBe("loading");
++    expect(result.evidence[0]).toContain("content script unreachable");
++    expect(result.tabStatus).toBe("loading");
++  });
++
++  it("WAIT_FOR_READY polls until the page is ready", async () => {
++    const handleMessage = await loadHandleMessage();
++    const chrome = (globalThis as any).chrome;
++    chrome.tabs.get.mockResolvedValue({
++      id: 5,
++      url: "https://example.com/page",
++      status: "complete",
++    });
++    chrome.tabs.sendMessage
++      .mockResolvedValueOnce(report("loading"))
++      .mockResolvedValueOnce(report("loading"))
++      .mockResolvedValue(report("ready"));
++
++    const result = await handleMessage(
++      { type: "WAIT_FOR_READY", tabId: 5, timeout: 2000, interval: 10 },
++      {},
++    );
++
++    expect(result.success).toBeUndefined();
++    expect(result.state).toBe("ready");
++    expect(result.accepted).toBe(false);
++    expect(result.polls).toBe(3);
++    expect(result.interval).toBe(50);
++    expect(chrome.tabs.sendMessage).toHaveBeenCalledTimes(3);
++  });
++
++  it("WAIT_FOR_READY fails fast with a typed code on a login bounce", async () => {
++    const handleMessage = await loadHandleMessage();
++    const chrome = (globalThis as any).chrome;
++    chrome.tabs.get.mockResolvedValue({
++      id: 5,
++      url: "https://example.com/login",
++      status: "complete",
++    });
++    chrome.tabs.sendMessage.mockResolvedValue(
++      report("login", { href: "https://example.com/login" }),
++    );
++
++    const promise = handleMessage({ type: "WAIT_FOR_READY", tabId: 5, timeout: 5000 }, {});
++    await expect(promise).rejects.toMatchObject({
++      code: "page_login",
++      message: expect.stringContaining("login at https://example.com/login (login evidence)"),
++      details: expect.objectContaining({ state: "login", polls: 1, tabId: 5 }),
++    });
++    expect(chrome.tabs.sendMessage).toHaveBeenCalledTimes(1);
++  });
++
++  it("WAIT_FOR_READY returns an accepted negative state", async () => {
++    const handleMessage = await loadHandleMessage();
++    const chrome = (globalThis as any).chrome;
++    chrome.tabs.get.mockResolvedValue({ id: 5, url: "https://example.com/", status: "complete" });
++    chrome.tabs.sendMessage.mockResolvedValue(report("challenge"));
++
++    const result = await handleMessage(
++      { type: "WAIT_FOR_READY", tabId: 5, accept: "challenge,login" },
++      {},
++    );
++    expect(result).toMatchObject({ accepted: true, state: "challenge" });
++    expect(result.success).toBeUndefined();
++  });
++
++  it("WAIT_FOR_READY rejects unknown accept states before polling", async () => {
++    const handleMessage = await loadHandleMessage();
++    const chrome = (globalThis as any).chrome;
++    await expect(
++      handleMessage({ type: "WAIT_FOR_READY", tabId: 5, accept: "blocked" }, {}),
++    ).rejects.toThrow(/Unknown readiness state/);
++    expect(chrome.tabs.sendMessage).not.toHaveBeenCalled();
++  });
++
++  it("WAIT_FOR_READY times out with page_timeout and the last state", async () => {
++    const handleMessage = await loadHandleMessage();
++    const chrome = (globalThis as any).chrome;
++    chrome.tabs.get.mockResolvedValue({ id: 5, url: "https://example.com/", status: "loading" });
++    chrome.tabs.sendMessage.mockResolvedValue(report("loading"));
++
++    await expect(
++      handleMessage({ type: "WAIT_FOR_READY", tabId: 5, timeout: 120, interval: 50 }, {}),
++    ).rejects.toMatchObject({
++      code: "page_timeout",
++      message: expect.stringContaining("did not become ready within 120ms"),
++      details: expect.objectContaining({ state: "loading" }),
++    });
++  });
++});
+diff --git a/test/unit/tool-scope.test.ts b/test/unit/tool-scope.test.ts
+index 8227c2b..ce82b49 100644
+--- a/test/unit/tool-scope.test.ts
++++ b/test/unit/tool-scope.test.ts
+@@ -48,6 +48,19 @@ describe("tool scope classification", () => {
+     expect(classified.resourceKeys).toEqual([`file:${require("node:path").resolve("same.har")}`]);
+   });
+ 
++  it("keeps readiness probes on the tab lane", () => {
++    expect(classifyTool("wait.ready", { selector: ".x" })).toEqual({
++      scope: "tab",
++      targetUse: "default-tab",
++      resourceKeys: [],
++    });
++    expect(classifyTool("page.readiness", {})).toEqual({
++      scope: "tab",
++      targetUse: "default-tab",
++      resourceKeys: [],
++    });
++  });
++
+   it("fails conservative for unclassified browser commands", () => {
+     expect(classifyTool("future.browser.command")).toMatchObject({
+       scope: "browser-write",
+-- 
+2.55.0
+

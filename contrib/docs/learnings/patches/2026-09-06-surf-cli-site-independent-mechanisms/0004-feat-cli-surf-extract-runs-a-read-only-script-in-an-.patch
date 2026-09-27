@@ -1,0 +1,1198 @@
+From 94bfd8267dc2d0398d1b570672f8cfba2250a9c9 Mon Sep 17 00:00:00 2001
+From: tryinget <markus@team-wangler.de>
+Date: Mon, 7 Sep 2026 00:11:16 +0200
+Subject: [PATCH 04/13] feat(cli): surf extract runs a read-only script in an
+ owned tab
+
+`surf extract <url> --file rows.js` composes existing tools into the
+extraction lifecycle agents keep re-deriving by hand:
+
+  tab.new -> wait.ready -> js -> parse -> rows invariant -> tab.close
+
+- Owned tab: the command opens its own tab and always closes it, also
+  when readiness or the script fails, so no tab leaks.
+- Readiness gate: --ready-selector/--ready-text/--ready-url-prefix/
+  --empty-text go to wait.ready; a login bounce, challenge, not-found
+  or error page fails the run with that typed code and is never
+  retried, since the next tab would land on the same page.
+- Bounded fresh-tab retry (--retry, default 1, max 5): transient
+  target failures ("navigated or closed", detached target, lost
+  execution context, unreachable content script), readiness timeouts
+  and zero-row results close the failed tab and start over in a new
+  one. A tab whose context was invalidated is never reused.
+- Zero rows is a failure unless --allow-empty is passed or the page
+  showed its own no-results message (--empty-text). This separates
+  "empty" from "logged out, blocked, or selectors missed".
+- Read-only by contract: the whole sequence may replay, so a script
+  that mutates state must run through `surf js` on an explicit target.
+  With --tab-id/--session the command reads that tab in place,
+  navigates only when a URL is given, and never retries or closes it.
+- Options prelude: --options '{"limit": 20}' is exposed to the script
+  as a frozen SURF_OPTIONS constant (native/script-options.cjs), so
+  the script stays a plain file usable in other page-JS tools.
+- Output: Markdown (metadata bullets plus a row table) by default,
+  --json for {data, rows, rowCount, attempts, readiness}.
+
+native/extract.cjs holds the pure pieces (error classifier, row
+selection, invariant, Markdown renderer) and runExtraction, which
+takes an injected executeTool; the tests script a fake host and assert
+the exact call sequence, including the close-then-reopen retry.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PpyRJ9kNJBQ5JiqeYjxkTF
+---
+ native/cli.cjs                   | 170 +++++++++++-
+ native/extract.cjs               | 374 ++++++++++++++++++++++++++
+ native/script-options.cjs        |  52 ++++
+ test/unit/extract.test.ts        | 448 +++++++++++++++++++++++++++++++
+ test/unit/script-options.test.ts |  48 ++++
+ 5 files changed, 1091 insertions(+), 1 deletion(-)
+ create mode 100644 native/extract.cjs
+ create mode 100644 native/script-options.cjs
+ create mode 100644 test/unit/extract.test.ts
+ create mode 100644 test/unit/script-options.test.ts
+
+diff --git a/native/cli.cjs b/native/cli.cjs
+index 39d42fd..eb2f0d1 100755
+--- a/native/cli.cjs
++++ b/native/cli.cjs
+@@ -16,7 +16,9 @@ const {
+   validateWorkflowArgs,
+   validateWorkflowFile,
+ } = require("./workflow-definition.cjs");
+-const { executeDoSteps } = require("./do-executor.cjs");
++const { executeDoSteps, sendDoRequest } = require("./do-executor.cjs");
++const { runExtraction, renderExtractionMarkdown } = require("./extract.cjs");
++const { parseScriptOptions } = require("./script-options.cjs");
+ const { openClientTransport } = require("./client-transport.cjs");
+ const { version: VERSION } = require("../package.json");
+ const {
+@@ -907,6 +909,39 @@ const TOOLS = {
+       "drag": { desc: "Drag between points", args: [], opts: { from: "Start x,y", to: "End x,y" } },
+     }
+   },
++  extract: {
++    desc: "Read-only extraction in an owned tab",
++    commands: {
++      "extract": {
++        desc: "Open a URL in a fresh tab, wait until it is ready, run a page-side script that returns JSON, print rows",
++        args: ["url"],
++        opts: {
++          file: "Script file; must `return` JSON (an array, or an object with a rows/items/results array)",
++          code: "Inline script instead of --file",
++          options: "JSON object exposed to the script as SURF_OPTIONS",
++          "options-file": "Read the options object from a JSON file",
++          "ready-selector": "wait.ready --selector before extracting",
++          "ready-text": "wait.ready --text before extracting",
++          "ready-url-prefix": "wait.ready --url-prefix; a different URL is a bounce",
++          "empty-text": "wait.ready --empty-text; lets an explicit no-results page pass the zero-rows check",
++          "ready-timeout": "Readiness timeout in ms (default: 20000)",
++          rows: "Key of the row array in the script result (default: auto)",
++          retry: "Fresh-tab retries on transient failures (default: 1, max: 5)",
++          "retry-delay-ms": "Delay between attempts (default: 500)",
++          "allow-empty": "Accept zero rows",
++          "keep-tab": "Leave the owned tab open on success and report its id",
++          "tab-id": "Extract from an existing tab instead (no fresh tab, no retry; navigates only if a URL is given)",
++          session: "Extract from a session's tab instead (same rules as --tab-id)",
++          json: "Print {data, rows, rowCount, attempts, readiness} as JSON",
++        },
++        examples: [
++          { cmd: 'extract "https://example.com/list" --file rows.js --ready-selector ".item"', desc: "Fresh tab, wait for items, print a Markdown table" },
++          { cmd: 'extract "https://example.com/search?q=x" --file rows.js --options \'{"limit": 20}\' --empty-text "No results" --json', desc: "Options prelude, explicit empty state, JSON output" },
++          { cmd: "extract --tab-id 42 --code 'return [...document.querySelectorAll(\"h2\")].map(h => ({ title: h.textContent }))'", desc: "Read an existing tab in place" },
++        ]
++      },
++    }
++  },
+   js: {
+     desc: "JavaScript execution",
+     commands: {
+@@ -2611,6 +2646,139 @@ if (args[0] === "do") {
+   return;
+ }
+ 
++// Handle `surf extract`: a read-only page-side script in an owned tab with a
++// readiness gate, bounded fresh-tab retry and the zero-rows invariant.
++if (args[0] === "extract") {
++  const extractArgs = args.slice(1);
++  const valueFlags = new Set([
++    "file", "code", "options", "options-file", "ready-selector", "ready-text", "ready-url-prefix",
++    "ready-timeout", "ready-interval", "empty-text", "rows", "retry", "retry-delay-ms",
++    "tab-id", "window-id", "session",
++  ]);
++  const boolFlags = new Set(["allow-empty", "keep-tab", "json", "markdown", "no-wait", "no-lock", "help"]);
++  const opts = {};
++  let url = null;
++  for (let i = 0; i < extractArgs.length; i++) {
++    const arg = extractArgs[i];
++    if (arg === "-f") {
++      opts.file = extractArgs[++i];
++    } else if (arg.startsWith("--")) {
++      const key = arg.slice(2);
++      if (boolFlags.has(key)) opts[key] = true;
++      else if (valueFlags.has(key)) opts[key] = extractArgs[++i];
++      else {
++        console.error(`Error: unknown extract option --${key}`);
++        process.exit(1);
++      }
++    } else if (url === null) {
++      url = arg;
++    } else {
++      console.error(`Error: unexpected argument ${arg}`);
++      process.exit(1);
++    }
++  }
++  if (opts.help) {
++    showToolHelp("extract");
++    process.exit(0);
++  }
++  const wantJson = opts.json === true;
++  const fail = (code, message, details) => {
++    if (wantJson) {
++      console.log(JSON.stringify({ error: { code, message, ...(details ? { details } : {}) } }, null, 2));
++    } else {
++      console.error(`Error: ${message}${code ? ` [${code}]` : ""}`);
++    }
++    process.exit(1);
++  };
++
++  let code = null;
++  try {
++    if (opts.file && opts.code) fail("usage", "use either --file or --code, not both");
++    if (opts.file) code = fs.readFileSync(opts.file, "utf8");
++    else if (typeof opts.code === "string") code = opts.code;
++    else fail("usage", "an extraction script is required: --file script.js or --code 'return {...}'");
++  } catch (error) {
++    fail("usage", `Failed to read script: ${error.message}`);
++  }
++
++  let scriptOptions = {};
++  try {
++    if (opts.options && opts["options-file"]) fail("usage", "use either --options or --options-file, not both");
++    if (opts["options-file"]) scriptOptions = parseScriptOptions(fs.readFileSync(opts["options-file"], "utf8"));
++    else scriptOptions = parseScriptOptions(opts.options);
++  } catch (error) {
++    fail("usage", error.message);
++  }
++
++  const toInt = (key, fallback) => {
++    if (opts[key] === undefined) return fallback;
++    const parsed = parseInt(opts[key], 10);
++    if (Number.isNaN(parsed) || parsed < 0) fail("usage", `--${key} must be a non-negative integer`);
++    return parsed;
++  };
++
++  const targetOptions = resolveEarlyTargetOptions(extractArgs);
++  const hasTarget = Boolean(targetOptions.tabId || targetOptions.windowId || targetOptions.session);
++  if (!hasTarget && !url) fail("usage", "a URL is required unless --tab-id, --window-id or --session names the page to read");
++
++  const settings = {
++    code,
++    url: url ?? undefined,
++    options: scriptOptions,
++    ready: {
++      selector: opts["ready-selector"],
++      text: opts["ready-text"],
++      urlPrefix: opts["ready-url-prefix"],
++      emptyText: opts["empty-text"],
++      timeout: toInt("ready-timeout", undefined),
++      interval: toInt("ready-interval", undefined),
++    },
++    retry: { count: toInt("retry", undefined), delayMs: toInt("retry-delay-ms", undefined) },
++    keepTab: opts["keep-tab"] === true,
++    allowEmpty: opts["allow-empty"] === true,
++    rowsKey: opts.rows,
++    target: hasTarget,
++  };
++
++  const runExtract = async () => {
++    let transport;
++    try {
++      transport = await openClientTransport(endpoint);
++      const baseContext = { ...targetOptions, endpoint, transport };
++      const executeTool = (toolName, toolArgs, ownedTabId) => {
++        const context = ownedTabId
++          ? { tabId: ownedTabId, admission: targetOptions.admission, endpoint, transport }
++          : baseContext;
++        return sendDoRequest(toolName, toolArgs, context);
++      };
++      const result = await runExtraction({
++        ...settings,
++        executeTool,
++        onEvent: (event) => {
++          if (wantJson) return;
++          if (event.type === "attempt" && event.of > 1) console.error(`[surf] extract attempt ${event.attempt}/${event.of}`);
++          if (event.type === "attempt-failed" && event.retryable) console.error(`[surf] attempt ${event.attempt} failed (${event.error}); retrying with a fresh tab`);
++        },
++      });
++      if (wantJson) {
++        console.log(JSON.stringify(result, null, 2));
++      } else {
++        console.log(renderExtractionMarkdown(result.data, result.rows, { title: url ? `Extraction from ${url}` : "Extraction" }));
++        if (result.tabId) console.error(`[surf] tab ${result.tabId} left open (--keep-tab)`);
++      }
++      return 0;
++    } catch (error) {
++      fail(error.code || "extraction_failed", error.message, error.details);
++      return 1;
++    } finally {
++      await transport?.close();
++    }
++  };
++
++  runExtract().then((exitCode) => process.exit(exitCode));
++  return;
++}
++
+ // Handle workflow management commands
+ if (args[0] === "workflow.list") {
+   const workflows = listWorkflows();
+diff --git a/native/extract.cjs b/native/extract.cjs
+new file mode 100644
+index 0000000..cd4d731
+--- /dev/null
++++ b/native/extract.cjs
+@@ -0,0 +1,374 @@
++/**
++ * Read-only page extraction in an owned tab.
++ *
++ * Lifecycle per attempt: tab.new -> wait.ready -> js -> parse -> rows
++ * invariant -> tab.close. A retry always closes the failed tab and opens
++ * a fresh one, so a target whose execution context was invalidated by a
++ * navigation is never reused.
++ *
++ * This runner is for extraction only. It replays the whole sequence on
++ * transient failures, so a script that mutates state (submits a form,
++ * sends a message, changes a setting) could apply its side effect more
++ * than once. Run such scripts through `surf js` on an explicit target.
++ */
++
++const { applyOptionsPrelude } = require("./script-options.cjs");
++
++const DEFAULT_RETRY_COUNT = 1;
++const DEFAULT_RETRY_DELAY_MS = 500;
++const MAX_RETRY_COUNT = 5;
++const ROW_KEY_CANDIDATES = ["rows", "items", "results", "entries", "records", "data"];
++
++/** Error substrings that mean the tab or its execution context went away. */
++const TRANSIENT_TAB_ERROR_MARKERS = [
++  "navigated or closed",
++  "Detached while handling command",
++  "Cannot find default execution context",
++  "Execution context was destroyed",
++  "Receiving end does not exist",
++  "Content script not loaded",
++  "no longer exists",
++  "Target closed",
++];
++
++/** Error codes for which a fresh tab is meaningful. */
++const RETRYABLE_ERROR_CODES = new Set(["empty_result", "page_timeout", "tab_gone", "target_gone"]);
++
++/** Readiness codes where a retry cannot help. */
++const FATAL_READINESS_CODES = new Set(["page_login", "page_challenge", "page_not_found", "page_error"]);
++
++class ExtractError extends Error {
++  constructor(code, message, details = {}) {
++    super(message);
++    this.name = "ExtractError";
++    this.code = code;
++    this.details = details;
++  }
++}
++
++function errorMessageOf(error) {
++  if (error instanceof Error) return error.message;
++  if (typeof error === "string") return error;
++  if (error && typeof error === "object") {
++    const text = error.content?.[0]?.text;
++    if (typeof text === "string") return text;
++    if (typeof error.message === "string") return error.message;
++    return JSON.stringify(error);
++  }
++  return String(error);
++}
++
++function errorCodeOf(error) {
++  if (error && typeof error === "object" && typeof error.code === "string") return error.code;
++  return null;
++}
++
++function isTransientTabError(error) {
++  const message = errorMessageOf(error);
++  return TRANSIENT_TAB_ERROR_MARKERS.some((marker) => message.includes(marker));
++}
++
++/**
++ * Whether a failed attempt is worth a fresh tab. Login bounces, challenges
++ * and not-found pages are not: the next tab lands on the same page.
++ */
++function isRetryableExtractionError(error) {
++  const code = errorCodeOf(error);
++  if (code && FATAL_READINESS_CODES.has(code)) return false;
++  if (code && RETRYABLE_ERROR_CODES.has(code)) return true;
++  return isTransientTabError(error);
++}
++
++/** Text of a successful tool response, or null. */
++function responseText(response) {
++  const text = response?.result?.content?.[0]?.text;
++  return typeof text === "string" ? text : null;
++}
++
++/** Turn a `{error}` tool response into an ExtractError, or return null. */
++function responseError(response, stage) {
++  if (!response || !response.error) return null;
++  const err = response.error;
++  const code = errorCodeOf(err) || "tool_error";
++  return new ExtractError(code, errorMessageOf(err), { stage, ...(err.details || {}) });
++}
++
++/** Parse what `surf js` printed for the script's return value. */
++function parseExtractionOutput(text) {
++  if (text === null || text === undefined || text.trim() === "" || text.trim() === "undefined") {
++    throw new ExtractError(
++      "no_output",
++      "The extraction script returned nothing. End it with `return { rows: [...] }` or `return [...]`.",
++    );
++  }
++  try {
++    return JSON.parse(text);
++  } catch (error) {
++    throw new ExtractError("invalid_output", `The extraction script did not return JSON: ${error.message}`, {
++      preview: text.slice(0, 200),
++    });
++  }
++}
++
++/**
++ * Pick the row array out of the script result: the result itself when it
++ * is an array, `--rows <key>` when given, else the first conventional key
++ * holding an array. Returns null when the result has no row concept.
++ */
++function selectRows(data, rowsKey) {
++  if (rowsKey) {
++    const rows = data && typeof data === "object" && !Array.isArray(data) ? data[rowsKey] : undefined;
++    if (!Array.isArray(rows)) {
++      throw new ExtractError("rows_key_missing", `The script result has no array at "${rowsKey}"`, {
++        keys: data && typeof data === "object" ? Object.keys(data) : [],
++      });
++    }
++    return rows;
++  }
++  if (Array.isArray(data)) return data;
++  if (data && typeof data === "object") {
++    for (const key of ROW_KEY_CANDIDATES) {
++      if (Array.isArray(data[key])) return data[key];
++    }
++  }
++  return null;
++}
++
++/**
++ * Zero rows is a failure unless the caller opts in. A logged-out render,
++ * a selector miss or a half-loaded page all look like "no results"; only
++ * the caller knows whether an empty result is plausible.
++ */
++function enforceRowsInvariant(rows, { allowEmpty = false, readiness } = {}) {
++  if (!Array.isArray(rows) || rows.length > 0 || allowEmpty) return;
++  if (readiness?.state === "empty") return;
++  throw new ExtractError(
++    "empty_result",
++    "The extraction returned zero rows (the page may be logged out, blocked, or the selectors missed). Pass --allow-empty to accept an empty result, or --empty-text to recognise the page's own no-results message.",
++    { rows: 0 },
++  );
++}
++
++function cellText(value) {
++  let text;
++  if (value === null || value === undefined) text = "";
++  else if (typeof value === "string") text = value;
++  else text = JSON.stringify(value);
++  return text.replace(/\s+/g, " ").replace(/\|/g, "\\|").trim();
++}
++
++function isPlainRow(row) {
++  return row !== null && typeof row === "object" && !Array.isArray(row);
++}
++
++/** Markdown for humans and LLMs: metadata bullets, then a table of rows. */
++function renderExtractionMarkdown(data, rows, { title = "Extraction" } = {}) {
++  const lines = [`# ${title}`, ""];
++  if (data && typeof data === "object" && !Array.isArray(data)) {
++    for (const [key, value] of Object.entries(data)) {
++      if (Array.isArray(value) || (value && typeof value === "object")) continue;
++      lines.push(`- ${key}: ${cellText(value)}`);
++    }
++    if (lines.length > 2) lines.push("");
++  }
++  if (!Array.isArray(rows)) {
++    lines.push("```json", JSON.stringify(data, null, 2), "```");
++    return lines.join("\n");
++  }
++  lines.push(`${rows.length} row${rows.length === 1 ? "" : "s"}`, "");
++  if (rows.length === 0) return lines.join("\n").trimEnd();
++  if (!rows.every(isPlainRow)) {
++    for (const row of rows) lines.push(`- ${cellText(row)}`);
++    return lines.join("\n");
++  }
++  const columns = [];
++  for (const row of rows) {
++    for (const key of Object.keys(row)) {
++      if (!columns.includes(key)) columns.push(key);
++    }
++  }
++  lines.push(`| ${columns.join(" | ")} |`);
++  lines.push(`| ${columns.map(() => "---").join(" | ")} |`);
++  for (const row of rows) {
++    lines.push(`| ${columns.map((column) => cellText(row[column])).join(" | ")} |`);
++  }
++  return lines.join("\n");
++}
++
++function normalizeRetry(retry) {
++  const count = Number.isInteger(retry?.count) ? Math.max(0, Math.min(retry.count, MAX_RETRY_COUNT)) : DEFAULT_RETRY_COUNT;
++  const delayMs = Number.isFinite(retry?.delayMs) && retry.delayMs >= 0 ? retry.delayMs : DEFAULT_RETRY_DELAY_MS;
++  return { count, delayMs };
++}
++
++function readinessArgs(ready = {}) {
++  const args = {};
++  if (ready.selector) args.selector = ready.selector;
++  if (ready.text) args.text = ready.text;
++  if (ready.urlPrefix) args.urlPrefix = ready.urlPrefix;
++  if (ready.emptyText) args.emptyText = ready.emptyText;
++  if (ready.timeout) args.timeout = ready.timeout;
++  if (ready.interval) args.interval = ready.interval;
++  return args;
++}
++
++/**
++ * Tab id from a tab.new response. The host prints "Created tab <id>: <url>"
++ * for a single tab; socket clients may also see {tabId} or {id}.
++ */
++function tabIdFromResponse(response) {
++  const failure = responseError(response, "tab.new");
++  if (failure) throw failure;
++  const text = responseText(response);
++  let parsed = null;
++  try {
++    parsed = text === null ? null : JSON.parse(text);
++  } catch {
++    parsed = null;
++  }
++  const fromJson = Number(parsed?.tabId ?? parsed?.id);
++  if (Number.isInteger(fromJson) && fromJson > 0) return fromJson;
++  const match = typeof text === "string" ? text.match(/\btab\s+(\d+)\b/i) : null;
++  if (match) return Number(match[1]);
++  throw new ExtractError("no_tab", "tab.new did not return a tab id", { response: text ?? response });
++}
++
++function parseToolJson(response, stage) {
++  const failure = responseError(response, stage);
++  if (failure) throw failure;
++  const text = responseText(response);
++  if (text === null) return null;
++  try {
++    return JSON.parse(text);
++  } catch {
++    return text;
++  }
++}
++
++/**
++ * Run one extraction attempt on `tabId` (already navigated). Shared by the
++ * owned-tab and caller-supplied-target modes.
++ */
++async function runAttemptOnTab(executeTool, tabId, settings) {
++  const readiness = parseToolJson(await executeTool("wait.ready", readinessArgs(settings.ready), tabId), "wait.ready");
++  const code = applyOptionsPrelude(settings.code, settings.options);
++  const jsResponse = await executeTool("js", { code }, tabId);
++  const failure = responseError(jsResponse, "js");
++  if (failure) throw failure;
++  const data = parseExtractionOutput(responseText(jsResponse));
++  const rows = selectRows(data, settings.rowsKey);
++  enforceRowsInvariant(rows, { allowEmpty: settings.allowEmpty, readiness });
++  return { data, rows, readiness };
++}
++
++/**
++ * @param {object} settings
++ * @param {(tool: string, args: object, tabId?: number) => Promise<object>} settings.executeTool
++ *   Sends one tool request. `tabId` overrides the target for owned tabs; when
++ *   it is undefined the caller's default target (session/tab/window) applies.
++ * @param {string} settings.code Page-side script; must `return` JSON.
++ * @param {string} [settings.url] Page to open. Required unless `target` is set.
++ * @param {object} [settings.options] Exposed to the script as SURF_OPTIONS.
++ * @param {object} [settings.ready] wait.ready expectations (selector, text, urlPrefix, emptyText, timeout, interval).
++ * @param {{count?: number, delayMs?: number}} [settings.retry]
++ * @param {boolean} [settings.keepTab] Leave the owned tab open on success.
++ * @param {boolean} [settings.allowEmpty]
++ * @param {string} [settings.rowsKey]
++ * @param {boolean} [settings.target] Use the caller's target instead of an owned tab.
++ * @param {(error: unknown) => boolean} [settings.isRetryable]
++ * @param {(ms: number) => Promise<void>} [settings.sleep]
++ * @param {(event: object) => void} [settings.onEvent]
++ */
++async function runExtraction(settings) {
++  const {
++    executeTool,
++    code,
++    url,
++    target = false,
++    keepTab = false,
++    isRetryable = isRetryableExtractionError,
++    sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
++    onEvent = () => {},
++  } = settings;
++  if (typeof executeTool !== "function") throw new Error("runExtraction requires executeTool");
++  if (typeof code !== "string" || code.trim() === "") throw new ExtractError("no_script", "An extraction script is required (--file or --code)");
++  if (!target && !url) throw new ExtractError("no_url", "A URL is required unless --tab-id or --session names the page to read");
++
++  if (target) {
++    // Caller-supplied target: navigate once if asked, never close, never retry.
++    if (url) {
++      const navigation = await executeTool("navigate", { url });
++      const failure = responseError(navigation, "navigate");
++      if (failure) throw failure;
++    }
++    onEvent({ type: "attempt", attempt: 1, of: 1, mode: "target" });
++    const attempt = await runAttemptOnTab(executeTool, undefined, settings);
++    return { ...attempt, rowCount: Array.isArray(attempt.rows) ? attempt.rows.length : null, attempts: 1, mode: "target", url: url ?? null };
++  }
++
++  const retry = normalizeRetry(settings.retry);
++  const attempts = retry.count + 1;
++  let lastError = null;
++  let attemptsMade = 0;
++
++  for (let attempt = 1; attempt <= attempts; attempt++) {
++    attemptsMade = attempt;
++    if (attempt > 1) await sleep(retry.delayMs);
++    onEvent({ type: "attempt", attempt, of: attempts, mode: "owned-tab" });
++    let tabId = null;
++    try {
++      tabId = tabIdFromResponse(await executeTool("tab.new", { url }));
++      const result = await runAttemptOnTab(executeTool, tabId, settings);
++      if (!keepTab) {
++        const closed = await executeTool("tab.close", { id: tabId }, tabId);
++        const closeFailure = responseError(closed, "tab.close");
++        if (closeFailure) throw closeFailure;
++      }
++      return {
++        ...result,
++        rowCount: Array.isArray(result.rows) ? result.rows.length : null,
++        attempts: attempt,
++        mode: "owned-tab",
++        url,
++        tabId: keepTab ? tabId : null,
++      };
++    } catch (error) {
++      lastError = error;
++      if (tabId) {
++        try {
++          await executeTool("tab.close", { id: tabId }, tabId);
++        } catch (closeError) {
++          onEvent({ type: "close-failed", attempt, tabId, error: errorMessageOf(closeError) });
++        }
++      }
++      const retryable = attempt < attempts && isRetryable(error);
++      onEvent({ type: "attempt-failed", attempt, of: attempts, error: errorMessageOf(error), code: errorCodeOf(error), retryable });
++      if (!retryable) break;
++    }
++  }
++  if (lastError instanceof ExtractError) {
++    lastError.details = { ...lastError.details, attempts: attemptsMade };
++    throw lastError;
++  }
++  throw new ExtractError(errorCodeOf(lastError) || "extraction_failed", errorMessageOf(lastError), { attempts: attemptsMade });
++}
++
++module.exports = {
++  DEFAULT_RETRY_COUNT,
++  DEFAULT_RETRY_DELAY_MS,
++  ExtractError,
++  FATAL_READINESS_CODES,
++  MAX_RETRY_COUNT,
++  RETRYABLE_ERROR_CODES,
++  ROW_KEY_CANDIDATES,
++  TRANSIENT_TAB_ERROR_MARKERS,
++  enforceRowsInvariant,
++  errorMessageOf,
++  isRetryableExtractionError,
++  isTransientTabError,
++  parseExtractionOutput,
++  renderExtractionMarkdown,
++  runExtraction,
++  selectRows,
++  tabIdFromResponse,
++};
+diff --git a/native/script-options.cjs b/native/script-options.cjs
+new file mode 100644
+index 0000000..5d70a35
+--- /dev/null
++++ b/native/script-options.cjs
+@@ -0,0 +1,52 @@
++/**
++ * Options prelude for page-side scripts.
++ *
++ * A script run through `surf js --file` or `surf extract` often needs a few
++ * parameters (a result limit, a query, a mode). Instead of templating them
++ * into the source, the caller passes JSON and the script reads a frozen
++ * `SURF_OPTIONS` constant. The script stays a plain file that runs unchanged
++ * in any other JavaScript-in-page tool when the constant is defined by hand.
++ */
++
++const PRELUDE_NAME = "SURF_OPTIONS";
++
++function isPlainObject(value) {
++  if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
++  const proto = Object.getPrototypeOf(value);
++  return proto === Object.prototype || proto === null;
++}
++
++/**
++ * Accept an object or a JSON string; reject anything that is not a JSON
++ * object. Returns `{}` for undefined, null or an empty string.
++ */
++function parseScriptOptions(input) {
++  if (input === undefined || input === null || input === "") return {};
++  if (input === true) throw new Error("--options needs a JSON object value");
++  let value = input;
++  if (typeof input === "string") {
++    try {
++      value = JSON.parse(input);
++    } catch (error) {
++      throw new Error(`--options is not valid JSON: ${error.message}`);
++    }
++  }
++  if (!isPlainObject(value)) {
++    throw new Error("--options must be a JSON object, e.g. '{\"limit\": 20}'");
++  }
++  // Round-trip so functions, undefined and prototypes cannot leak into the page.
++  return JSON.parse(JSON.stringify(value));
++}
++
++/** `const SURF_OPTIONS = Object.freeze({...});` followed by a newline. */
++function buildOptionsPrelude(options) {
++  const normalized = parseScriptOptions(options);
++  return `const ${PRELUDE_NAME} = Object.freeze(${JSON.stringify(normalized)});\n`;
++}
++
++/** Prefix `code` with the prelude; an empty options object still defines the constant. */
++function applyOptionsPrelude(code, options) {
++  return `${buildOptionsPrelude(options)}${code}`;
++}
++
++module.exports = { PRELUDE_NAME, applyOptionsPrelude, buildOptionsPrelude, parseScriptOptions };
+diff --git a/test/unit/extract.test.ts b/test/unit/extract.test.ts
+new file mode 100644
+index 0000000..a8abe1d
+--- /dev/null
++++ b/test/unit/extract.test.ts
+@@ -0,0 +1,448 @@
++import { describe, expect, it, vi } from "vitest";
++
++// @ts-expect-error - CommonJS module without type definitions
++import * as extract from "../../native/extract.cjs";
++
++type Call = { tool: string; args: Record<string, unknown>; tabId?: number };
++
++function ok(payload: unknown) {
++  return {
++    result: {
++      content: [
++        { type: "text", text: typeof payload === "string" ? payload : JSON.stringify(payload) },
++      ],
++    },
++  };
++}
++
++function toolError(text: string, code?: string) {
++  return { error: { content: [{ type: "text", text }], ...(code ? { code } : {}) } };
++}
++
++/**
++ * Scripted fake host: each entry answers the next call to `tool`. The
++ * recorded call list doubles as the protocol assertion, the same way the
++ * Go fork's socket-level retry test worked.
++ */
++function scriptedHost(script: Array<{ tool: string; reply: unknown | (() => unknown) }>) {
++  const calls: Call[] = [];
++  let index = 0;
++  const executeTool = vi.fn(async (tool: string, args: Record<string, unknown>, tabId?: number) => {
++    calls.push({ tool, args, tabId });
++    const entry = script[index++];
++    if (!entry) {
++      throw new Error(`unexpected call ${tool} (#${calls.length})`);
++    }
++    if (entry.tool !== tool) {
++      throw new Error(`expected ${entry.tool} but got ${tool} at call #${calls.length}`);
++    }
++    return typeof entry.reply === "function" ? (entry.reply as () => unknown)() : entry.reply;
++  });
++  return { calls, executeTool, remaining: () => script.length - index };
++}
++
++const ready = ok({
++  state: "ready",
++  evidence: ["document.readyState is complete"],
++  polls: 1,
++  waited: 12,
++});
++const rowsResult = ok({
++  rows: [
++    { title: "A", href: "/a" },
++    { title: "B", href: "/b" },
++  ],
++  total: 2,
++});
++
++describe("runExtraction (owned tab)", () => {
++  it("opens, waits, extracts and closes a fresh tab", async () => {
++    const host = scriptedHost([
++      { tool: "tab.new", reply: ok({ success: true, tabId: 41, url: "https://x/" }) },
++      { tool: "wait.ready", reply: ready },
++      { tool: "js", reply: rowsResult },
++      { tool: "tab.close", reply: ok({ success: true }) },
++    ]);
++
++    const result = await extract.runExtraction({
++      executeTool: host.executeTool,
++      url: "https://x/",
++      code: "return SURF_OPTIONS.limit;",
++      options: { limit: 5 },
++      ready: { selector: ".row", timeout: 3000 },
++    });
++
++    expect(result).toMatchObject({
++      rowCount: 2,
++      attempts: 1,
++      mode: "owned-tab",
++      tabId: null,
++      url: "https://x/",
++    });
++    expect(result.rows).toHaveLength(2);
++    expect(result.readiness.state).toBe("ready");
++    expect(host.calls.map((call) => [call.tool, call.tabId])).toEqual([
++      ["tab.new", undefined],
++      ["wait.ready", 41],
++      ["js", 41],
++      ["tab.close", 41],
++    ]);
++    expect(host.calls[0].args).toEqual({ url: "https://x/" });
++    expect(host.calls[1].args).toEqual({ selector: ".row", timeout: 3000 });
++    expect(host.calls[2].args.code).toBe(
++      'const SURF_OPTIONS = Object.freeze({"limit":5});\nreturn SURF_OPTIONS.limit;',
++    );
++    expect(host.calls[3].args).toEqual({ id: 41 });
++    expect(host.remaining()).toBe(0);
++  });
++
++  it("retries with a fresh tab after a transient execution-context failure", async () => {
++    const host = scriptedHost([
++      { tool: "tab.new", reply: ok({ tabId: 1 }) },
++      { tool: "wait.ready", reply: ready },
++      { tool: "js", reply: toolError("Inspected target navigated or closed") },
++      { tool: "tab.close", reply: ok({ success: true }) },
++      { tool: "tab.new", reply: ok({ tabId: 2 }) },
++      { tool: "wait.ready", reply: ready },
++      { tool: "js", reply: rowsResult },
++      { tool: "tab.close", reply: ok({ success: true }) },
++    ]);
++    const sleep = vi.fn(async () => undefined);
++    const events: Array<Record<string, unknown>> = [];
++
++    const result = await extract.runExtraction({
++      executeTool: host.executeTool,
++      url: "https://x/",
++      code: "return 1",
++      retry: { count: 1, delayMs: 250 },
++      sleep,
++      onEvent: (event: Record<string, unknown>) => events.push(event),
++    });
++
++    expect(result.attempts).toBe(2);
++    expect(result.rowCount).toBe(2);
++    expect(sleep).toHaveBeenCalledWith(250);
++    expect(host.calls.map((call) => call.tool)).toEqual([
++      "tab.new",
++      "wait.ready",
++      "js",
++      "tab.close",
++      "tab.new",
++      "wait.ready",
++      "js",
++      "tab.close",
++    ]);
++    expect(host.calls[3].args).toEqual({ id: 1 });
++    expect(events.find((event) => event.type === "attempt-failed")).toMatchObject({
++      attempt: 1,
++      retryable: true,
++    });
++  });
++
++  it("treats zero rows as a failure, retries once, then reports empty_result", async () => {
++    const empty = ok({ rows: [] });
++    const host = scriptedHost([
++      { tool: "tab.new", reply: ok({ tabId: 1 }) },
++      { tool: "wait.ready", reply: ready },
++      { tool: "js", reply: empty },
++      { tool: "tab.close", reply: ok({}) },
++      { tool: "tab.new", reply: ok({ tabId: 2 }) },
++      { tool: "wait.ready", reply: ready },
++      { tool: "js", reply: empty },
++      { tool: "tab.close", reply: ok({}) },
++    ]);
++
++    await expect(
++      extract.runExtraction({
++        executeTool: host.executeTool,
++        url: "https://x/",
++        code: "return []",
++        sleep: async () => undefined,
++      }),
++    ).rejects.toMatchObject({ code: "empty_result", details: { attempts: 2 } });
++    expect(host.remaining()).toBe(0);
++  });
++
++  it("accepts zero rows with allowEmpty and when the page reports its own empty state", async () => {
++    const allow = scriptedHost([
++      { tool: "tab.new", reply: ok({ tabId: 1 }) },
++      { tool: "wait.ready", reply: ready },
++      { tool: "js", reply: ok([]) },
++      { tool: "tab.close", reply: ok({}) },
++    ]);
++    const allowed = await extract.runExtraction({
++      executeTool: allow.executeTool,
++      url: "https://x/",
++      code: "return []",
++      allowEmpty: true,
++    });
++    expect(allowed.rowCount).toBe(0);
++
++    const emptyState = scriptedHost([
++      { tool: "tab.new", reply: ok({ tabId: 1 }) },
++      {
++        tool: "wait.ready",
++        reply: ok({ state: "empty", evidence: ['empty-state text "No results" found'] }),
++      },
++      { tool: "js", reply: ok({ rows: [] }) },
++      { tool: "tab.close", reply: ok({}) },
++    ]);
++    const explicit = await extract.runExtraction({
++      executeTool: emptyState.executeTool,
++      url: "https://x/",
++      code: "return {rows: []}",
++      ready: { emptyText: "No results" },
++    });
++    expect(explicit.rowCount).toBe(0);
++    expect(explicit.readiness.state).toBe("empty");
++  });
++
++  it("does not retry a login bounce and still closes the tab", async () => {
++    const host = scriptedHost([
++      { tool: "tab.new", reply: ok({ tabId: 1 }) },
++      {
++        tool: "wait.ready",
++        reply: toolError("Page is not ready: login at https://x/login", "page_login"),
++      },
++      { tool: "tab.close", reply: ok({}) },
++    ]);
++
++    await expect(
++      extract.runExtraction({
++        executeTool: host.executeTool,
++        url: "https://x/",
++        code: "return 1",
++        retry: { count: 3 },
++      }),
++    ).rejects.toMatchObject({
++      code: "page_login",
++      message: expect.stringContaining("login at https://x/login"),
++    });
++    expect(host.calls.map((call) => call.tool)).toEqual(["tab.new", "wait.ready", "tab.close"]);
++  });
++
++  it("does not retry a script error and reports a single attempt", async () => {
++    const host = scriptedHost([
++      { tool: "tab.new", reply: ok({ tabId: 1 }) },
++      { tool: "wait.ready", reply: ready },
++      { tool: "js", reply: toolError("SyntaxError: Unexpected token ')'") },
++      { tool: "tab.close", reply: ok({}) },
++    ]);
++    await expect(
++      extract.runExtraction({
++        executeTool: host.executeTool,
++        url: "https://x/",
++        code: "return )",
++        retry: { count: 2 },
++      }),
++    ).rejects.toMatchObject({ code: "tool_error", details: { stage: "js", attempts: 1 } });
++    expect(host.remaining()).toBe(0);
++  });
++
++  it("retries a readiness timeout but gives up after the retry budget", async () => {
++    const host = scriptedHost([
++      { tool: "tab.new", reply: ok({ tabId: 1 }) },
++      {
++        tool: "wait.ready",
++        reply: toolError("Page did not become ready within 20000ms", "page_timeout"),
++      },
++      { tool: "tab.close", reply: ok({}) },
++      { tool: "tab.new", reply: ok({ tabId: 2 }) },
++      {
++        tool: "wait.ready",
++        reply: toolError("Page did not become ready within 20000ms", "page_timeout"),
++      },
++      { tool: "tab.close", reply: ok({}) },
++    ]);
++    await expect(
++      extract.runExtraction({
++        executeTool: host.executeTool,
++        url: "https://x/",
++        code: "return 1",
++        sleep: async () => undefined,
++      }),
++    ).rejects.toMatchObject({ code: "page_timeout" });
++    expect(host.remaining()).toBe(0);
++  });
++
++  it("keeps the tab open on success when asked and reports its id", async () => {
++    const host = scriptedHost([
++      { tool: "tab.new", reply: ok({ tabId: 9 }) },
++      { tool: "wait.ready", reply: ready },
++      { tool: "js", reply: rowsResult },
++    ]);
++    const result = await extract.runExtraction({
++      executeTool: host.executeTool,
++      url: "https://x/",
++      code: "return 1",
++      keepTab: true,
++    });
++    expect(result.tabId).toBe(9);
++    expect(host.calls.map((call) => call.tool)).toEqual(["tab.new", "wait.ready", "js"]);
++  });
++
++  it("surfaces a script that returns nothing or non-JSON", async () => {
++    const host = scriptedHost([
++      { tool: "tab.new", reply: ok({ tabId: 1 }) },
++      { tool: "wait.ready", reply: ready },
++      { tool: "js", reply: ok("undefined") },
++      { tool: "tab.close", reply: ok({}) },
++    ]);
++    await expect(
++      extract.runExtraction({
++        executeTool: host.executeTool,
++        url: "https://x/",
++        code: "document.title",
++      }),
++    ).rejects.toMatchObject({ code: "no_output" });
++    expect(host.remaining()).toBe(0);
++  });
++
++  it("rejects missing script or URL before touching the browser", async () => {
++    const executeTool = vi.fn();
++    await expect(
++      extract.runExtraction({ executeTool, url: "https://x/", code: "" }),
++    ).rejects.toMatchObject({ code: "no_script" });
++    await expect(extract.runExtraction({ executeTool, code: "return 1" })).rejects.toMatchObject({
++      code: "no_url",
++    });
++    expect(executeTool).not.toHaveBeenCalled();
++  });
++});
++
++describe("runExtraction (caller-supplied target)", () => {
++  it("navigates once, never opens or closes tabs, never retries", async () => {
++    const host = scriptedHost([
++      { tool: "navigate", reply: ok({ success: true }) },
++      { tool: "wait.ready", reply: ready },
++      { tool: "js", reply: toolError("Inspected target navigated or closed") },
++    ]);
++    await expect(
++      extract.runExtraction({
++        executeTool: host.executeTool,
++        target: true,
++        url: "https://x/",
++        code: "return 1",
++        retry: { count: 3 },
++      }),
++    ).rejects.toMatchObject({ code: "tool_error" });
++    expect(host.calls.map((call) => [call.tool, call.tabId])).toEqual([
++      ["navigate", undefined],
++      ["wait.ready", undefined],
++      ["js", undefined],
++    ]);
++  });
++
++  it("reads the current page in place when no URL is given", async () => {
++    const host = scriptedHost([
++      { tool: "wait.ready", reply: ready },
++      { tool: "js", reply: ok([{ a: 1 }]) },
++    ]);
++    const result = await extract.runExtraction({
++      executeTool: host.executeTool,
++      target: true,
++      code: "return [{a: 1}]",
++    });
++    expect(result).toMatchObject({ mode: "target", attempts: 1, rowCount: 1, url: null });
++  });
++});
++
++describe("tabIdFromResponse", () => {
++  it("reads JSON and the host's text form", () => {
++    expect(extract.tabIdFromResponse(ok({ success: true, tabId: 12 }))).toBe(12);
++    expect(extract.tabIdFromResponse(ok({ id: 13 }))).toBe(13);
++    expect(extract.tabIdFromResponse(ok("Created tab 1076931763: http://127.0.0.1/list"))).toBe(
++      1076931763,
++    );
++    expect(() => extract.tabIdFromResponse(ok("OK"))).toThrow(/did not return a tab id/);
++    expect(() => extract.tabIdFromResponse(toolError("tab_busy", "tab_busy"))).toThrow(/tab_busy/);
++  });
++});
++
++describe("helpers", () => {
++  it("classifies transient tab errors and retryable codes", () => {
++    expect(extract.isTransientTabError(new Error("Inspected target navigated or closed"))).toBe(
++      true,
++    );
++    expect(extract.isTransientTabError("Cannot find default execution context")).toBe(true);
++    expect(
++      extract.isTransientTabError({ content: [{ text: "Receiving end does not exist" }] }),
++    ).toBe(true);
++    expect(extract.isTransientTabError(new Error("selector not found"))).toBe(false);
++
++    expect(extract.isRetryableExtractionError(new extract.ExtractError("empty_result", "x"))).toBe(
++      true,
++    );
++    expect(extract.isRetryableExtractionError({ code: "page_timeout", message: "slow" })).toBe(
++      true,
++    );
++    expect(
++      extract.isRetryableExtractionError({
++        code: "page_login",
++        message: "Detached while handling command",
++      }),
++    ).toBe(false);
++    expect(extract.isRetryableExtractionError(new Error("syntax error"))).toBe(false);
++  });
++
++  it("selects rows from arrays, conventional keys or an explicit key", () => {
++    expect(extract.selectRows([1, 2])).toEqual([1, 2]);
++    expect(extract.selectRows({ total: 2, items: [{ a: 1 }] })).toEqual([{ a: 1 }]);
++    expect(extract.selectRows({ jobs: [{ a: 1 }] }, "jobs")).toEqual([{ a: 1 }]);
++    expect(extract.selectRows({ title: "x" })).toBeNull();
++    expect(() => extract.selectRows({ title: "x" }, "jobs")).toThrow(/no array at "jobs"/);
++  });
++
++  it("enforces the zero-rows invariant only for row arrays", () => {
++    expect(() => extract.enforceRowsInvariant([])).toThrow(/zero rows/);
++    expect(() => extract.enforceRowsInvariant([], { allowEmpty: true })).not.toThrow();
++    expect(() => extract.enforceRowsInvariant([], { readiness: { state: "empty" } })).not.toThrow();
++    expect(() => extract.enforceRowsInvariant(null)).not.toThrow();
++    expect(() => extract.enforceRowsInvariant([{ a: 1 }])).not.toThrow();
++  });
++
++  it("parses script output and rejects undefined or non-JSON", () => {
++    expect(extract.parseExtractionOutput('{"a":1}')).toEqual({ a: 1 });
++    expect(() => extract.parseExtractionOutput("undefined")).toThrow(/returned nothing/);
++    expect(() => extract.parseExtractionOutput("hello")).toThrow(/did not return JSON/);
++  });
++
++  it("renders metadata bullets and a table with escaped cells", () => {
++    const markdown = extract.renderExtractionMarkdown(
++      {
++        query: "a|b",
++        total: 2,
++        rows: [
++          { title: "First", href: "/1" },
++          { title: "Second\nline", extra: true },
++        ],
++      },
++      [
++        { title: "First", href: "/1" },
++        { title: "Second\nline", extra: true },
++      ],
++      { title: "Search" },
++    );
++    expect(markdown).toBe(
++      [
++        "# Search",
++        "",
++        "- query: a\\|b",
++        "- total: 2",
++        "",
++        "2 rows",
++        "",
++        "| title | href | extra |",
++        "| --- | --- | --- |",
++        "| First | /1 |  |",
++        "| Second line |  | true |",
++      ].join("\n"),
++    );
++  });
++
++  it("renders scalar rows as bullets and row-less results as JSON", () => {
++    expect(extract.renderExtractionMarkdown(["x", "y"], ["x", "y"])).toContain("- x\n- y");
++    expect(extract.renderExtractionMarkdown({ title: "T" }, null)).toContain('"title": "T"');
++    expect(extract.renderExtractionMarkdown([], [])).toBe("# Extraction\n\n0 rows");
++  });
++});
+diff --git a/test/unit/script-options.test.ts b/test/unit/script-options.test.ts
+new file mode 100644
+index 0000000..e5d93f5
+--- /dev/null
++++ b/test/unit/script-options.test.ts
+@@ -0,0 +1,48 @@
++import { describe, expect, it } from "vitest";
++
++// @ts-expect-error - CommonJS module without type definitions
++import * as scriptOptions from "../../native/script-options.cjs";
++
++describe("parseScriptOptions", () => {
++  it("returns an empty object for missing input", () => {
++    expect(scriptOptions.parseScriptOptions(undefined)).toEqual({});
++    expect(scriptOptions.parseScriptOptions(null)).toEqual({});
++    expect(scriptOptions.parseScriptOptions("")).toEqual({});
++  });
++
++  it("accepts JSON strings and plain objects", () => {
++    expect(scriptOptions.parseScriptOptions('{"limit": 20, "query": "x"}')).toEqual({
++      limit: 20,
++      query: "x",
++    });
++    expect(scriptOptions.parseScriptOptions({ mode: "list" })).toEqual({ mode: "list" });
++  });
++
++  it("rejects non-object values and invalid JSON", () => {
++    expect(() => scriptOptions.parseScriptOptions("[1]")).toThrow(/must be a JSON object/);
++    expect(() => scriptOptions.parseScriptOptions("42")).toThrow(/must be a JSON object/);
++    expect(() => scriptOptions.parseScriptOptions("{oops")).toThrow(/not valid JSON/);
++    expect(() => scriptOptions.parseScriptOptions(true)).toThrow(/needs a JSON object/);
++  });
++
++  it("strips functions and undefined values by JSON round-trip", () => {
++    const parsed = scriptOptions.parseScriptOptions({ keep: 1, fn: () => 1, gone: undefined });
++    expect(parsed).toEqual({ keep: 1 });
++  });
++});
++
++describe("buildOptionsPrelude", () => {
++  it("defines a frozen SURF_OPTIONS constant that is valid JavaScript on its own", () => {
++    const prelude = scriptOptions.buildOptionsPrelude({ limit: 3 });
++    expect(prelude).toBe('const SURF_OPTIONS = Object.freeze({"limit":3});\n');
++    const evaluate = new Function(`${prelude}return SURF_OPTIONS;`);
++    expect(evaluate()).toEqual({ limit: 3 });
++    expect(Object.isFrozen(evaluate())).toBe(true);
++  });
++
++  it("still defines the constant for empty options and prefixes the code", () => {
++    expect(scriptOptions.applyOptionsPrelude("return 1;", undefined)).toBe(
++      "const SURF_OPTIONS = Object.freeze({});\nreturn 1;",
++    );
++  });
++});
+-- 
+2.55.0
+

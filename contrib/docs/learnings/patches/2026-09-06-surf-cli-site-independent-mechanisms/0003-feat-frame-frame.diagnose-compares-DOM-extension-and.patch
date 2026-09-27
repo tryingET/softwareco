@@ -1,0 +1,920 @@
+From 91c3ea485acff1b36645ab9cc35fda04d06cf22a Mon Sep 17 00:00:00 2001
+From: tryinget <markus@team-wangler.de>
+Date: Mon, 7 Sep 2026 00:04:14 +0200
+Subject: [PATCH 03/13] feat(frame): frame.diagnose compares DOM, extension and
+ CDP frame views
+
+Widgets that live in srcdoc or script-created iframes show up as
+about:blank frames, sandboxed frames never load the content script,
+and out-of-process frames are visible to CDP only. Each inventory
+alone hides a different half of the picture, and the usual symptom is
+a selector that never matches.
+
+frame.diagnose collects three inventories side by side and explains
+the mismatches:
+
+- DOM <iframe> elements with src/srcdoc, sandbox, allow and layout
+  (collected through a CDP evaluate),
+- chrome.webNavigation frames (the ids frame.switch uses) with a
+  content-script PING per frame,
+- the CDP frame tree (the ids frame.js uses).
+
+src/utils/frame-diagnose.ts holds the pure correlation and the warning
+rules: blank/srcdoc frames, sandboxes without allow-scripts, zero-size
+frames, unreachable content scripts, navigation errors, CDP-only
+frames, cross-origin frames, ambiguous URL matches and count
+mismatches. Each warning names the frame command that still works.
+
+Registered as a tab-lane tool in tool-scope, the MCP server and the CLI
+(plain-text report; --json for the full inventories).
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PpyRJ9kNJBQ5JiqeYjxkTF
+---
+ native/cli.cjs                                |  49 +++-
+ native/host-helpers.cjs                       |   2 +
+ native/mcp-server.cjs                         |   4 +
+ native/tool-scope.cjs                         |   2 +-
+ src/service-worker/index.ts                   |  71 +++++
+ src/utils/frame-diagnose.ts                   | 252 ++++++++++++++++++
+ test/unit/frame-diagnose.test.ts              | 206 ++++++++++++++
+ test/unit/host-helpers.test.ts                |   9 +
+ .../frame-diagnose-handlers.test.ts           | 141 ++++++++++
+ test/unit/tool-scope.test.ts                  |   4 +
+ 10 files changed, 737 insertions(+), 3 deletions(-)
+ create mode 100644 src/utils/frame-diagnose.ts
+ create mode 100644 test/unit/frame-diagnose.test.ts
+ create mode 100644 test/unit/service-worker/frame-diagnose-handlers.test.ts
+
+diff --git a/native/cli.cjs b/native/cli.cjs
+index 20c9e52..39d42fd 100755
+--- a/native/cli.cjs
++++ b/native/cli.cjs
+@@ -1163,6 +1163,14 @@ const TOOLS = {
+         args: [],
+         examples: [{ cmd: "frame.list", desc: "Show frame tree" }]
+       },
++      "frame.diagnose": {
++        desc: "Explain frame mismatches: DOM iframes, extension frames with content-script reachability, CDP frame tree",
++        args: [],
++        examples: [
++          { cmd: "frame.diagnose", desc: "Why does my selector not reach the widget?" },
++          { cmd: "frame.diagnose --json", desc: "Full inventories as JSON" },
++        ]
++      },
+       "frame.switch": {
+         desc: "Switch to iframe context",
+         args: [],
+@@ -1654,7 +1662,7 @@ const ALL_SOCKET_TOOLS = [
+   "form.fill",
+   "perf.start", "perf.stop", "perf.metrics",
+   "upload",
+-  "frame.list", "frame.switch", "frame.main", "frame.js",
++  "frame.list", "frame.diagnose", "frame.switch", "frame.main", "frame.js",
+   "cookie.list", "cookie.get", "cookie.set", "cookie.clear",
+   "search", "batch",
+   "zoom", "resize",
+@@ -1676,7 +1684,8 @@ const SEE_ALSO = {
+   "tab.new": ["window.new for isolation"],
+   "window.new": ["window.list"],
+   "window.list": ["tab.list"],
+-  "frame.list": ["frame.switch", "frame.main"],
++  "frame.list": ["frame.switch", "frame.main", "frame.diagnose"],
++  "frame.diagnose": ["frame.list", "frame.switch", "frame.js"],
+   "frame.switch": ["frame.list", "frame.main", "frame.js"],
+   "frame.main": ["frame.list", "frame.switch"],
+   "frame.js": ["frame.switch", "js"],
+@@ -3854,6 +3863,42 @@ async function handleResponse(response) {
+     }
+     console.log("\nUsage: surf emulate.device \"<device name>\"");
+     console.log('Reset:  surf emulate.device "reset"');
++  } else if (tool === "frame.diagnose" && data?.counts) {
++    const lines = [];
++    lines.push(`Frame diagnosis for ${data.mainPage?.href ?? "?"}${data.mainPage?.title ? ` (${data.mainPage.title})` : ""}`);
++    lines.push(`DOM iframes: ${data.counts.domIframes}, extension frames: ${data.counts.extensionFrames} (incl. main), CDP frames: ${data.counts.cdpFrames}`);
++    if (Array.isArray(data.domIframes) && data.domIframes.length > 0) {
++      lines.push("", "DOM iframes:");
++      for (const f of data.domIframes) {
++        const flags = [
++          f.blank ? "blank" : null,
++          f.crossOrigin ? "cross-origin" : null,
++          f.scriptsBlocked ? "scripts-blocked" : null,
++          f.zeroSize ? "0-size" : null,
++        ].filter(Boolean).join(",");
++        const links = [
++          f.extensionFrameIds?.length ? `ext ${f.extensionFrameIds.join("/")}` : "ext -",
++          f.cdpFrameIds?.length ? `cdp ${f.cdpFrameIds.join("/")}` : "cdp -",
++        ].join(", ");
++        lines.push(`  [${f.domIndex}] ${f.srcdoc ? "srcdoc" : (f.src || "about:blank")} ${Math.round(f.rect?.width ?? 0)}x${Math.round(f.rect?.height ?? 0)}${f.name ? ` name=${f.name}` : ""}${f.sandbox !== null && f.sandbox !== undefined ? ` sandbox="${f.sandbox}"` : ""}${flags ? ` [${flags}]` : ""} -> ${links}`);
++      }
++    }
++    if (Array.isArray(data.extensionFrames) && data.extensionFrames.length > 0) {
++      lines.push("", "Extension frames (frame.switch ids):");
++      for (const f of data.extensionFrames) {
++        const reach = f.contentScriptReachable ? "content-script ok" : `content-script unreachable${f.contentScriptError ? ` (${f.contentScriptError})` : ""}`;
++        lines.push(`  #${f.frameId}${f.isMain ? " main" : ` parent ${f.parentFrameId}`} ${f.url}${f.crossOrigin ? " [cross-origin]" : ""} - ${reach}`);
++      }
++    }
++    if (Array.isArray(data.cdpFrames) && data.cdpFrames.length > 0) {
++      lines.push("", "CDP frames (frame.js ids):");
++      for (const f of data.cdpFrames) {
++        lines.push(`  ${f.frameId}${f.isMain ? " main" : ` parent ${f.parentId}`} ${f.url}${f.name ? ` name=${f.name}` : ""}${f.extensionFrameIds?.length ? ` -> ext ${f.extensionFrameIds.join("/")}` : ""}`);
++      }
++    }
++    lines.push("", Array.isArray(data.warnings) && data.warnings.length > 0 ? "Warnings:" : "No warnings.");
++    for (const w of Array.isArray(data.warnings) ? data.warnings : []) lines.push(`  - ${w}`);
++    console.log(lines.join("\n"));
+   } else if (tool === "wait.ready" || tool === "page.readiness") {
+     const lines = [`state: ${data?.state ?? "unknown"}`];
+     if (data?.href) lines.push(`url: ${data.href}`);
+diff --git a/native/host-helpers.cjs b/native/host-helpers.cjs
+index dace7ae..bfa247c 100644
+--- a/native/host-helpers.cjs
++++ b/native/host-helpers.cjs
+@@ -910,6 +910,8 @@ function mapToolToMessage(tool, args, tabId) {
+       return { type: "WAIT_FOR_LOAD", timeout: a.timeout || 30000, ...baseMsg };
+     case "frame.list":
+       return { type: "GET_FRAMES", ...baseMsg };
++    case "frame.diagnose":
++      return { type: "FRAME_DIAGNOSE", ...baseMsg };
+     case "frame.switch":
+       return { 
+         type: "FRAME_SWITCH", 
+diff --git a/native/mcp-server.cjs b/native/mcp-server.cjs
+index 2b9a69f..9cb2d5f 100644
+--- a/native/mcp-server.cjs
++++ b/native/mcp-server.cjs
+@@ -263,6 +263,10 @@ const TOOL_SCHEMAS = {
+     desc: "List all frames in page",
+     schema: {}
+   },
++  "frame.diagnose": {
++    desc: "Compare DOM iframes, extension frames (with content-script reachability) and the CDP frame tree, with warnings",
++    schema: {}
++  },
+   "frame.js": {
+     desc: "Execute JS in specific frame",
+     schema: {
+diff --git a/native/tool-scope.cjs b/native/tool-scope.cjs
+index 0799d36..554d12b 100644
+--- a/native/tool-scope.cjs
++++ b/native/tool-scope.cjs
+@@ -46,7 +46,7 @@ const TAB_TOOLS = new Set([
+   "search", "locate.role", "locate.text", "locate.label", "element.styles",
+   "js", "javascript_tool", "eval",
+   "wait.element", "wait.url", "wait.network", "wait.dom", "wait.load", "wait.ready", "page.readiness", "health",
+-  "frame.list", "frame.switch", "frame.main", "frame.js",
++  "frame.list", "frame.diagnose", "frame.switch", "frame.main", "frame.js",
+   "dialog.accept", "dialog.dismiss", "dialog.info",
+   "console", "network", "network.get", "network.body", "network.curl", "network.path",
+   "network.origins", "network.clear", "network.stats", "network.export",
+diff --git a/src/service-worker/index.ts b/src/service-worker/index.ts
+index 4e9d607..b5f1127 100644
+--- a/src/service-worker/index.ts
++++ b/src/service-worker/index.ts
+@@ -1,5 +1,11 @@
+ import { CDPController } from "../cdp/controller";
+ import { debugLog } from "../utils/debug";
++import {
++  DOM_IFRAME_INVENTORY_EXPRESSION,
++  type DomIframeEntry,
++  type ExtensionFrameEntry,
++  buildFrameDiagnosis,
++} from "../utils/frame-diagnose";
+ import type { ReadinessExpectations } from "../utils/page-readiness";
+ import {
+   type ReadinessProbeResult,
+@@ -205,6 +211,52 @@ async function probeTabReadiness(tabId: number, expect: ReadinessExpectations):
+   }
+ }
+ 
++async function collectDomIframeInventory(
++  tabId: number,
++): Promise<{ href: string; title: string; iframes: DomIframeEntry[] }> {
++  const result = await cdp.evaluateScript(tabId, DOM_IFRAME_INVENTORY_EXPRESSION);
++  if (result.exceptionDetails) {
++    throw new Error(
++      result.exceptionDetails.exception?.description ||
++        result.exceptionDetails.text ||
++        "Failed to collect the DOM iframe inventory",
++    );
++  }
++  const value = result.result?.value;
++  if (!value || typeof value !== "object" || !Array.isArray(value.iframes)) {
++    throw new Error("Unexpected DOM iframe inventory result shape");
++  }
++  return value as { href: string; title: string; iframes: DomIframeEntry[] };
++}
++
++/** webNavigation frames plus a content-script PING per frame. */
++async function collectExtensionFrames(tabId: number): Promise<ExtensionFrameEntry[]> {
++  const frames = (await chrome.webNavigation.getAllFrames({ tabId })) ?? [];
++  const entries: ExtensionFrameEntry[] = [];
++  for (const frame of frames) {
++    const entry: ExtensionFrameEntry = {
++      frameId: frame.frameId,
++      parentFrameId: frame.parentFrameId,
++      url: frame.url,
++      errorOccurred: frame.errorOccurred === true,
++      contentScriptReachable: false,
++    };
++    try {
++      const ping = await chrome.tabs.sendMessage(tabId, { type: "PING" }, { frameId: frame.frameId });
++      if (ping?.success) {
++        entry.contentScriptReachable = true;
++        entry.contentScript = { href: ping.href, readyState: ping.readyState };
++      } else {
++        entry.contentScriptError = ping?.error ? String(ping.error) : "no response";
++      }
++    } catch (err) {
++      entry.contentScriptError = err instanceof Error ? err.message : String(err);
++    }
++    entries.push(entry);
++  }
++  return entries;
++}
++
+ function describeReadiness(result: ReadinessProbeResult): string {
+   const where = result.href ? ` at ${result.href}` : "";
+   const evidence = result.evidence.length > 0 ? ` (${result.evidence.join("; ")})` : "";
+@@ -2227,6 +2279,25 @@ export async function handleMessage(
+       return { success: true, frames: result.frames };
+     }
+ 
++    case "FRAME_DIAGNOSE": {
++      if (!tabId) throw new Error("No tabId provided");
++      const dom = await collectDomIframeInventory(tabId);
++      const extensionFrames = await collectExtensionFrames(tabId);
++      const cdpResult = await cdp.getFrames(tabId);
++      const diagnosis = buildFrameDiagnosis({
++        mainPage: { href: dom.href, title: dom.title },
++        domIframes: dom.iframes,
++        extensionFrames,
++        cdpFrames: cdpResult.success ? (cdpResult.frames ?? []) : [],
++      });
++      if (!cdpResult.success) {
++        diagnosis.warnings.unshift(`CDP frame tree unavailable: ${cdpResult.error}`);
++      }
++      // No `success` key on purpose: formatToolContent renders {success, frames}
++      // as the bare frame list.
++      return diagnosis;
++    }
++
+     case "FRAME_SWITCH": {
+       if (!tabId) throw new Error("No tabId provided");
+       const { selector, name, index } = message;
+diff --git a/src/utils/frame-diagnose.ts b/src/utils/frame-diagnose.ts
+new file mode 100644
+index 0000000..18075ce
+--- /dev/null
++++ b/src/utils/frame-diagnose.ts
+@@ -0,0 +1,252 @@
++/**
++ * Frame diagnosis: three inventories of the same page side by side.
++ *
++ * A page can carry frames that each inventory sees differently:
++ *
++ * - The DOM lists `<iframe>` elements with their attributes and layout,
++ *   but a `srcdoc` or script-created frame shows up as `about:blank`.
++ * - `chrome.webNavigation.getAllFrames` lists the frames the extension can
++ *   message, with the numeric ids `frame.switch` uses; a frame the content
++ *   script did not load in (sandboxed, restricted, still loading) is
++ *   listed but unreachable.
++ * - The CDP frame tree (`Page.getFrameTree`) lists what the renderer knows,
++ *   with the string ids `frame.js` uses, including out-of-process frames.
++ *
++ * `buildFrameDiagnosis` correlates the three by URL and explains the
++ * mismatches, so an agent can pick the right frame command instead of
++ * guessing why a selector never matches.
++ */
++
++export interface FrameRect {
++  x: number;
++  y: number;
++  width: number;
++  height: number;
++}
++
++export interface DomIframeEntry {
++  domIndex: number;
++  /** Resolved absolute URL (`iframe.src`), empty for srcdoc/blank frames. */
++  src: string;
++  /** The literal `src` attribute, useful when it is relative. */
++  srcAttribute?: string;
++  srcdoc: boolean;
++  title: string;
++  name: string;
++  id: string;
++  sandbox: string | null;
++  allow: string;
++  rect: FrameRect;
++}
++
++export interface ExtensionFrameEntry {
++  frameId: number;
++  parentFrameId: number;
++  url: string;
++  errorOccurred: boolean;
++  contentScriptReachable: boolean;
++  contentScript?: { href?: string; readyState?: string };
++  contentScriptError?: string;
++}
++
++export interface CdpFrameEntry {
++  frameId: string;
++  parentId?: string;
++  url: string;
++  name: string;
++}
++
++export interface FrameDiagnosisInput {
++  mainPage: { href: string; title: string };
++  domIframes: DomIframeEntry[];
++  extensionFrames: ExtensionFrameEntry[];
++  cdpFrames: CdpFrameEntry[];
++}
++
++export interface DiagnosedDomIframe extends DomIframeEntry {
++  origin: string | null;
++  crossOrigin: boolean;
++  blank: boolean;
++  zeroSize: boolean;
++  scriptsBlocked: boolean;
++  extensionFrameIds: number[];
++  cdpFrameIds: string[];
++}
++
++export interface DiagnosedExtensionFrame extends ExtensionFrameEntry {
++  isMain: boolean;
++  origin: string | null;
++  crossOrigin: boolean;
++}
++
++export interface DiagnosedCdpFrame extends CdpFrameEntry {
++  isMain: boolean;
++  origin: string | null;
++  crossOrigin: boolean;
++  extensionFrameIds: number[];
++}
++
++export interface FrameDiagnosis {
++  mainPage: { href: string; title: string; origin: string | null };
++  counts: { domIframes: number; extensionFrames: number; cdpFrames: number };
++  domIframes: DiagnosedDomIframe[];
++  extensionFrames: DiagnosedExtensionFrame[];
++  cdpFrames: DiagnosedCdpFrame[];
++  warnings: string[];
++}
++
++export function originOf(url: string): string | null {
++  try {
++    const parsed = new URL(url);
++    return parsed.origin === "null" ? null : parsed.origin;
++  } catch {
++    return null;
++  }
++}
++
++export function isBlankFrameUrl(url: string): boolean {
++  return url === "" || url === "about:blank" || url.startsWith("about:blank?") || url === "about:srcdoc";
++}
++
++/** Sandboxed frames run no scripts unless `allow-scripts` is present. */
++export function sandboxBlocksScripts(sandbox: string | null): boolean {
++  if (sandbox === null) return false;
++  return !sandbox.split(/\s+/).includes("allow-scripts");
++}
++
++function sameUrl(a: string, b: string): boolean {
++  if (isBlankFrameUrl(a) && isBlankFrameUrl(b)) return true;
++  return a === b;
++}
++
++function short(url: string, max = 80): string {
++  if (url.length <= max) return url;
++  return `${url.slice(0, max - 3)}...`;
++}
++
++export function buildFrameDiagnosis(input: FrameDiagnosisInput): FrameDiagnosis {
++  const mainOrigin = originOf(input.mainPage.href);
++  const childExtensionFrames = input.extensionFrames.filter((frame) => frame.parentFrameId !== -1);
++  const warnings: string[] = [];
++
++  const extensionFrames: DiagnosedExtensionFrame[] = input.extensionFrames.map((frame) => {
++    const origin = originOf(frame.url);
++    return {
++      ...frame,
++      isMain: frame.parentFrameId === -1,
++      origin,
++      crossOrigin: origin !== null && mainOrigin !== null && origin !== mainOrigin,
++    };
++  });
++
++  const cdpFrames: DiagnosedCdpFrame[] = input.cdpFrames.map((frame) => {
++    const origin = originOf(frame.url);
++    return {
++      ...frame,
++      isMain: frame.parentId === undefined,
++      origin,
++      crossOrigin: origin !== null && mainOrigin !== null && origin !== mainOrigin,
++      extensionFrameIds: childExtensionFrames
++        .filter((candidate) => !isBlankFrameUrl(frame.url) && sameUrl(candidate.url, frame.url))
++        .map((candidate) => candidate.frameId),
++    };
++  });
++
++  const domIframes: DiagnosedDomIframe[] = input.domIframes.map((iframe) => {
++    const blank = iframe.srcdoc || isBlankFrameUrl(iframe.src);
++    const origin = blank ? null : originOf(iframe.src);
++    const matchesUrl = (url: string): boolean => !blank && sameUrl(url, iframe.src);
++    return {
++      ...iframe,
++      origin,
++      crossOrigin: origin !== null && mainOrigin !== null && origin !== mainOrigin,
++      blank,
++      zeroSize: iframe.rect.width <= 0 || iframe.rect.height <= 0,
++      scriptsBlocked: sandboxBlocksScripts(iframe.sandbox),
++      extensionFrameIds: childExtensionFrames.filter((frame) => matchesUrl(frame.url)).map((frame) => frame.frameId),
++      cdpFrameIds: input.cdpFrames.filter((frame) => frame.parentId !== undefined && matchesUrl(frame.url)).map((frame) => frame.frameId),
++    };
++  });
++
++  const blankIframes = domIframes.filter((iframe) => iframe.blank);
++  if (blankIframes.length > 0) {
++    warnings.push(
++      `${blankIframes.length} iframe(s) have no URL (about:blank or srcdoc): DOM indexes ${blankIframes.map((iframe) => iframe.domIndex).join(", ")}. Their content cannot be matched by URL; reach it through frame.list / frame.js with the CDP frame id, or frame.switch --index.`,
++    );
++  }
++
++  for (const iframe of domIframes) {
++    if (iframe.scriptsBlocked) {
++      warnings.push(`iframe ${iframe.domIndex} (${short(iframe.src) || "no src"}) is sandboxed without allow-scripts: no content script or page script runs inside it.`);
++    }
++    if (iframe.zeroSize) {
++      warnings.push(`iframe ${iframe.domIndex} (${short(iframe.src) || "no src"}) is rendered at ${iframe.rect.width}x${iframe.rect.height}: hidden, collapsed, or not yet laid out.`);
++    }
++    if (!iframe.blank && iframe.extensionFrameIds.length === 0) {
++      warnings.push(`iframe ${iframe.domIndex} (${short(iframe.src)}) has no matching extension frame: it may still be loading, be blocked, or have navigated elsewhere.`);
++    }
++    if (iframe.extensionFrameIds.length > 1) {
++      warnings.push(`iframe ${iframe.domIndex} (${short(iframe.src)}) matches ${iframe.extensionFrameIds.length} extension frames by URL (${iframe.extensionFrameIds.join(", ")}); use frame.switch --index to pick one.`);
++    }
++  }
++
++  for (const frame of extensionFrames) {
++    if (frame.isMain) continue;
++    if (!frame.contentScriptReachable) {
++      const reason = frame.contentScriptError ? ` (${frame.contentScriptError})` : "";
++      warnings.push(`extension frame ${frame.frameId} (${short(frame.url)}) has no reachable content script${reason}: page.read, click by ref and frame.switch will not work inside it; frame.js with its CDP frame id may.`);
++    }
++    if (frame.errorOccurred) {
++      warnings.push(`extension frame ${frame.frameId} (${short(frame.url)}) reported a navigation error.`);
++    }
++  }
++
++  const unseenByExtension = cdpFrames.filter(
++    (frame) => !frame.isMain && !isBlankFrameUrl(frame.url) && frame.extensionFrameIds.length === 0,
++  );
++  for (const frame of unseenByExtension) {
++    warnings.push(`CDP frame ${frame.frameId} (${short(frame.url)}) is not reported by chrome.webNavigation: likely out-of-process or detached; only frame.js can reach it.`);
++  }
++
++  const crossOriginCount = domIframes.filter((iframe) => iframe.crossOrigin).length;
++  if (crossOriginCount > 0) {
++    warnings.push(`${crossOriginCount} cross-origin iframe(s): selectors from the main page do not reach them; switch with frame.switch first.`);
++  }
++
++  if (domIframes.length !== childExtensionFrames.length) {
++    warnings.push(`DOM lists ${domIframes.length} iframe(s) but the extension sees ${childExtensionFrames.length} child frame(s); nested or detached frames account for the difference.`);
++  }
++
++  return {
++    mainPage: { ...input.mainPage, origin: mainOrigin },
++    counts: {
++      domIframes: domIframes.length,
++      extensionFrames: extensionFrames.length,
++      cdpFrames: cdpFrames.length,
++    },
++    domIframes,
++    extensionFrames,
++    cdpFrames,
++    warnings,
++  };
++}
++
++/** Page-side expression that returns the DOM iframe inventory as a plain object. */
++export const DOM_IFRAME_INVENTORY_EXPRESSION = `(() => {
++  const iframes = Array.from(document.querySelectorAll("iframe")).map((el, domIndex) => {
++    const rect = el.getBoundingClientRect();
++    return {
++      domIndex,
++      src: el.hasAttribute("srcdoc") ? "" : el.src || "",
++      srcAttribute: el.getAttribute("src") || "",
++      srcdoc: el.hasAttribute("srcdoc"),
++      title: el.title || "",
++      name: el.getAttribute("name") || "",
++      id: el.id || "",
++      sandbox: el.hasAttribute("sandbox") ? el.getAttribute("sandbox") : null,
++      allow: el.getAttribute("allow") || "",
++      rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
++    };
++  });
++  return { href: location.href, title: document.title, iframes };
++})()`;
+diff --git a/test/unit/frame-diagnose.test.ts b/test/unit/frame-diagnose.test.ts
+new file mode 100644
+index 0000000..6e7c243
+--- /dev/null
++++ b/test/unit/frame-diagnose.test.ts
+@@ -0,0 +1,206 @@
++import { describe, expect, it } from "vitest";
++import {
++  buildFrameDiagnosis,
++  type CdpFrameEntry,
++  type DomIframeEntry,
++  type ExtensionFrameEntry,
++  isBlankFrameUrl,
++  originOf,
++  sandboxBlocksScripts,
++} from "../../src/utils/frame-diagnose";
++
++const MAIN = "https://app.example.com/page";
++
++function iframe(overrides: Partial<DomIframeEntry> = {}): DomIframeEntry {
++  return {
++    domIndex: 0,
++    src: "https://widgets.example.net/embed",
++    srcdoc: false,
++    title: "",
++    name: "",
++    id: "",
++    sandbox: null,
++    allow: "",
++    rect: { x: 0, y: 0, width: 300, height: 200 },
++    ...overrides,
++  };
++}
++
++function extFrame(overrides: Partial<ExtensionFrameEntry> = {}): ExtensionFrameEntry {
++  return {
++    frameId: 7,
++    parentFrameId: 0,
++    url: "https://widgets.example.net/embed",
++    errorOccurred: false,
++    contentScriptReachable: true,
++    contentScript: { href: "https://widgets.example.net/embed", readyState: "complete" },
++    ...overrides,
++  };
++}
++
++const mainExt: ExtensionFrameEntry = {
++  frameId: 0,
++  parentFrameId: -1,
++  url: MAIN,
++  errorOccurred: false,
++  contentScriptReachable: true,
++};
++
++function cdpFrame(overrides: Partial<CdpFrameEntry> = {}): CdpFrameEntry {
++  return {
++    frameId: "F2",
++    parentId: "F1",
++    url: "https://widgets.example.net/embed",
++    name: "",
++    ...overrides,
++  };
++}
++
++const mainCdp: CdpFrameEntry = { frameId: "F1", url: MAIN, name: "" };
++
++describe("helpers", () => {
++  it("computes origins and blank URLs", () => {
++    expect(originOf("https://a.example.com/x?y")).toBe("https://a.example.com");
++    expect(originOf("about:blank")).toBeNull();
++    expect(originOf("not a url")).toBeNull();
++    expect(isBlankFrameUrl("")).toBe(true);
++    expect(isBlankFrameUrl("about:blank?x")).toBe(true);
++    expect(isBlankFrameUrl("about:srcdoc")).toBe(true);
++    expect(isBlankFrameUrl("https://a/")).toBe(false);
++  });
++
++  it("knows when a sandbox blocks scripts", () => {
++    expect(sandboxBlocksScripts(null)).toBe(false);
++    expect(sandboxBlocksScripts("")).toBe(true);
++    expect(sandboxBlocksScripts("allow-forms")).toBe(true);
++    expect(sandboxBlocksScripts("allow-forms allow-scripts")).toBe(false);
++  });
++});
++
++describe("buildFrameDiagnosis", () => {
++  it("correlates a healthy cross-origin iframe across all three inventories", () => {
++    const result = buildFrameDiagnosis({
++      mainPage: { href: MAIN, title: "Page" },
++      domIframes: [iframe()],
++      extensionFrames: [mainExt, extFrame()],
++      cdpFrames: [mainCdp, cdpFrame()],
++    });
++
++    expect(result.mainPage.origin).toBe("https://app.example.com");
++    expect(result.counts).toEqual({ domIframes: 1, extensionFrames: 2, cdpFrames: 2 });
++    expect(result.domIframes[0]).toMatchObject({
++      crossOrigin: true,
++      blank: false,
++      zeroSize: false,
++      scriptsBlocked: false,
++      extensionFrameIds: [7],
++      cdpFrameIds: ["F2"],
++    });
++    expect(result.extensionFrames[0].isMain).toBe(true);
++    expect(result.extensionFrames[1].crossOrigin).toBe(true);
++    expect(result.cdpFrames[1].extensionFrameIds).toEqual([7]);
++    expect(result.warnings).toEqual([
++      "1 cross-origin iframe(s): selectors from the main page do not reach them; switch with frame.switch first.",
++    ]);
++  });
++
++  it("returns no warnings for a page without frames", () => {
++    const result = buildFrameDiagnosis({
++      mainPage: { href: MAIN, title: "Page" },
++      domIframes: [],
++      extensionFrames: [mainExt],
++      cdpFrames: [mainCdp],
++    });
++    expect(result.warnings).toEqual([]);
++  });
++
++  it("explains blank and srcdoc iframes and points at the CDP ids", () => {
++    const result = buildFrameDiagnosis({
++      mainPage: { href: MAIN, title: "Page" },
++      domIframes: [iframe({ src: "", srcdoc: true }), iframe({ domIndex: 1, src: "about:blank" })],
++      extensionFrames: [
++        mainExt,
++        extFrame({ frameId: 3, url: "about:blank" }),
++        extFrame({ frameId: 4, url: "about:srcdoc" }),
++      ],
++      cdpFrames: [mainCdp, cdpFrame({ frameId: "F3", url: "about:blank" })],
++    });
++
++    expect(result.domIframes.map((entry) => entry.blank)).toEqual([true, true]);
++    expect(result.domIframes[0].extensionFrameIds).toEqual([]);
++    expect(result.warnings[0]).toContain(
++      "2 iframe(s) have no URL (about:blank or srcdoc): DOM indexes 0, 1",
++    );
++    expect(result.warnings.some((line) => line.includes("has no matching extension frame"))).toBe(
++      false,
++    );
++  });
++
++  it("flags unreachable content scripts, navigation errors and CDP-only frames", () => {
++    const result = buildFrameDiagnosis({
++      mainPage: { href: MAIN, title: "Page" },
++      domIframes: [iframe({ src: "https://app.example.com/inner" })],
++      extensionFrames: [
++        mainExt,
++        extFrame({
++          frameId: 5,
++          url: "https://app.example.com/inner",
++          contentScriptReachable: false,
++          contentScriptError: "Could not establish connection",
++          errorOccurred: true,
++        }),
++      ],
++      cdpFrames: [
++        mainCdp,
++        cdpFrame({ frameId: "F5", url: "https://app.example.com/inner" }),
++        cdpFrame({ frameId: "F9", url: "https://oop.example.org/" }),
++      ],
++    });
++
++    expect(result.domIframes[0].crossOrigin).toBe(false);
++    expect(result.warnings).toEqual([
++      "extension frame 5 (https://app.example.com/inner) has no reachable content script (Could not establish connection): page.read, click by ref and frame.switch will not work inside it; frame.js with its CDP frame id may.",
++      "extension frame 5 (https://app.example.com/inner) reported a navigation error.",
++      "CDP frame F9 (https://oop.example.org/) is not reported by chrome.webNavigation: likely out-of-process or detached; only frame.js can reach it.",
++    ]);
++  });
++
++  it("flags sandboxes without allow-scripts, zero-size frames and ambiguous URL matches", () => {
++    const result = buildFrameDiagnosis({
++      mainPage: { href: MAIN, title: "Page" },
++      domIframes: [
++        iframe({ sandbox: "allow-forms", rect: { x: 0, y: 0, width: 0, height: 0 } }),
++        iframe({ domIndex: 1 }),
++      ],
++      extensionFrames: [mainExt, extFrame({ frameId: 7 }), extFrame({ frameId: 8 })],
++      cdpFrames: [mainCdp],
++    });
++
++    expect(result.domIframes[0]).toMatchObject({
++      scriptsBlocked: true,
++      zeroSize: true,
++      extensionFrameIds: [7, 8],
++    });
++    expect(result.warnings.some((line) => line.includes("sandboxed without allow-scripts"))).toBe(
++      true,
++    );
++    expect(result.warnings.some((line) => line.includes("rendered at 0x0"))).toBe(true);
++    expect(
++      result.warnings.filter((line) => line.includes("matches 2 extension frames by URL (7, 8)")),
++    ).toHaveLength(2);
++  });
++
++  it("reports DOM iframes the extension does not list and count mismatches", () => {
++    const result = buildFrameDiagnosis({
++      mainPage: { href: MAIN, title: "Page" },
++      domIframes: [iframe({ src: "https://late.example.com/" })],
++      extensionFrames: [mainExt],
++      cdpFrames: [mainCdp],
++    });
++    expect(result.warnings).toEqual([
++      "iframe 0 (https://late.example.com/) has no matching extension frame: it may still be loading, be blocked, or have navigated elsewhere.",
++      "1 cross-origin iframe(s): selectors from the main page do not reach them; switch with frame.switch first.",
++      "DOM lists 1 iframe(s) but the extension sees 0 child frame(s); nested or detached frames account for the difference.",
++    ]);
++  });
++});
+diff --git a/test/unit/host-helpers.test.ts b/test/unit/host-helpers.test.ts
+index 0f770a2..5ddb5cd 100644
+--- a/test/unit/host-helpers.test.ts
++++ b/test/unit/host-helpers.test.ts
+@@ -544,6 +544,15 @@ describe("formatToolContent", () => {
+   });
+ });
+ 
++describe("frame.diagnose", () => {
++  it("maps to FRAME_DIAGNOSE with the tab id", () => {
++    expect(helpers.mapToolToMessage("frame.diagnose", {}, 9)).toEqual({
++      type: "FRAME_DIAGNOSE",
++      tabId: 9,
++    });
++  });
++});
++
+ describe("readiness tools", () => {
+   it("maps wait.ready with CLI flag spelling", () => {
+     const msg = helpers.mapToolToMessage(
+diff --git a/test/unit/service-worker/frame-diagnose-handlers.test.ts b/test/unit/service-worker/frame-diagnose-handlers.test.ts
+new file mode 100644
+index 0000000..d4025c4
+--- /dev/null
++++ b/test/unit/service-worker/frame-diagnose-handlers.test.ts
+@@ -0,0 +1,141 @@
++import { beforeEach, describe, expect, it, vi } from "vitest";
++import { createChromeMock, resetChromeMock } from "../../mocks/chrome";
++
++vi.mock("../../../src/native/port-manager", () => ({
++  initNativeMessaging: vi.fn(),
++  postToNativeHost: vi.fn(),
++}));
++
++async function loadHandleMessage() {
++  vi.resetModules();
++  (globalThis as any).chrome = createChromeMock();
++  const mod = await import("../../../src/service-worker/index");
++  return mod.handleMessage;
++}
++
++const inventory = {
++  href: "https://app.example.com/page",
++  title: "Page",
++  iframes: [
++    {
++      domIndex: 0,
++      src: "https://widgets.example.net/embed",
++      srcdoc: false,
++      title: "",
++      name: "widget",
++      id: "",
++      sandbox: null,
++      allow: "",
++      rect: { x: 0, y: 0, width: 300, height: 200 },
++    },
++  ],
++};
++
++function mockCdp(
++  chrome: ReturnType<typeof createChromeMock>,
++  options: { frameTreeError?: string } = {},
++) {
++  chrome.debugger.sendCommand.mockImplementation(async (_target: any, method: string) => {
++    if (method === "Runtime.evaluate") {
++      return { result: { value: inventory, type: "object" } };
++    }
++    if (method === "Page.getFrameTree") {
++      if (options.frameTreeError) {
++        throw new Error(options.frameTreeError);
++      }
++      return {
++        frameTree: {
++          frame: { id: "F1", url: "https://app.example.com/page", name: "" },
++          childFrames: [
++            { frame: { id: "F2", url: "https://widgets.example.net/embed", name: "widget" } },
++          ],
++        },
++      };
++    }
++    return {};
++  });
++}
++
++describe("FRAME_DIAGNOSE", () => {
++  beforeEach(() => {
++    resetChromeMock();
++  });
++
++  it("combines the DOM inventory, webNavigation frames with PING results and the CDP tree", async () => {
++    const handleMessage = await loadHandleMessage();
++    const chrome = (globalThis as any).chrome;
++    mockCdp(chrome);
++    chrome.webNavigation.getAllFrames.mockResolvedValue([
++      { frameId: 0, parentFrameId: -1, url: "https://app.example.com/page", errorOccurred: false },
++      {
++        frameId: 7,
++        parentFrameId: 0,
++        url: "https://widgets.example.net/embed",
++        errorOccurred: false,
++      },
++    ]);
++    chrome.tabs.sendMessage.mockImplementation(async (_tabId: number, _msg: any, opts: any) => {
++      if (opts.frameId === 0) {
++        return { success: true, href: "https://app.example.com/page", readyState: "complete" };
++      }
++      throw new Error("Could not establish connection");
++    });
++
++    const result = await handleMessage({ type: "FRAME_DIAGNOSE", tabId: 5 }, {});
++
++    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(5, { type: "PING" }, { frameId: 0 });
++    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(5, { type: "PING" }, { frameId: 7 });
++    expect(result.success).toBeUndefined();
++    expect(result.mainPage).toEqual({
++      href: "https://app.example.com/page",
++      title: "Page",
++      origin: "https://app.example.com",
++    });
++    expect(result.counts).toEqual({ domIframes: 1, extensionFrames: 2, cdpFrames: 2 });
++    expect(result.domIframes[0]).toMatchObject({
++      extensionFrameIds: [7],
++      cdpFrameIds: ["F2"],
++      crossOrigin: true,
++    });
++    expect(result.extensionFrames[1]).toMatchObject({
++      frameId: 7,
++      contentScriptReachable: false,
++      contentScriptError: "Could not establish connection",
++    });
++    expect(result.extensionFrames[0].contentScript).toEqual({
++      href: "https://app.example.com/page",
++      readyState: "complete",
++    });
++    expect(
++      result.warnings.some(
++        (line: string) =>
++          line.includes("extension frame 7") && line.includes("no reachable content script"),
++      ),
++    ).toBe(true);
++  });
++
++  it("keeps going when the CDP frame tree is unavailable", async () => {
++    const handleMessage = await loadHandleMessage();
++    const chrome = (globalThis as any).chrome;
++    mockCdp(chrome, { frameTreeError: "Target closed" });
++    chrome.webNavigation.getAllFrames.mockResolvedValue([
++      { frameId: 0, parentFrameId: -1, url: "https://app.example.com/page", errorOccurred: false },
++    ]);
++    chrome.tabs.sendMessage.mockResolvedValue({
++      success: true,
++      href: "https://app.example.com/page",
++      readyState: "complete",
++    });
++
++    const result = await handleMessage({ type: "FRAME_DIAGNOSE", tabId: 5 }, {});
++    expect(result.counts.cdpFrames).toBe(0);
++    expect(result.warnings[0]).toBe("CDP frame tree unavailable: Target closed");
++  });
++
++  it("requires a tab id", async () => {
++    const handleMessage = await loadHandleMessage();
++    await expect(handleMessage({ type: "FRAME_DIAGNOSE" }, {})).rejects.toThrow(
++      "No tabId provided",
++    );
++  });
++});
+diff --git a/test/unit/tool-scope.test.ts b/test/unit/tool-scope.test.ts
+index ce82b49..c86a19b 100644
+--- a/test/unit/tool-scope.test.ts
++++ b/test/unit/tool-scope.test.ts
+@@ -54,6 +54,10 @@ describe("tool scope classification", () => {
+       targetUse: "default-tab",
+       resourceKeys: [],
+     });
++    expect(classifyTool("frame.diagnose", {})).toMatchObject({
++      scope: "tab",
++      targetUse: "default-tab",
++    });
+     expect(classifyTool("page.readiness", {})).toEqual({
+       scope: "tab",
+       targetUse: "default-tab",
+-- 
+2.55.0
+

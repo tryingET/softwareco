@@ -1,0 +1,193 @@
+From 91a7e33f784a9485f4c07db33dcb7924257dfeab Mon Sep 17 00:00:00 2001
+From: tryinget <markus@team-wangler.de>
+Date: Mon, 7 Sep 2026 02:53:17 +0200
+Subject: [PATCH 12/13] feat(cli): error codes in every error line, JSON error
+ objects, no transport keys
+
+Agents branch on error codes, but the CLI printed only the message
+("Error: Page is not ready: login at ...") while the host had attached
+code=page_login. Append the code to the first line of every error
+("... [page_login]", the form surf extract already used) and, under
+--json, also print {"error": {"code", "message", "details"}} on
+stdout so a --json caller never has to parse prose.
+
+Strip the extension message id and _resolved* keys from page.readiness,
+wait.ready and frame.diagnose --json output and from extract's readiness
+block: they change between runs and mean nothing to the caller.
+formatToolContent drops _resolvedWindowId alongside _resolvedTabId.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PpyRJ9kNJBQ5JiqeYjxkTF
+---
+ native/cli.cjs                 | 36 +++++++++++++++++++++++++++++++++-
+ native/extract.cjs             | 11 ++++++++++-
+ native/host-helpers.cjs        |  2 +-
+ test/unit/extract.test.ts      | 26 ++++++++++++++++++++++++
+ test/unit/host-helpers.test.ts | 10 ++++++++++
+ 5 files changed, 82 insertions(+), 3 deletions(-)
+
+diff --git a/native/cli.cjs b/native/cli.cjs
+index 0a7401f..05a85b1 100755
+--- a/native/cli.cjs
++++ b/native/cli.cjs
+@@ -1818,6 +1818,7 @@ Core loop: navigate -> wait/read -> act -> screenshot/read.
+ Navigate: surf navigate "https://example.com"    # alias: surf go "..."
+ Wait after navigation: surf wait 2                # or wait.load for load complete
+ Wait for real content: surf wait.ready --selector ".results"   # fails fast with page_login / page_challenge / page_not_found; --accept login returns the state
++Errors: first line ends with [code]; --json also prints {"error":{code,message}} on stdout
+ Read DOM/refs: surf page.read --depth 3 --compact # alias: surf read
+ Refs: use e1/e2 refs from page.read; prefer refs over CSS when available.
+ Click ref: surf click e5
+@@ -3844,6 +3845,18 @@ function queueSummary(queue) {
+   return pieces.join(" ");
+ }
+ 
++const READINESS_TOOLS = new Set(["wait.ready", "page.readiness"]);
++
++/**
++ * Drop the extension message id and target-resolver keys from a data
++ * result; they mean nothing to a caller and change between runs.
++ */
++function stripTransportKeys(value) {
++  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
++  const { id, _resolvedTabId, _resolvedWindowId, _hint, ...rest } = value;
++  return rest;
++}
++
+ async function handleResponse(response) {
+   clearTimeout(timeout);
+   printResponseContext(response);
+@@ -3855,7 +3868,27 @@ async function handleResponse(response) {
+       socket.end();
+       process.exit(0);
+     }
+-    console.error("Error:", errContent);
++    // Put the error code where scripts and agents can branch on it: after
++    // the first line in text mode, as {error: {code, message, details}} on
++    // stdout under --json (the same shape `surf extract` prints).
++    const errorCode = typeof response.error.code === "string" ? response.error.code : null;
++    const [firstLine, ...restLines] = errContent.split("\n");
++    const display = errorCode && !firstLine.includes(`[${errorCode}]`)
++      ? [`${firstLine} [${errorCode}]`, ...restLines].join("\n")
++      : errContent;
++    console.error("Error:", display);
++    if (wantJson) {
++      // details repeats code/message when the error serialises itself; keep the rest.
++      const { code: _code, message: _message, ...details } =
++        response.error.details && typeof response.error.details === "object" ? response.error.details : {};
++      console.log(JSON.stringify({
++        error: {
++          code: errorCode || "error",
++          message: typeof response.error.message === "string" ? response.error.message : firstLine,
++          ...(Object.keys(details).length > 0 ? { details } : {}),
++        },
++      }, null, 2));
++    }
+ 
+     if (autoCapture) {
+       await performAutoCapture();
+@@ -3905,6 +3938,7 @@ async function handleResponse(response) {
+   }
+ 
+   if (wantJson) {
++    if (READINESS_TOOLS.has(finalTool) || finalTool === "frame.diagnose") data = stripTransportKeys(data);
+     const output = response.target || response.notice
+       ? { result: data ?? null, target: response.target || null, notice: response.notice || null }
+       : data ?? null;
+diff --git a/native/extract.cjs b/native/extract.cjs
+index cd4d731..ef4231b 100644
+--- a/native/extract.cjs
++++ b/native/extract.cjs
+@@ -249,8 +249,17 @@ function parseToolJson(response, stage) {
+  * Run one extraction attempt on `tabId` (already navigated). Shared by the
+  * owned-tab and caller-supplied-target modes.
+  */
++/** Drop the extension message id and target-resolver keys from a readiness result. */
++function cleanReadiness(readiness) {
++  if (!readiness || typeof readiness !== "object") return readiness;
++  const { id, _resolvedTabId, _resolvedWindowId, _hint, ...rest } = readiness;
++  return rest;
++}
++
+ async function runAttemptOnTab(executeTool, tabId, settings) {
+-  const readiness = parseToolJson(await executeTool("wait.ready", readinessArgs(settings.ready), tabId), "wait.ready");
++  const readiness = cleanReadiness(
++    parseToolJson(await executeTool("wait.ready", readinessArgs(settings.ready), tabId), "wait.ready"),
++  );
+   const code = applyOptionsPrelude(settings.code, settings.options);
+   const jsResponse = await executeTool("js", { code }, tabId);
+   const failure = responseError(jsResponse, "js");
+diff --git a/native/host-helpers.cjs b/native/host-helpers.cjs
+index bfa247c..9cc1595 100644
+--- a/native/host-helpers.cjs
++++ b/native/host-helpers.cjs
+@@ -462,7 +462,7 @@ function formatToolContent(result, log = () => {}, options = {}) {
+   }
+   
+   // Strip internal fields before JSON output
+-  const { _resolvedTabId, _hint, ...cleanResult } = result;
++  const { _resolvedTabId, _resolvedWindowId, _hint, ...cleanResult } = result;
+   if (_hint) {
+     return text(JSON.stringify(cleanResult) + `\n[hint] ${_hint}`);
+   }
+diff --git a/test/unit/extract.test.ts b/test/unit/extract.test.ts
+index a8abe1d..734c91b 100644
+--- a/test/unit/extract.test.ts
++++ b/test/unit/extract.test.ts
+@@ -56,6 +56,32 @@ const rowsResult = ok({
+ });
+ 
+ describe("runExtraction (owned tab)", () => {
++  it("drops the message id and resolver keys from the readiness result", async () => {
++    const host = scriptedHost([
++      { tool: "tab.new", reply: ok({ success: true, tabId: 41, url: "https://x/" }) },
++      {
++        tool: "wait.ready",
++        reply: ok({
++          id: 27,
++          _resolvedTabId: 41,
++          _resolvedWindowId: 9,
++          state: "ready",
++          evidence: [],
++          polls: 1,
++          waited: 3,
++        }),
++      },
++      { tool: "js", reply: rowsResult },
++      { tool: "tab.close", reply: ok({ success: true }) },
++    ]);
++    const result = await extract.runExtraction({
++      executeTool: host.executeTool,
++      url: "https://x/",
++      code: "return 1;",
++    });
++    expect(result.readiness).toEqual({ state: "ready", evidence: [], polls: 1, waited: 3 });
++  });
++
+   it("opens, waits, extracts and closes a fresh tab", async () => {
+     const host = scriptedHost([
+       { tool: "tab.new", reply: ok({ success: true, tabId: 41, url: "https://x/" }) },
+diff --git a/test/unit/host-helpers.test.ts b/test/unit/host-helpers.test.ts
+index 5ddb5cd..35f3860 100644
+--- a/test/unit/host-helpers.test.ts
++++ b/test/unit/host-helpers.test.ts
+@@ -497,6 +497,16 @@ describe("formatToolContent", () => {
+       });
+       expect(result[0].text).not.toContain("_resolvedTabId");
+     });
++
++    it("strips _resolvedWindowId from JSON output", () => {
++      const result = helpers.formatToolContent({
++        state: "ready",
++        evidence: [],
++        _resolvedTabId: 123,
++        _resolvedWindowId: 456,
++      });
++      expect(JSON.parse(result[0].text)).toEqual({ state: "ready", evidence: [] });
++    });
+   });
+ 
+   describe("scroll responses", () => {
+-- 
+2.55.0
+

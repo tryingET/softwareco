@@ -1,0 +1,136 @@
+From 11e20aaca8114ecc9ffde93b3a940b73e1d80c6b Mon Sep 17 00:00:00 2001
+From: tryinget <markus@team-wangler.de>
+Date: Mon, 7 Sep 2026 02:53:17 +0200
+Subject: [PATCH 10/13] fix(cdp): surface the CDP error message instead of its
+ JSON envelope
+
+chrome.debugger.sendCommand rejects with the CDP error serialised as the
+Error message ('{"code":-32000,"message":"Inspected target navigated
+or closed"}'), which every caller then printed verbatim. Unwrap it in
+CDPController.send: the message becomes the human-readable text and the
+CDP code and method are kept as cdpCode/cdpMethod on the error. Substring
+checks elsewhere ("Cannot access", "navigated or closed", "Detached
+while handling command") keep working because they match the inner
+message.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PpyRJ9kNJBQ5JiqeYjxkTF
+---
+ src/cdp/controller.ts            | 39 +++++++++++++++++++++++++++++++-
+ test/unit/cdp/controller.test.ts | 37 +++++++++++++++++++++++++++++-
+ 2 files changed, 74 insertions(+), 2 deletions(-)
+
+diff --git a/src/cdp/controller.ts b/src/cdp/controller.ts
+index f6969d1..c0ddc38 100644
+--- a/src/cdp/controller.ts
++++ b/src/cdp/controller.ts
+@@ -13,6 +13,39 @@ class CDPControllerError extends Error {
+   }
+ }
+ 
++export interface DebuggerCommandError extends Error {
++  /** CDP error code (for example -32000) when the browser reported one. */
++  cdpCode?: number;
++  /** The CDP method that failed. */
++  cdpMethod?: string;
++}
++
++/**
++ * `chrome.debugger.sendCommand` rejects with the CDP error serialised as
++ * JSON in the message (`{"code":-32000,"message":"Inspected target navigated
++ * or closed"}`). Surface the message itself and keep the code as a property,
++ * so callers and users see "Inspected target navigated or closed" instead
++ * of a JSON blob. Anything that is not such a JSON object passes through.
++ */
++export function describeDebuggerError(err: unknown, method?: string): Error {
++  const raw = err instanceof Error ? err.message : String(err);
++  const trimmed = raw.trim();
++  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
++    try {
++      const parsed = JSON.parse(trimmed) as { code?: unknown; message?: unknown };
++      if (parsed && typeof parsed.message === "string" && parsed.message.length > 0) {
++        const error = new Error(parsed.message) as DebuggerCommandError;
++        if (typeof parsed.code === "number") error.cdpCode = parsed.code;
++        if (method) error.cdpMethod = method;
++        return error;
++      }
++    } catch {
++      // not JSON after all; fall through
++    }
++  }
++  return err instanceof Error ? err : new Error(raw);
++}
++
+ interface ConsoleMessage {
+   type: string;
+   text: string;
+@@ -1330,7 +1363,11 @@ export class CDPController {
+   ): Promise<any> {
+     await this.ensureAttached(tabId);
+     const target = this.targets.get(tabId)!;
+-    return chrome.debugger.sendCommand(target, method, params);
++    try {
++      return await chrome.debugger.sendCommand(target, method, params);
++    } catch (err) {
++      throw describeDebuggerError(err, method);
++    }
+   }
+ 
+   async sendCommand(
+diff --git a/test/unit/cdp/controller.test.ts b/test/unit/cdp/controller.test.ts
+index 8d2c08d..71a26d5 100644
+--- a/test/unit/cdp/controller.test.ts
++++ b/test/unit/cdp/controller.test.ts
+@@ -1,5 +1,5 @@
+ import { vi } from "vitest";
+-import { CDPController } from "../../../src/cdp/controller";
++import { CDPController, describeDebuggerError } from "../../../src/cdp/controller";
+ 
+ // Mock chrome.debugger API
+ const mockChrome = {
+@@ -15,7 +15,42 @@ const mockChrome = {
+ // Set global chrome before tests
+ vi.stubGlobal("chrome", mockChrome);
+ 
++describe("describeDebuggerError", () => {
++  it("unwraps the JSON-encoded CDP error chrome.debugger rejects with", () => {
++    const error = describeDebuggerError(
++      new Error('{"code":-32000,"message":"Inspected target navigated or closed"}'),
++      "Runtime.evaluate",
++    );
++    expect(error.message).toBe("Inspected target navigated or closed");
++    expect(error).toMatchObject({ cdpCode: -32000, cdpMethod: "Runtime.evaluate" });
++  });
++
++  it("passes plain errors and non-JSON messages through unchanged", () => {
++    const plain = new Error("Detached while handling command.");
++    expect(describeDebuggerError(plain, "Page.enable")).toBe(plain);
++    expect(describeDebuggerError("{not json", "Page.enable").message).toBe("{not json");
++    expect(describeDebuggerError('{"code":1}', "Page.enable").message).toBe('{"code":1}');
++  });
++});
++
+ describe("CDPController", () => {
++  describe("send", () => {
++    it("rethrows CDP failures with the browser's message instead of a JSON blob", async () => {
++      const controller = new CDPController();
++      mockChrome.debugger.attach.mockResolvedValue(undefined);
++      mockChrome.debugger.sendCommand.mockRejectedValue(
++        new Error('{"code":-32000,"message":"Inspected target navigated or closed"}'),
++      );
++      await expect(
++        controller.sendCommand(7, "Runtime.evaluate", { expression: "1" }),
++      ).rejects.toMatchObject({
++        message: "Inspected target navigated or closed",
++        cdpCode: -32000,
++        cdpMethod: "Runtime.evaluate",
++      });
++    });
++  });
++
+   beforeEach(() => {
+     vi.clearAllMocks();
+   });
+-- 
+2.55.0
+

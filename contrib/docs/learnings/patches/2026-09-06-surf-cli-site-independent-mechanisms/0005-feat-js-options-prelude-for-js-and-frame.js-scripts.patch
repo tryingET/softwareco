@@ -1,0 +1,79 @@
+From 67987bd0875e52c57616ae3daf13f2780de3f92e Mon Sep 17 00:00:00 2001
+From: tryinget <markus@team-wangler.de>
+Date: Mon, 7 Sep 2026 00:11:16 +0200
+Subject: [PATCH 05/13] feat(js): --options prelude for js and frame.js scripts
+
+`surf js --file script.js --options '{"limit": 20}'` prepends
+`const SURF_OPTIONS = Object.freeze({...});` to the script, the same
+prelude `surf extract` uses. Scripts read their parameters from that
+constant instead of being templated, so one file serves the CLI, the
+extract runner and any other JavaScript-in-page tool where the
+constant is defined by hand.
+
+The value must be a JSON object; anything else is a usage error before
+the request is sent.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PpyRJ9kNJBQ5JiqeYjxkTF
+---
+ native/cli.cjs | 19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/native/cli.cjs b/native/cli.cjs
+index eb2f0d1..383e5dc 100755
+--- a/native/cli.cjs
++++ b/native/cli.cjs
+@@ -18,7 +18,7 @@ const {
+ } = require("./workflow-definition.cjs");
+ const { executeDoSteps, sendDoRequest } = require("./do-executor.cjs");
+ const { runExtraction, renderExtractionMarkdown } = require("./extract.cjs");
+-const { parseScriptOptions } = require("./script-options.cjs");
++const { applyOptionsPrelude, parseScriptOptions } = require("./script-options.cjs");
+ const { openClientTransport } = require("./client-transport.cjs");
+ const { version: VERSION } = require("../package.json");
+ const {
+@@ -948,11 +948,13 @@ const TOOLS = {
+       "js": {
+         desc: "Execute JavaScript (use 'return' for values)",
+         args: ["code"],
+-        opts: { file: "Run JS from file" },
++        opts: { file: "Run JS from file", options: "JSON object exposed to the script as a frozen SURF_OPTIONS constant" },
+         examples: [
+           { cmd: 'js "return document.title"', desc: "Get title" },
+           { cmd: 'js "document.body.style.background = \'red\'"', desc: "Run code" },
+           { cmd: "js --file script.js", desc: "Run file" },
++          { cmd: 'js --file script.js --options \'{"limit": 20}\'', desc: "Run file with SURF_OPTIONS.limit" },
++          { cmd: 'js "piHelpers.setValue(document.querySelector(\'#q\'), \'hello\')"', desc: "Set a framework-controlled input" },
+         ]
+       },
+     }
+@@ -1228,7 +1230,7 @@ const TOOLS = {
+       "frame.js": {
+         desc: "Execute JS in specific frame",
+         args: ["code"],
+-        opts: { id: "Frame ID from frame.list", file: "Run JS from file" },
++        opts: { id: "Frame ID from frame.list", file: "Run JS from file", options: "JSON object exposed as SURF_OPTIONS" },
+         examples: [
+           { cmd: 'frame.js "return document.title" --id frame1', desc: "JS in specific frame" },
+         ]
+@@ -3190,6 +3192,17 @@ if ((tool === "js" || tool === "frame.js") && toolArgs.file) {
+   }
+ }
+ 
++if ((tool === "js" || tool === "frame.js") && toolArgs.options !== undefined) {
++  try {
++    if (typeof toolArgs.code !== "string") throw new Error("--options needs code (inline or --file)");
++    toolArgs.code = applyOptionsPrelude(toolArgs.code, toolArgs.options);
++    delete toolArgs.options;
++  } catch (e) {
++    console.error(`Error: ${e.message}`);
++    process.exit(1);
++  }
++}
++
+ if (tool === "batch" && toolArgs.file) {
+   try {
+     const parsed = JSON.parse(fs.readFileSync(toolArgs.file, "utf8"));
+-- 
+2.55.0
+
