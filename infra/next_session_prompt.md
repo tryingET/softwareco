@@ -16,12 +16,12 @@ Do not ask for permission to start.
 - Keep only the active handoff window (not a history log).
 - Move finished session narrative to `diary/`.
 - Crystallize durable patterns in `docs/learnings/` and decisions in `docs/decisions/`.
-- Track deferred work in `governance/work-items.json` (not in ad-hoc TODO notes).
+- Track deferred work in Agent Kernel (`ak task ...`), not in ad-hoc TODO notes.
 
 ## SOURCE-OF-TRUTH MAP
 - Repo operating contract: `AGENTS.md`
 - Mission and goals: `docs/project/`
-- Active/deferred work contract: `governance/work-items.json`
+- Active/deferred work contract: Agent Kernel DB (`ak task ready`, `ak task list -r .`)
 - Prior decisions: `docs/decisions/`
 - Crystallized learnings: `docs/learnings/`
 - Raw session capture: `diary/`
@@ -35,13 +35,13 @@ Do not ask for permission to start.
 ## READ-FIRST ALLOWLIST (STARTUP BUDGET)
 1. `AGENTS.md`
 2. `README.md`
-3. `governance/work-items.json`
+3. `ak task ready` (the AK DB is the sole work authority)
 4. `docs/project/mission.md`
 5. `docs/project/tactical_goals.md`
 6. Most recent `diary/YYYY-MM-DD--type-scope-summary.md`
 
 ## EXECUTION MODE (ONE SESSION = ONE SLICE)
-1. Pick one highest-leverage actionable slice from `governance/work-items.json`.
+1. Pick one highest-leverage actionable slice from `ak task ready`.
 2. Implement end-to-end on a branch.
 3. Validate:
    - `./scripts/ci/smoke.sh`
@@ -53,7 +53,7 @@ Do not ask for permission to start.
 - Outcome:
 - Files changed:
 - Validation commands + results:
-- Deferred tasks updated in `governance/work-items.json`:
+- Deferred tasks recorded in AK (`ak task create` / `ak task defer`):
 - Next-session starting point:
 
 ## END-OF-SESSION

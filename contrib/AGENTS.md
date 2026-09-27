@@ -7,7 +7,7 @@ Template for a delivery project repo (project context + code + tests).
 - No secrets in git.
 - Mainline development: commit to `main` and push to `main`.
 - Treat `docs/_core/**` as immutable.
-- Track deferred work in `governance/work-items.json` (avoid ad-hoc TODO comments).
+- Track deferred work in Agent Kernel (`ak task ...`), not in ad-hoc TODO comments.
 
 ## Deterministic tooling policy (ROCS-first)
 - Prefer `./scripts/rocs.sh <args...>` before ad-hoc inline scripting.

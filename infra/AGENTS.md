@@ -25,7 +25,7 @@ Repo-specific operational details belong in each infra repo's local `AGENTS.md`.
 - No secrets in git.
 - Main-first workflow: commit directly to `main` for normal repo work.
 - Use GitHub PRs for releases or when the operator explicitly asks for review.
-- Track deferred work in `governance/work-items.json` where available.
+- Track deferred work in Agent Kernel (`ak task ...`), not in ad-hoc TODO comments.
 - If an infra repo uses repo-local direction docs (`strategic_goals.md`, `tactical_goals.md`, `operating_plan.md`), update them in the same pass when a direction slice task lands, or bind the doc-sync follow-up into AK with an explicit deferral.
 - In infra repos that import runtime links from direction docs, use typed refs such as `task:` / `decision:` instead of raw `#123` shorthand.
 - Treat `ak direction check` as an authority-reconciliation gate when that substrate exists, not just a markdown parser smoke test.

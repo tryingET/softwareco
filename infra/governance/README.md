@@ -1,44 +1,22 @@
-# Project Work Items
+# Governance — infra lane root
 
-`governance/work-items.json` is the project-local planning model for this repository.
+Deferred and active work for this lane lives in the **Agent Kernel DB** (`ak task ...`).
+The AK DB is the sole work authority; no checked-in work-items projection exists or should be reintroduced.
 
-## Purpose
+The retired `governance/work-items.json` / `work-items.cue` pair contained only completed
+(`done`) historical task references already recorded in AK; nothing was lost at retirement.
 
-- Scope: **single repo** (features, bugs, improvements)
-- Authority: planning/coordination
-- Operational status: **non-operational** (no scheduler)
+## Optional explicit task-scope snapshots
 
-Use this when work is local to this repo. Use L0/FCOS programs when work spans repos.
+When a lane-root AK task needs explicit scope:
 
-## Contract (must stay aligned)
-
-- Schema: `governance/work-items.cue`
-- Seed model: `governance/work-items.json`
-
-Core fields:
-- `schema_version`
-- `updated_at`
-- `owner`
-- `project_name`
-- `milestones[]`
-
-Issue state machine:
-- `triage -> queued -> doing -> review -> done`
-
-## Validation
-
-```bash
-cue vet governance/work-items.json governance/work-items.cue
-```
-
-## Use this vs alternatives
-
-| Use this file when | Use alternative when |
-|---|---|
-| Work is repo-local and needs milestone/issue/task structure | Work spans multiple repos/programs (use FCOS/L0 program models) |
-| You need deterministic schema checks | You only need lightweight conversational triage (use issues/notes) |
+- author/update the scope in AK via `ak task scope show|set|update ...`
+- keep repo-side copies under `governance/task-scopes/AK-<TASK-ID>.snapshot.json` as frozen exports
+- refresh a checked-in snapshot with `mkdir -p governance/task-scopes && ak task scope export <TASK-ID> > governance/task-scopes/AK-<TASK-ID>.snapshot.json`
+- verify checked-in snapshots with `./scripts/check-task-scope-snapshots.sh` before commit or in CI
 
 ## Non-negotiable
 
-Do not leave deferred work as ad-hoc TODO comments or scattered markdown notes.
-Track deferred work in the authoritative work-items model.
+- Do not leave deferred work as ad-hoc TODO comments or scattered markdown notes.
+- Do not reintroduce a checked-in `governance/work-items.json` projection; the AK DB is authoritative.
+- Do not hand-author `governance/task-scopes/AK-*.snapshot.json` as if it were the live task-scope source of truth.
