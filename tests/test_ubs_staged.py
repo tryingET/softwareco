@@ -141,7 +141,10 @@ class UbsStagedFeature(unittest.TestCase):
         #   exports GIT_DIR / GIT_INDEX_FILE / GIT_WORK_TREE for the enclosing repository
         enclosing = self.tmp / "enclosing"
         subprocess.run(["git", "init", "-q", str(enclosing)], check=True, capture_output=True, env=clean_env())
-        subprocess.run(["git", "-C", str(enclosing), "commit", "-q", "--allow-empty", "-m", "init"],
+        # CI runners have no git identity; give this one scratch commit its own.
+        subprocess.run(["git", "-C", str(enclosing), "-c", "user.name=ubs-staged test",
+                        "-c", "user.email=ubs-staged-test@example.invalid",
+                        "commit", "-q", "--allow-empty", "-m", "init"],
                        check=True, capture_output=True, env=clean_env())
         subprocess.run(["git", "-C", str(enclosing), "worktree", "add", "-q", str(self.tmp / "wt"), "-b", "wt"],
                        check=True, capture_output=True, env=clean_env())
