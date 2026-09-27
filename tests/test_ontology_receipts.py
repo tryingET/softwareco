@@ -133,10 +133,27 @@ class TestOntologyReceipts(unittest.TestCase):
             layers["company"]["src_root"],
             str(ROOT.resolve() / "ontology/src"),
         )
-        self.assertEqual(
-            layers["core"]["src_root"],
-            str(Path.home() / "ai-society/core/ontology-kernel/ontology/src"),
-        )
+        # rocs-cli >= 0.4.5 binds the pinned core ref to its exact ontology tree: read in place
+        # when the kernel checkout's ontology tree is that tree, else from an immutable snapshot.
+        # Assert the binding, not a checkout path that moves with kernel main.
+        kernel = Path.home() / "ai-society/core/ontology-kernel"
+        requested = layers["core"]["origin"].rsplit("@", 1)[1].rstrip(">")
+        expected_tree = subprocess.run(
+            ["git", "-C", str(kernel), "rev-parse", f"{requested}:ontology"],
+            check=True, capture_output=True, text=True,
+        ).stdout.strip()
+        core_source = layers["core"]["source"]
+        self.assertIn(core_source, {"workspace", "workspace_ref_snapshot"})
+        if core_source == "workspace":
+            self.assertEqual(layers["core"]["src_root"], str(kernel / "ontology/src"))
+        else:
+            self.assertTrue(layers["core"]["src_root"].endswith(f"/workspace-ref-snapshots/{expected_tree}/ontology/src"))
+        for command in ("validate", "build"):
+            receipt_core = [layer for layer in aggregate["commands"][command]["layer_sources"] if layer["name"] == "core"]
+            self.assertEqual(len(receipt_core), 1)
+            self.assertEqual(receipt_core[0]["source"], core_source)
+            self.assertEqual(receipt_core[0]["binding"]["requested_ref"], requested)
+            self.assertEqual(receipt_core[0]["binding"]["ontology_tree"], expected_tree)
         self.assertNotIn(".local/state/pi-quests/tmp", json.dumps(resolved))
 
     def test_parent_producers_declare_external_output_contract(self) -> None:

@@ -22,7 +22,7 @@
       "locator_kind": "repo",
       "name": "core",
       "origin": "<repo:core/ontology-kernel@v0.2.1>",
-      "source": "workspace",
+      "source": "workspace_ref_snapshot",
       "source_contract": "ontology-markdown-v1"
     }
   ],
