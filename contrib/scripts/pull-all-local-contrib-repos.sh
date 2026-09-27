@@ -15,10 +15,13 @@ usage() {
 Pull all git repos directly inside a folder in parallel, with safe defaults.
 
 Behavior:
-  - always fetch origin when present
+  - skip linked worktrees; fail closed if Git topology metadata is unavailable
+  - always fetch origin when present for standalone repos
   - also fetch the current branch's upstream remote when different from origin
   - fetch branch refs with `--no-tags` so conflicting local tags do not block branch freshness
-  - prefer the latest stable GitHub Release tag from origin when one exists
+  - default to latest stable GitHub Release tag from origin when one exists
+  - repo-local `git config --local contrib.syncMode branch` follows origin's default branch instead
+  - `contrib.syncMode release` restores release preference; invalid/multiple values fail closed
   - checkout the latest release in detached HEAD only when the worktree is clean
   - if no release exists, checkout and fast-forward origin's default branch (origin/HEAD, fallback main) when safe
 
@@ -310,8 +313,46 @@ if [[ ! -e "${repo_dir}/.git" ]]; then
   exit 0
 fi
 
+# Refuse linked worktrees in the worker, including include-root and dry-run.
+if ! git_dir="$(git -C "$repo_dir" rev-parse --path-format=absolute --git-dir 2>/dev/null)" \
+  || [[ -z "$git_dir" ]] \
+  || ! common_dir="$(git -C "$repo_dir" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" \
+  || [[ -z "$common_dir" ]]; then
+  emit "FAIL" "cannot determine Git worktree topology"
+  exit 0
+fi
+if [[ "$git_dir" != "$common_dir" ]]; then
+  emit "SKIP" "linked worktree"
+  exit 0
+fi
+
+# Owner-local policy only: a fetched repository file must not select its own
+# update policy. Reject ambiguous values and read failures before any fetch.
+# A sentinel preserves trailing newlines so duplicate empty values cannot be
+# collapsed into an apparently valid single policy by command substitution.
+if sync_mode="$(
+  config_status=0
+  git -C "$repo_dir" config --local --get-all contrib.syncMode 2>/dev/null || config_status=$?
+  printf '.'
+  exit "$config_status"
+)"; then
+  case "$sync_mode" in
+    $'branch\n.'|$'release\n.') sync_mode="${sync_mode%$'\n.'}" ;;
+    *)
+      emit "FAIL" "invalid local contrib.syncMode (expected one branch or release value)"
+      exit 0 ;;
+  esac
+else
+  config_status=$?
+  if [[ "$config_status" != 1 ]]; then
+    emit "FAIL" "cannot read local contrib.syncMode"
+    exit 0
+  fi
+  sync_mode=release
+fi
+
 if [[ "$dry_run" == "1" ]]; then
-  emit "DRYRUN" "would fetch origin/current upstream, prefer latest stable GitHub release tag, else checkout/fast-forward origin default branch when safe"
+  emit "DRYRUN" "policy=$sync_mode; would fetch origin/current upstream, then follow $sync_mode policy with clean-tree and fast-forward guards"
   exit 0
 fi
 
@@ -362,7 +403,9 @@ release_lookup_failed=0
 origin_url=""
 origin_slug=""
 
-if origin_url="$(git -C "$repo_dir" config --get remote.origin.url 2>/dev/null)"; then
+if [[ "$sync_mode" == branch ]]; then
+  details+=("policy=branch")
+elif origin_url="$(git -C "$repo_dir" config --get remote.origin.url 2>/dev/null)"; then
   if origin_slug="$(github_slug_from_url "$origin_url")"; then
     set +e
     latest_release_tag="$(gh release list --repo "$origin_slug" --limit 1 --exclude-drafts --exclude-pre-releases --json tagName --jq '.[0].tagName // ""' 2>/dev/null)"
