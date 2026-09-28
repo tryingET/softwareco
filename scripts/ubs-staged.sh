@@ -37,13 +37,17 @@ if [ "$staged_count" -eq 0 ]; then
 	exit 0
 fi
 
-echo "ubs-staged: scanning $staged_count staged file(s) with $ubs_bin --staged"
+# --no-cargo: the cargo phases (fmt, clippy, check, test, audit) cannot run on staged files alone.
+# A staged Cargo.toml made the Rust module report a partial scan (exit 2) and blocked every
+# dependency change (agent-kernel AK5021, 2026-09-28). Builds, lints and tests are the repo's own
+# validation; the hook keeps the static rules.
+echo "ubs-staged: scanning $staged_count staged file(s) with $ubs_bin --staged --no-cargo"
 # UBS exits 3 for "nothing scanned: no supported language detected", which for
 # staged files is the same case as nothing staged (e.g. a docs-only commit).
 # But 3 can also propagate from a failing module or tool, so pass only when
 # UBS's machine-readable result confirms that no language was detected.
 rc=0
-"$ubs_bin" --ci --staged || rc=$?
+"$ubs_bin" --ci --staged --no-cargo || rc=$?
 # UBS scans whole staged files, so a one-line change to a large file failed on criticals nobody
 # introduced (agent-kernel main.rs carried 93 in untouched code, 2026-09-28). When the staged scan
 # reports criticals, compare per-file, per-rule critical counts between HEAD's versions and the staged
@@ -64,8 +68,8 @@ if [ "$rc" -eq 1 ] && [ "${UBS_STAGED_STRICT:-0}" != "1" ] && [ -n "${TMPDIR:-}"
 		git show ":$path" >"$work/staged/$path"
 		git show "HEAD:$path" >"$work/head/$path" 2>/dev/null || rm -f "$work/head/$path"
 	done
-	(cd "$work/head" && "$ubs_bin" --ci --format=json . >"$work/head.json" 2>/dev/null) || true
-	(cd "$work/staged" && "$ubs_bin" --ci --format=json . >"$work/staged.json" 2>/dev/null) || true
+	(cd "$work/head" && "$ubs_bin" --ci --no-cargo --format=json . >"$work/head.json" 2>/dev/null) || true
+	(cd "$work/staged" && "$ubs_bin" --ci --no-cargo --format=json . >"$work/staged.json" 2>/dev/null) || true
 	echo "ubs-staged: comparing critical counts per file and rule with HEAD's versions of the staged files"
 	new_rc=0
 	python3 - "$work" <<'PY' || new_rc=$?
@@ -98,7 +102,7 @@ PY
 	exit "$new_rc"
 fi
 if [ "$rc" -eq 3 ]; then
-	result="$("$ubs_bin" --ci --staged --format=json 2>/dev/null || true)"
+	result="$("$ubs_bin" --ci --staged --no-cargo --format=json 2>/dev/null || true)"
 	case "$result" in
 	*'"result":"no-supported-languages"'*)
 		echo "ubs-staged: UBS detected no language to scan in the staged files; nothing to check"

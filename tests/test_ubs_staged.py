@@ -80,6 +80,9 @@ class UbsStagedFeature(unittest.TestCase):
         self.assertEqual(len(self.calls()), 1, self.calls())
         self.assertIn("--staged", self.calls()[0].split())
         self.assertNotIn("src/app.py", self.calls()[0])
+        # And cargo phases are skipped: they cannot run on staged files alone (a staged
+        # Cargo.toml made the Rust module report a partial scan, exit 2)
+        self.assertIn("--no-cargo", self.calls()[0].split())
 
     def test_scenario_nothing_staged_skips_the_scanner(self) -> None:
         # Given a repo with nothing staged
