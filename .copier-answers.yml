@@ -5,7 +5,7 @@ company_slug: softwareco
 enable_community_pack: false
 enable_release_pack: false
 enable_vouch_gate: false
-l0_source_sha: 782d0fcf56acade1dbd211c41307640127bd0274
+l0_source_sha: 2dbc150431085b7f006e49df612e475b32925884
 l1_org_docs_profile: rich
 l1_profile: custom
 l2_org_docs_default: rich
