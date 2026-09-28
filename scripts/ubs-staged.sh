@@ -44,6 +44,59 @@ echo "ubs-staged: scanning $staged_count staged file(s) with $ubs_bin --staged"
 # UBS's machine-readable result confirms that no language was detected.
 rc=0
 "$ubs_bin" --ci --staged || rc=$?
+# UBS scans whole staged files, so a one-line change to a large file failed on criticals nobody
+# introduced (agent-kernel main.rs carried 93 in untouched code, 2026-09-28). When the staged scan
+# reports criticals, compare per-file, per-rule critical counts between HEAD's versions and the staged
+# versions, and fail on any increase. Counts, not `--new-only`: that flag also hides a new instance of
+# a rule the file already had. UBS_STAGED_STRICT=1 keeps the whole-file result; without HEAD, TMPDIR
+# or a parseable report it stays strict.
+if [ "$rc" -eq 1 ] && [ "${UBS_STAGED_STRICT:-0}" != "1" ] && [ -n "${TMPDIR:-}" ] \
+	&& git rev-parse --verify --quiet HEAD >/dev/null; then
+	work="$(mktemp -d "$TMPDIR/ubs-staged.XXXXXX")"
+	trap 'rm -rf "$work"' EXIT
+	mkdir -p "$work/head" "$work/staged"
+	if [ -f .ubsignore ]; then
+		cp .ubsignore "$work/head/.ubsignore"
+		cp .ubsignore "$work/staged/.ubsignore"
+	fi
+	git diff --cached --name-only --diff-filter=ACMR | while IFS= read -r path; do
+		mkdir -p "$work/head/$(dirname "$path")" "$work/staged/$(dirname "$path")"
+		git show ":$path" >"$work/staged/$path"
+		git show "HEAD:$path" >"$work/head/$path" 2>/dev/null || rm -f "$work/head/$path"
+	done
+	(cd "$work/head" && "$ubs_bin" --ci --format=json . >"$work/head.json" 2>/dev/null) || true
+	(cd "$work/staged" && "$ubs_bin" --ci --format=json . >"$work/staged.json" 2>/dev/null) || true
+	echo "ubs-staged: comparing critical counts per file and rule with HEAD's versions of the staged files"
+	new_rc=0
+	python3 - "$work" <<'PY' || new_rc=$?
+import collections, json, os, sys
+work = sys.argv[1]
+def criticals(side):
+    try:
+        with open(os.path.join(work, side + ".json"), encoding="utf-8") as handle:
+            report = json.load(handle)
+    except (OSError, ValueError):
+        if side == "head":
+            return collections.Counter()  # no HEAD versions to scan: every staged critical is new
+        print("ubs-staged: the staged scan produced no readable report; keeping the whole-file result", file=sys.stderr)
+        sys.exit(1)
+    root = os.path.join(work, side)
+    counts = collections.Counter()
+    for finding in report.get("findings", []):
+        if finding.get("severity") == "critical" and not finding.get("suppressed"):
+            counts[(os.path.relpath(finding["file"], root), finding["rule_id"])] += 1
+    return counts
+head, staged = criticals("head"), criticals("staged")
+added = {key: staged[key] - head[key] for key in staged if staged[key] > head[key]}
+for (path, rule), count in sorted(added.items()):
+    print(f"ubs-staged: new critical: {path} {rule} (+{count})", file=sys.stderr)
+if added:
+    sys.exit(1)
+print(f"ubs-staged: all {sum(staged.values())} critical findings are pre-existing in the staged files; "
+      "none is new (UBS_STAGED_STRICT=1 restores the whole-file result)")
+PY
+	exit "$new_rc"
+fi
 if [ "$rc" -eq 3 ]; then
 	result="$("$ubs_bin" --ci --staged --format=json 2>/dev/null || true)"
 	case "$result" in

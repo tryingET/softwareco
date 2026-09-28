@@ -10,6 +10,7 @@ Scenarios are written Given/When/Then.
 """
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -24,7 +25,11 @@ REAL_UBS = Path.home() / "ai-society" / "softwareco" / "contrib" / "ultimate_bug
 
 STUB = """#!/usr/bin/env sh
 printf '%s\\n' "$*" >> "$STUB_LOG"
-case " $* " in *" --format=json "*) printf '%s' "${STUB_JSON:-}" ;; esac
+case " $* $PWD" in
+  *" --format=json "*/head) printf '%s' "${STUB_HEAD_JSON:-}" | sed "s|__ROOT__|$PWD|g"; exit 1 ;;
+  *" --format=json "*/staged) printf '%s' "${STUB_STAGED_JSON:-}" | sed "s|__ROOT__|$PWD|g"; exit 1 ;;
+  *" --format=json "*) printf '%s' "${STUB_JSON:-}" ;;
+esac
 exit "${STUB_RC:-0}"
 """
 
@@ -192,3 +197,86 @@ class UbsStagedFeature(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class _Fixture(unittest.TestCase):
+    """The scratch repository and stub helpers of UbsStagedFeature, without re-running its tests."""
+    setUp = UbsStagedFeature.setUp
+    stage = UbsStagedFeature.stage
+    run_wrapper = UbsStagedFeature.run_wrapper
+    calls = UbsStagedFeature.calls
+
+
+class UbsStagedBaselineFeature(_Fixture):
+    """Feature: only criticals the staged change adds fail the hook (2026-09-28).
+
+    UBS scans whole staged files, so a one-line change to a large file failed on criticals nobody
+    introduced. With a HEAD commit, the wrapper compares per-file, per-rule critical counts between
+    HEAD's versions and the staged versions and fails on any increase. UBS's --new-only is not used:
+    it also hides a new instance of a rule the file already had. UBS_STAGED_STRICT=1 keeps the old result.
+    """
+
+    def run_baseline(self, head: list, staged: list, **env: str) -> subprocess.CompletedProcess:
+        # Findings carry absolute paths under each side's scan root, as UBS reports them.
+        def doc(side: str, items: list) -> str:
+            return json.dumps({"findings": [{"severity": "critical", "suppressed": False,
+                                             "file": f"__ROOT__/{path}", "rule_id": rule} for path, rule in items]})
+        return self.run_wrapper(self.stub, STUB_RC="1", STUB_HEAD_JSON=doc("head", head),
+                                STUB_STAGED_JSON=doc("staged", staged), **env)
+
+    def commit_base(self, rel: str, text: str) -> None:
+        self.stage(rel, text)
+        git(self.repo, "-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-qm", "base")
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.commit_base("src/app.py", "print(1)\n")
+        self.stage("src/app.py", "print(1)\nprint(2)\n")
+        self.env = {"TMPDIR": str(self.tmp)}
+
+    def test_scenario_preexisting_criticals_pass(self) -> None:
+        pair = [("src/app.py", "py.security.eval-exec-usage")] * 2
+        result = self.run_baseline(pair, pair, **self.env)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("none is new", result.stdout)
+
+    def test_scenario_a_new_instance_of_an_existing_rule_fails(self) -> None:
+        rule = ("src/app.py", "py.security.eval-exec-usage")
+        result = self.run_baseline([rule], [rule, rule], **self.env)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("new critical: src/app.py py.security.eval-exec-usage (+1)", result.stderr)
+
+    def test_scenario_a_new_rule_fails(self) -> None:
+        result = self.run_baseline([("src/app.py", "a")], [("src/app.py", "a"), ("src/app.py", "b")], **self.env)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+
+    def test_scenario_strict_mode_and_missing_tmpdir_keep_the_whole_file_result(self) -> None:
+        pair = [("src/app.py", "a")]
+        for env in ({"UBS_STAGED_STRICT": "1", **self.env}, {"TMPDIR": ""}):
+            with self.subTest(env=env):
+                self.log.unlink(missing_ok=True)
+                result = self.run_baseline(pair, pair, **env)
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertFalse(any("--format=json" in c for c in self.calls()), self.calls())
+
+
+SERVICE_UBS = Path.home() / "ai-society" / "softwareco" / "contrib" / "ultimate_bug_scanner-local" / "ubs"
+
+
+class UbsStagedRealBaselineFeature(_Fixture):
+    @unittest.skipUnless(SERVICE_UBS.exists(), "UBS service worktree not present")
+    def test_scenario_real_ubs_separates_preexisting_from_new_criticals(self) -> None:
+        # Given a committed file that already carries real criticals
+        risky = "import os\ndef run(user):\n    os.system('echo ' + user)\n    return eval(user)\n"
+        self.stage("src/app.py", risky)
+        git(self.repo, "-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-qm", "base")
+        env = {"TMPDIR": str(self.tmp)}
+        # When only a harmless line is staged, the pre-existing criticals do not fail the hook
+        self.stage("src/app.py", "# harmless comment\n" + risky)
+        result = self.run_wrapper(SERVICE_UBS, **env)
+        self.assertEqual(result.returncode, 0, result.stdout[-1500:] + result.stderr[-1500:])
+        # When another eval is staged in the same file, the new instance of an existing rule fails the hook
+        self.stage("src/app.py", risky + "def again(user):\n    return eval(user + '1')\n")
+        result = self.run_wrapper(SERVICE_UBS, **env)
+        self.assertEqual(result.returncode, 1, result.stdout[-1500:] + result.stderr[-1500:])
+        self.assertIn("new critical: src/app.py", result.stderr)
