@@ -35,7 +35,7 @@ if [ ! -f ontology/manifest.yaml ]; then
 		echo "error: unmaterialized ontology lacks regular .gitmodules" >&2
 		exit 1
 	}
-	expected_oid=e0a046d0848f0cf901517057e02baee529a5180c
+	expected_oid=b2e42daf61a889c08745b922056b627753f45a2c
 	expected_source=https://github.com/tryingET/softwareco-ontology.git
 	[ "$(git rev-parse HEAD:.gitmodules)" = "$(git rev-parse :.gitmodules)" ] || {
 		echo "error: indexed .gitmodules differs from HEAD" >&2
@@ -102,7 +102,7 @@ assert_contains "$ci_workflow" "if [ ! -f ontology/manifest.yaml ]" "root CI mus
 assert_contains "$ci_workflow" "ROCS_OUTPUT_ROOT: governance/ontology-dist" "root CI must route ROCS outputs outside ontology"
 assert_contains "$ci_workflow" 'ROCS_AUTHORITY_AGGREGATE: "1"' "root CI must preserve validate/build authority receipts"
 assert_contains "$ci_workflow" "https://github.com/tryingET/core_ontology-kernel.git" "root CI must materialize the strict core dependency"
-assert_contains "$ci_workflow" "0aeca17e789bc3d452ad3241da7affff0ced3813" "root CI must verify the exact strict core dependency OID"
+assert_contains "$ci_workflow" "a6d38f56dd9b91e0a03b96444385402aecf1b9b0" "root CI must verify the exact strict core dependency OID"
 assert_not_contains "$ci_workflow" "submodules: recursive" "root CI must not initialize unrelated raw gitlinks recursively"
 
 # Staged-file UBS wiring (29c7647, 1f2d1ed, b46f03a).

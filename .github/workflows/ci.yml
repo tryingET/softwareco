@@ -66,7 +66,7 @@ jobs:
           fi
           if [ ! -f ontology/manifest.yaml ]; then
             ./scripts/materialize-ontology.sh \
-              --expected-oid e0a046d0848f0cf901517057e02baee529a5180c \
+              --expected-oid b2e42daf61a889c08745b922056b627753f45a2c \
               --source https://github.com/tryingET/softwareco-ontology.git \
               --token-env SOFTWARECO_ONTOLOGY_TOKEN
           fi
@@ -77,11 +77,11 @@ jobs:
       - name: Materialize exact strict core ontology dependency
         run: |
           mkdir -p "$HOME/ai-society/core"
-          git clone --quiet --depth 1 --branch v0.2.1 \
+          git clone --quiet --depth 1 --branch v0.3.0 \
             https://github.com/tryingET/core_ontology-kernel.git \
             "$HOME/ai-society/core/ontology-kernel"
           test "$(git -C "$HOME/ai-society/core/ontology-kernel" rev-parse HEAD)" = \
-            0aeca17e789bc3d452ad3241da7affff0ced3813
+            a6d38f56dd9b91e0a03b96444385402aecf1b9b0
 
       - name: "Materialize pinned rocs-cli core (AK #5901)"
         env:
@@ -126,7 +126,7 @@ jobs:
           fi
           if [ ! -f ontology/manifest.yaml ]; then
             ./scripts/materialize-ontology.sh \
-              --expected-oid e0a046d0848f0cf901517057e02baee529a5180c \
+              --expected-oid b2e42daf61a889c08745b922056b627753f45a2c \
               --source https://github.com/tryingET/softwareco-ontology.git \
               --token-env SOFTWARECO_ONTOLOGY_TOKEN
           fi
@@ -137,11 +137,11 @@ jobs:
       - name: Materialize exact strict core ontology dependency
         run: |
           mkdir -p "$HOME/ai-society/core"
-          git clone --quiet --depth 1 --branch v0.2.1 \
+          git clone --quiet --depth 1 --branch v0.3.0 \
             https://github.com/tryingET/core_ontology-kernel.git \
             "$HOME/ai-society/core/ontology-kernel"
           test "$(git -C "$HOME/ai-society/core/ontology-kernel" rev-parse HEAD)" = \
-            0aeca17e789bc3d452ad3241da7affff0ced3813
+            a6d38f56dd9b91e0a03b96444385402aecf1b9b0
 
       - name: "Materialize pinned rocs-cli core (AK #5901)"
         env:

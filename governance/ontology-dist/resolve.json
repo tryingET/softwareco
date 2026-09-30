@@ -11,10 +11,10 @@
     {
       "kind": "ref",
       "name": "core",
-      "origin": "<repo:core/ontology-kernel@v0.2.1>",
-      "source": "workspace_ref_snapshot",
+      "origin": "<repo:core/ontology-kernel@v0.3.0>",
+      "source": "workspace",
       "source_contract": "ontology-markdown-v1",
-      "src_root": "/home/tryinget/.cache/rocs/workspace-ref-snapshots/faeeea14311b20614c573ae45355e917eeef5177/ontology/src"
+      "src_root": "/home/tryinget/ai-society/core/ontology-kernel/ontology/src"
     }
   ],
   "profile": null,
