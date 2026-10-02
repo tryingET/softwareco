@@ -62,6 +62,39 @@ def launcher_version() -> str:
     return match.group(1)
 
 
+def assert_no_unbound_scratch_paths(case: unittest.TestCase, resolved: dict, bound_paths: list[str]) -> None:
+    """Permit exact proven repo/layer identities, not arbitrary scratch paths."""
+    serialized = json.dumps(resolved)
+    for path in bound_paths:
+        # Match whole JSON string values, not prefixes of unrelated paths.
+        serialized = serialized.replace(json.dumps(path), '"<bound-path>"')
+    case.assertNotIn(".local/state/pi-quests/tmp", serialized)
+
+
+class TestReceiptScratchPaths(unittest.TestCase):
+    def test_exact_bound_parent_and_layer_paths_are_allowed(self) -> None:
+        root = "/home/test/.local/state/pi-quests/tmp/isolated-parent"
+        company = root + "/ontology/src"
+        core = "/home/test/ai-society/core/ontology-kernel/ontology/src"
+        resolved = {"repo": root, "layers": [{"src_root": company}, {"src_root": core}]}
+        assert_no_unbound_scratch_paths(self, resolved, [root, company, core])
+
+    def test_unrelated_scratch_path_is_still_rejected(self) -> None:
+        root = "/home/test/.local/state/pi-quests/tmp/isolated-parent"
+        resolved = {"repo": root, "unexpected": root + "/unbound-source"}
+        with self.assertRaises(AssertionError):
+            assert_no_unbound_scratch_paths(self, resolved, [root])
+
+    def test_hash_named_unbound_scratch_snapshot_is_rejected(self) -> None:
+        root = "/home/test/.local/state/pi-quests/tmp/isolated-parent"
+        company = root + "/ontology/src"
+        snapshot = ("/home/test/.local/state/pi-quests/tmp/untrusted/"
+                    "workspace-ref-snapshots/" + "a" * 40 + "/ontology/src")
+        resolved = {"repo": root, "layers": [{"src_root": company}, {"src_root": snapshot}]}
+        with self.assertRaises(AssertionError):
+            assert_no_unbound_scratch_paths(self, resolved, [root, company])
+
+
 class TestOntologyReceipts(unittest.TestCase):
     def test_schema3_bundle_is_bound_to_reviewed_rocs_release(self) -> None:
         if not sealed_launcher():
@@ -136,7 +169,7 @@ class TestOntologyReceipts(unittest.TestCase):
         # rocs-cli >= 0.4.5 binds the pinned core ref to its exact ontology tree: read in place
         # when the kernel checkout's ontology tree is that tree, else from an immutable snapshot.
         # Assert the binding, not a checkout path that moves with kernel main.
-        kernel = Path.home() / "ai-society/core/ontology-kernel"
+        kernel = (Path.home() / "ai-society/core/ontology-kernel").resolve(strict=True)
         requested = layers["core"]["origin"].rsplit("@", 1)[1].rstrip(">")
         expected_tree = subprocess.run(
             ["git", "-C", str(kernel), "rev-parse", f"{requested}:ontology"],
@@ -154,7 +187,13 @@ class TestOntologyReceipts(unittest.TestCase):
             self.assertEqual(receipt_core[0]["source"], core_source)
             self.assertEqual(receipt_core[0]["binding"]["requested_ref"], requested)
             self.assertEqual(receipt_core[0]["binding"]["ontology_tree"], expected_tree)
-        self.assertNotIn(".local/state/pi-quests/tmp", json.dumps(resolved))
+        # Permit the exact isolated parent and independently checked workspace-core
+        # path. A snapshot suffix alone does not bind its root: retain the old
+        # scratch-snapshot rejection until that root has an independent contract.
+        bound_paths = [canonical_repo, str(ROOT.resolve() / "ontology/src")]
+        if core_source == "workspace":
+            bound_paths.append(str(kernel / "ontology/src"))
+        assert_no_unbound_scratch_paths(self, resolved, bound_paths)
 
     def test_parent_producers_declare_external_output_contract(self) -> None:
         wrapper = WRAPPER.read_text(encoding="utf-8")
