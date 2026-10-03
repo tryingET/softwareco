@@ -13,6 +13,8 @@ decision_id: 86
 
 ## Current legal state
 
+**2026-10-03: Decision `86` was rejected by the Holding Owner** (evidence `13026`, AK `6590`). The design is not pursued: a byte copy of the live database is no valid observation under native FrankenSQLite, the live-database access rule forbids it, and the pinned Pi runtime paths in `cto-canary/config.json` no longer exist. Task `4284` was cancelled and `5394` failed; the four disabled `softwareco-cto-canary*` units were moved to `~/.local/state/quarantine/softwareco-cto-canary-units-20261003/`. A new decision may start from an AK observation export (task `4340`). The paragraphs below are history.
+
 Decision `83` is accepted history but its activation was stopped before any model call. Acceptance receipt `9173`, activation receipt `9189`, and direct-human stop receipt `9201` are immutable. Its installed bundle remains for evidence; all units are inactive, both timers are disabled, its activation file is `human_stopped`, and it has zero run directories.
 
 Decision `86` is the inactive corrective candidate in `decision_pending` with controlling `ready_for_adr` synthesis. Authority/security and runtime/operator rereviews both returned `READY` for exact implementation commit `793879676d0ad3eae4bdaff7cdfe8a4dc19592b5`; review closure is tracked at `2a2c31105e01e73a69a0a6e36451a5c42f1e49c1`. It has no acceptance, installation, activation, or model-call authority until a new direct-human receipt binds the final candidate commit. Do not reuse receipts `9173` or `9189`, the Decision 83 bundle, or the temporary MITO compatibility shim.

@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "candidate_state": "inactive_decision86_pending_direct_human_acceptance",
+  "candidate_state": "rejected_decision86_2026-10-03",
   "cwd": "/home/tryinget/ai-society/softwareco",
   "portfolio_root": "/home/tryinget/ai-society/softwareco/owned",
   "authority_db": "/home/tryinget/ai-society/society.v2.db",
