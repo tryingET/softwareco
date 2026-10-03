@@ -88,10 +88,10 @@ jobs:
           # tryingET/rocs-cli is public since 2026-09-30 (AK 6273), so no deploy key.
           # The pinned-core launcher runs $HOME/ai-society/core/rocs-cli, so it must
           # be this exact release.
-          git clone -q --depth 1 --branch v0.4.4 https://github.com/tryingET/rocs-cli.git \
+          git clone -q --depth 1 --branch v0.4.6 https://github.com/tryingET/rocs-cli.git \
             "$HOME/ai-society/core/rocs-cli"
           test "$(git -C "$HOME/ai-society/core/rocs-cli" rev-parse HEAD)" = \
-            ba73f46658ee0e06d49c2541090f0ccc65349858
+            bdb4ac4db29f6f87af884c27e1515acfd131c08d
 
       - name: Run full lane
         env:
@@ -140,10 +140,10 @@ jobs:
           # tryingET/rocs-cli is public since 2026-09-30 (AK 6273), so no deploy key.
           # The pinned-core launcher runs $HOME/ai-society/core/rocs-cli, so it must
           # be this exact release.
-          git clone -q --depth 1 --branch v0.4.4 https://github.com/tryingET/rocs-cli.git \
+          git clone -q --depth 1 --branch v0.4.6 https://github.com/tryingET/rocs-cli.git \
             "$HOME/ai-society/core/rocs-cli"
           test "$(git -C "$HOME/ai-society/core/rocs-cli" rev-parse HEAD)" = \
-            ba73f46658ee0e06d49c2541090f0ccc65349858
+            bdb4ac4db29f6f87af884c27e1515acfd131c08d
 
       - name: Run deep lane
         env:
