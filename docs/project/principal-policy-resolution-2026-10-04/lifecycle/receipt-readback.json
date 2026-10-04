@@ -1,0 +1,202 @@
+[
+  {
+    "id": 16231,
+    "concern": "architecture-decision",
+    "source_authority": "agent-kernel",
+    "from_state": "tasks_reevaluation_pending",
+    "to_state": "unblocked",
+    "actor": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+    "status": "applied",
+    "task_id": 6662,
+    "created_at": "2026-10-04T13:55:49.225256167+00:00",
+    "details": {
+      "decision_id": 173,
+      "task_id": null,
+      "verdict": null,
+      "authority": "human-operator current SoftwareCo policy-owner acceptance and bounded lifecycle continuation, governance receipt 16224; no O2–O7 execution grants",
+      "owner_words": null,
+      "recorded_by": null,
+      "scope": null
+    }
+  },
+  {
+    "id": 16230,
+    "concern": "architecture-decision",
+    "source_authority": "agent-kernel",
+    "from_state": "tasks_reevaluation_pending",
+    "to_state": "tasks_reevaluation_pending",
+    "actor": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+    "status": "applied",
+    "task_id": 6662,
+    "created_at": "2026-10-04T13:55:48.043195054+00:00",
+    "details": {
+      "decision_id": 173,
+      "task_id": 6662,
+      "verdict": null,
+      "authority": null,
+      "owner_words": null,
+      "recorded_by": null,
+      "scope": null
+    }
+  },
+  {
+    "id": 16229,
+    "concern": "architecture-decision",
+    "source_authority": "agent-kernel",
+    "from_state": "tasks_reevaluation_pending",
+    "to_state": "tasks_reevaluation_pending",
+    "actor": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+    "status": "applied",
+    "task_id": 6635,
+    "created_at": "2026-10-04T13:55:47.071084555+00:00",
+    "details": {
+      "decision_id": 173,
+      "task_id": 6635,
+      "verdict": null,
+      "authority": null,
+      "owner_words": null,
+      "recorded_by": null,
+      "scope": null
+    }
+  },
+  {
+    "id": 16228,
+    "concern": "architecture-decision",
+    "source_authority": "agent-kernel",
+    "from_state": "adr_recorded",
+    "to_state": "tasks_reevaluation_pending",
+    "actor": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+    "status": "applied",
+    "task_id": 6662,
+    "created_at": "2026-10-04T13:55:36.523436645+00:00",
+    "details": {
+      "decision_id": 173,
+      "task_id": null,
+      "verdict": null,
+      "authority": null,
+      "owner_words": null,
+      "recorded_by": null,
+      "scope": null
+    }
+  },
+  {
+    "id": 16227,
+    "concern": "architecture-decision",
+    "source_authority": "agent-kernel",
+    "from_state": "adr_required",
+    "to_state": "adr_recorded",
+    "actor": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+    "status": "applied",
+    "task_id": 6662,
+    "created_at": "2026-10-04T13:55:33.341798801+00:00",
+    "details": {
+      "decision_id": 173,
+      "task_id": null,
+      "verdict": null,
+      "authority": null,
+      "owner_words": null,
+      "recorded_by": null,
+      "scope": null
+    }
+  },
+  {
+    "id": 16225,
+    "concern": "architecture-decision",
+    "source_authority": "agent-kernel",
+    "from_state": "decision_pending",
+    "to_state": "adr_required",
+    "actor": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+    "status": "applied",
+    "task_id": 6662,
+    "created_at": "2026-10-04T13:51:43.874882035+00:00",
+    "details": {
+      "decision_id": 173,
+      "task_id": null,
+      "verdict": null,
+      "authority": "human-operator current SoftwareCo policy-owner act, governance receipt 16224",
+      "owner_words": null,
+      "recorded_by": null,
+      "scope": null
+    }
+  },
+  {
+    "id": 16224,
+    "concern": "softwareco-principal-policy-acceptance",
+    "source_authority": "human-operator",
+    "from_state": "decision_pending",
+    "to_state": "accepted",
+    "actor": "human-operator",
+    "status": "applied",
+    "task_id": 6662,
+    "created_at": "2026-10-04T13:51:39.085364320+00:00",
+    "details": {
+      "decision_id": 173,
+      "task_id": null,
+      "verdict": null,
+      "authority": null,
+      "owner_words": "I confirm my current SoftwareCo policy-owner authority and accept that exact conditional policy. Proceed through ADR recording, planning, reevaluation and unblocking; no O2–O7 authorization, appointment, birth, implementation, publication or activation is granted.",
+      "recorded_by": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+      "scope": "O1 conditional company policy acceptance and bounded lifecycle continuation only"
+    }
+  },
+  {
+    "id": 16223,
+    "concern": "architecture-decision",
+    "source_authority": "agent-kernel",
+    "from_state": "in_review",
+    "to_state": "decision_pending",
+    "actor": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+    "status": "applied",
+    "task_id": 6662,
+    "created_at": "2026-10-04T13:50:16.470054747+00:00",
+    "details": {
+      "decision_id": 173,
+      "task_id": null,
+      "verdict": null,
+      "authority": null,
+      "owner_words": null,
+      "recorded_by": null,
+      "scope": null
+    }
+  },
+  {
+    "id": 16222,
+    "concern": "architecture-decision",
+    "source_authority": "agent-kernel",
+    "from_state": "review_pending",
+    "to_state": "in_review",
+    "actor": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+    "status": "applied",
+    "task_id": 6662,
+    "created_at": "2026-10-04T13:50:15.391945814+00:00",
+    "details": {
+      "decision_id": 173,
+      "task_id": null,
+      "verdict": null,
+      "authority": null,
+      "owner_words": null,
+      "recorded_by": null,
+      "scope": null
+    }
+  },
+  {
+    "id": 16221,
+    "concern": "task-lifecycle",
+    "source_authority": "agent-kernel",
+    "from_state": "pending",
+    "to_state": "claimed",
+    "actor": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+    "status": "applied",
+    "task_id": 6662,
+    "created_at": "2026-10-04T13:49:06.243093734+00:00",
+    "details": {
+      "decision_id": null,
+      "task_id": null,
+      "verdict": null,
+      "authority": null,
+      "owner_words": null,
+      "recorded_by": null,
+      "scope": null
+    }
+  }
+]

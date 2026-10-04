@@ -1,0 +1,115 @@
+{
+  "snapshot_kind": "read-only-native-passport-projection-not-authority-store",
+  "observed_at": "2026-10-04T13:56:54Z",
+  "decision": {
+    "id": 173,
+    "scope": "company",
+    "repo_scope": null,
+    "title": "Principal policy settlement: standing appointed technical initiative, exact one-use inert birth exception to D68, D167 lineage and main-first source conformance",
+    "rfc_ref": "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r3.md",
+    "significance_tier": "architecture",
+    "state": "unblocked",
+    "review_mode": "independent_architecture_review",
+    "review_closure_mode": "bootstrap_single_track",
+    "review_outcome": "ready_for_adr",
+    "adr_ref": "docs/decisions/2026-10-04-principal-policy-settlement.md",
+    "outcome": "accepted",
+    "evidence_ref": "docs/project/principal-policy-resolution-2026-10-04/lifecycle/owner-acceptance.md",
+    "created_at": "2026-10-04T06:02:42.174011540+00:00",
+    "updated_at": "2026-10-04T13:55:49.183318238+00:00"
+  },
+  "linked_tasks": [
+    {
+      "decision_id": 173,
+      "task_id": 6635,
+      "link_role": "decision_support",
+      "reevaluation_status": "still_valid",
+      "note": "Operator-authorized reevaluation after conditional ADR: original RFC/evidence preparation scope remains valid; no adoption, appointment, birth, implementation or publication expansion; task status/claim/completion unchanged.",
+      "reevaluated_at": "2026-10-04T13:55:47.071084555+00:00"
+    },
+    {
+      "decision_id": 173,
+      "task_id": 6662,
+      "link_role": "decision_support",
+      "reevaluation_status": "still_valid",
+      "note": "Operator owner act receipt 16224 authorizes this bounded lifecycle recording/planning/reevaluation/unblocking slice; no O2–O7 grants or source/runtime execution.",
+      "reevaluated_at": "2026-10-04T13:55:48.043195054+00:00"
+    }
+  ],
+  "legal_review_closure": {
+    "artifact_id": 1517,
+    "artifact_kind": "review_memo",
+    "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/inspection-01a106ff/inspection-memo.md",
+    "created_at": "2026-10-04T13:50:15.913194118+00:00",
+    "review_outcome": "ready_for_adr"
+  },
+  "review_attempts": [
+    {
+      "attempt_id": 655,
+      "artifact_id": 1517,
+      "artifact_kind": "review_memo",
+      "attempt_role": "track_review",
+      "track_id": "current_track",
+      "reviewed_artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r3.md",
+      "review_outcome": "ready_for_adr",
+      "legal_next_move": "open_adr",
+      "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/inspection-01a106ff/inspection-memo.md",
+      "note": "Operator-authorized native recording of actual fresh independent Pi inspection session-01a106ff-1134-7a28-af1d-be5c69550640; exact R3 hashes unchanged and artifacts now tracked. One inspector, three lenses; no acceptance or runtime proof.",
+      "policy_schema_version": 6,
+      "profile_id": "tier1_architecture_mainfirst",
+      "cited_input_attempt_ids": [],
+      "cited_input_artifact_refs": [],
+      "cited_input_track_ids": [],
+      "created_at": "2026-10-04T13:50:15.913194118+00:00"
+    }
+  ],
+  "missing_tracks": [],
+  "post_adr_continuation_truth": {
+    "adr_recorded": true,
+    "adr_ref": "docs/decisions/2026-10-04-principal-policy-settlement.md",
+    "decision_outcome": "accepted",
+    "current_implementation_plan": {
+      "artifact_id": 1518,
+      "artifact_kind": "implementation_plan",
+      "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/lifecycle/implementation-plan.md",
+      "note": "After native ADR recording: owner-admitted successor decomposition only; no O2–O7 grants or execution under this lifecycle task.",
+      "artifact_sequence": 8,
+      "created_at": "2026-10-04T13:55:33.854675107+00:00",
+      "is_current_for_kind": true
+    },
+    "current_validation_rollout_rollback": {
+      "artifact_id": 1519,
+      "artifact_kind": "validation_rollout_rollback",
+      "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/lifecycle/validation-rollout-rollback.md",
+      "note": "After native ADR recording: staged native/receiver evidence, refusal boundaries and phase-specific rollback; no runtime pass or rollout asserted.",
+      "artifact_sequence": 9,
+      "created_at": "2026-10-04T13:55:34.368126495+00:00",
+      "is_current_for_kind": true
+    },
+    "continuation_artifacts": [
+      {
+        "artifact_id": 1518,
+        "artifact_kind": "implementation_plan",
+        "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/lifecycle/implementation-plan.md",
+        "note": "After native ADR recording: owner-admitted successor decomposition only; no O2–O7 grants or execution under this lifecycle task.",
+        "artifact_sequence": 8,
+        "created_at": "2026-10-04T13:55:33.854675107+00:00",
+        "is_current_for_kind": true
+      },
+      {
+        "artifact_id": 1519,
+        "artifact_kind": "validation_rollout_rollback",
+        "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/lifecycle/validation-rollout-rollback.md",
+        "note": "After native ADR recording: staged native/receiver evidence, refusal boundaries and phase-specific rollback; no runtime pass or rollout asserted.",
+        "artifact_sequence": 9,
+        "created_at": "2026-10-04T13:55:34.368126495+00:00",
+        "is_current_for_kind": true
+      }
+    ],
+    "missing_execution_artifacts": [],
+    "pending_linked_task_reevaluations": [],
+    "ready_for_post_adr_execution_tracking": true,
+    "ready_for_unblocked": true,
+    "ready_for_kes_learning_closure": false
+  }
+}
