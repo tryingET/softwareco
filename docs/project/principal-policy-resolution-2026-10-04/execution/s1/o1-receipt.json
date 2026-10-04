@@ -1,0 +1,33 @@
+{
+  "id": 16224,
+  "concern": "softwareco-principal-policy-acceptance",
+  "source_authority": "human-operator",
+  "mito_layer": "Design & Configuration",
+  "s3_domain_ref": "softwareco",
+  "agreement_ref": "decision:173",
+  "from_state": "decision_pending",
+  "to_state": "accepted",
+  "guard_ref": null,
+  "consent_mode": null,
+  "evidence_ref": "docs/project/principal-policy-resolution-2026-10-04/lifecycle/owner-acceptance.md",
+  "rollback_ref": null,
+  "task_id": 6662,
+  "repo_scope": "/home/tryinget/ai-society/softwareco",
+  "actor": "human-operator",
+  "status": "applied",
+  "details": {
+    "decision_id": 173,
+    "owner_capacity": "current SoftwareCo policy owner, explicitly affirmed by operator",
+    "origin": "actual native Pi interview response",
+    "recorded_by": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+    "owner_words": "I confirm my current SoftwareCo policy-owner authority and accept that exact conditional policy. Proceed through ADR recording, planning, reevaluation and unblocking; no O2–O7 authorization, appointment, birth, implementation, publication or activation is granted.",
+    "rfc_sha256": "2eb577b70e96a33d0e68483741f85b4d6ebe6eff6b1453cfcad7977468f819cd",
+    "appendix_sha256": "83bded5d9e4caa95bf9689fffc1e5eebce5a0d695acbb1429859dd769471caf0",
+    "review_artifact_id": 1517,
+    "scope": "O1 conditional company policy acceptance and bounded lifecycle continuation only",
+    "other_owner_slots_granted": false,
+    "runtime_qualification_proven": false,
+    "cryptographic_signature_claimed": false
+  },
+  "created_at": "2026-10-04T13:51:39.085364320+00:00"
+}

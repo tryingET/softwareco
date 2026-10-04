@@ -1,0 +1,400 @@
+[
+  {
+    "task": {
+      "id": 6671,
+      "repo": "/home/tryinget/ai-society/softwareco",
+      "title": "D173 S2: coordinate actual D24 bridge and role clearance, enduring identity/intended-subject binding and appointment contract; preserve creator versus subject distinctions; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+      "description": null,
+      "status": "pending",
+      "priority": 1,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": [
+        6670
+      ],
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-04T14:27:47.689772528+00:00",
+      "completed_at": null,
+      "scope": {
+        "allowed_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s2/**"
+        ],
+        "required_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s2/result.md"
+        ],
+        "forbidden_paths": []
+      },
+      "entity_version": 2
+    },
+    "deferral": {
+      "id": 590,
+      "task_id": 6671,
+      "state": "active",
+      "kind": "until_event",
+      "reason": "D173 S2 coordination awaits current applicable owner admission and exact source-owner execution scopes; O1/direction activation is insufficient. S1 discovers and routes those acts; dependent effects remain held.",
+      "trigger_ref": "decision:173",
+      "trigger_json": {
+        "condition": "current applicable O2–O7 owner records and exact admitted execution tasks established",
+        "automatic_permission": false
+      },
+      "defer_until": null,
+      "review_at": null,
+      "created_at": "2026-10-04T14:27:52.376203687+00:00",
+      "created_by": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+      "resolved_at": null,
+      "resolved_by": null,
+      "resolution_note": null
+    }
+  },
+  {
+    "task": {
+      "id": 6672,
+      "repo": "/home/tryinget/ai-society/softwareco",
+      "title": "D173 S3: coordinate qualified route-A instruction/source correction and exact company pin/answers/adoption; reuse AK6351 without widening it; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+      "description": null,
+      "status": "pending",
+      "priority": 1,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": [
+        6670
+      ],
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-04T14:27:53.645402638+00:00",
+      "completed_at": null,
+      "scope": {
+        "allowed_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s3/**"
+        ],
+        "required_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s3/result.md"
+        ],
+        "forbidden_paths": []
+      },
+      "entity_version": 2
+    },
+    "deferral": {
+      "id": 591,
+      "task_id": 6672,
+      "state": "active",
+      "kind": "until_event",
+      "reason": "D173 S3 coordination awaits current applicable owner admission and exact source-owner execution scopes; O1/direction activation is insufficient. S1 discovers and routes those acts; dependent effects remain held.",
+      "trigger_ref": "decision:173",
+      "trigger_json": {
+        "condition": "current applicable O2–O7 owner records and exact admitted execution tasks established",
+        "automatic_permission": false
+      },
+      "defer_until": null,
+      "review_at": null,
+      "created_at": "2026-10-04T14:27:59.477072690+00:00",
+      "created_by": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+      "resolved_at": null,
+      "resolved_by": null,
+      "resolution_note": null
+    }
+  },
+  {
+    "task": {
+      "id": 6673,
+      "repo": "/home/tryinget/ai-society/softwareco",
+      "title": "D173 S4: coordinate and obtain native parent-right/custodian qualification for aliases, reservation, revocation, fencing and original-attempt recovery; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+      "description": null,
+      "status": "pending",
+      "priority": 1,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": [
+        6670
+      ],
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-04T14:28:00.773292099+00:00",
+      "completed_at": null,
+      "scope": {
+        "allowed_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s4/**"
+        ],
+        "required_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s4/result.md"
+        ],
+        "forbidden_paths": []
+      },
+      "entity_version": 2
+    },
+    "deferral": {
+      "id": 592,
+      "task_id": 6673,
+      "state": "active",
+      "kind": "until_event",
+      "reason": "D173 S4 coordination awaits current applicable owner admission and exact source-owner execution scopes; O1/direction activation is insufficient. S1 discovers and routes those acts; dependent effects remain held.",
+      "trigger_ref": "decision:173",
+      "trigger_json": {
+        "condition": "current applicable O2–O7 owner records and exact admitted execution tasks established",
+        "automatic_permission": false
+      },
+      "defer_until": null,
+      "review_at": null,
+      "created_at": "2026-10-04T14:28:03.979052271+00:00",
+      "created_by": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+      "resolved_at": null,
+      "resolved_by": null,
+      "resolution_note": null
+    }
+  },
+  {
+    "task": {
+      "id": 6674,
+      "repo": "/home/tryinget/ai-society/softwareco",
+      "title": "D173 S5: obtain actual fleet placement admission and installed discovery/lint/collision qualification for the intended Principal artifact; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+      "description": null,
+      "status": "pending",
+      "priority": 1,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": [
+        6670
+      ],
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-04T14:28:05.325091426+00:00",
+      "completed_at": null,
+      "scope": {
+        "allowed_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s5/**"
+        ],
+        "required_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s5/result.md"
+        ],
+        "forbidden_paths": []
+      },
+      "entity_version": 2
+    },
+    "deferral": {
+      "id": 593,
+      "task_id": 6674,
+      "state": "active",
+      "kind": "until_event",
+      "reason": "D173 S5 coordination awaits current applicable owner admission and exact source-owner execution scopes; O1/direction activation is insufficient. S1 discovers and routes those acts; dependent effects remain held.",
+      "trigger_ref": "decision:173",
+      "trigger_json": {
+        "condition": "current applicable O2–O7 owner records and exact admitted execution tasks established",
+        "automatic_permission": false
+      },
+      "defer_until": null,
+      "review_at": null,
+      "created_at": "2026-10-04T14:28:10.161387972+00:00",
+      "created_by": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+      "resolved_at": null,
+      "resolved_by": null,
+      "resolution_note": null
+    }
+  },
+  {
+    "task": {
+      "id": 6675,
+      "repo": "/home/tryinget/ai-society/softwareco",
+      "title": "D173 S6: coordinate one separately authorized inert birth with O3 right/O6 permit and native receiver-accepted provenance; no activation or retry by new ID; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+      "description": null,
+      "status": "pending",
+      "priority": 1,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": [
+        6671,
+        6672,
+        6673,
+        6674
+      ],
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-04T14:28:11.167492243+00:00",
+      "completed_at": null,
+      "scope": {
+        "allowed_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s6/**"
+        ],
+        "required_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s6/result.md"
+        ],
+        "forbidden_paths": []
+      },
+      "entity_version": 2
+    },
+    "deferral": {
+      "id": 594,
+      "task_id": 6675,
+      "state": "active",
+      "kind": "until_event",
+      "reason": "D173 S6 coordination awaits current applicable owner admission and exact source-owner execution scopes; O1/direction activation is insufficient. S1 discovers and routes those acts; dependent effects remain held.",
+      "trigger_ref": "decision:173",
+      "trigger_json": {
+        "condition": "current applicable O2–O7 owner records and exact admitted execution tasks established",
+        "automatic_permission": false
+      },
+      "defer_until": null,
+      "review_at": null,
+      "created_at": "2026-10-04T14:28:14.450175295+00:00",
+      "created_by": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+      "resolved_at": null,
+      "resolved_by": null,
+      "resolution_note": null
+    }
+  },
+  {
+    "task": {
+      "id": 6676,
+      "repo": "/home/tryinget/ai-society/softwareco",
+      "title": "D173 S7: coordinate owned-host bounded M0 experiment with real cognition, frozen-resource confinement, egress/custody/crash recovery and accepted/rejected disposition; no language adoption by assumption; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+      "description": null,
+      "status": "pending",
+      "priority": 1,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": [
+        6670
+      ],
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-04T14:28:15.453324169+00:00",
+      "completed_at": null,
+      "scope": {
+        "allowed_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s7/**"
+        ],
+        "required_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s7/result.md"
+        ],
+        "forbidden_paths": []
+      },
+      "entity_version": 2
+    },
+    "deferral": {
+      "id": 595,
+      "task_id": 6676,
+      "state": "active",
+      "kind": "until_event",
+      "reason": "D173 S7 coordination awaits current applicable owner admission and exact source-owner execution scopes; O1/direction activation is insufficient. S1 discovers and routes those acts; dependent effects remain held.",
+      "trigger_ref": "decision:173",
+      "trigger_json": {
+        "condition": "current applicable O2–O7 owner records and exact admitted execution tasks established",
+        "automatic_permission": false
+      },
+      "defer_until": null,
+      "review_at": null,
+      "created_at": "2026-10-04T14:28:18.751231857+00:00",
+      "created_by": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+      "resolved_at": null,
+      "resolved_by": null,
+      "resolution_note": null
+    }
+  },
+  {
+    "task": {
+      "id": 6677,
+      "repo": "/home/tryinget/ai-society/softwareco",
+      "title": "D173 S8: coordinate independently authored OptMem/Souls-inspired memory control/candidate trial under current data/provider/retention/withdrawal profiles; no unauthorized reuse/private ingestion; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+      "description": null,
+      "status": "pending",
+      "priority": 1,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": [
+        6676
+      ],
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-04T14:28:19.741812768+00:00",
+      "completed_at": null,
+      "scope": {
+        "allowed_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s8/**"
+        ],
+        "required_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s8/result.md"
+        ],
+        "forbidden_paths": []
+      },
+      "entity_version": 2
+    },
+    "deferral": {
+      "id": 596,
+      "task_id": 6677,
+      "state": "active",
+      "kind": "until_event",
+      "reason": "D173 S8 coordination awaits current applicable owner admission and exact source-owner execution scopes; O1/direction activation is insufficient. S1 discovers and routes those acts; dependent effects remain held.",
+      "trigger_ref": "decision:173",
+      "trigger_json": {
+        "condition": "current applicable O2–O7 owner records and exact admitted execution tasks established",
+        "automatic_permission": false
+      },
+      "defer_until": null,
+      "review_at": null,
+      "created_at": "2026-10-04T14:28:24.698877589+00:00",
+      "created_by": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+      "resolved_at": null,
+      "resolved_by": null,
+      "resolution_note": null
+    }
+  },
+  {
+    "task": {
+      "id": 6678,
+      "repo": "/home/tryinget/ai-society/softwareco",
+      "title": "D173 S9: coordinate actual owner-issued appointment/active profiles, long-running fenced operation, one receiver-accepted useful routine outcome and evidence-backed KES disposition; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+      "description": null,
+      "status": "pending",
+      "priority": 1,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": [
+        6671,
+        6675,
+        6676,
+        6677
+      ],
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-04T14:28:25.664002118+00:00",
+      "completed_at": null,
+      "scope": {
+        "allowed_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s9/**"
+        ],
+        "required_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s9/result.md"
+        ],
+        "forbidden_paths": []
+      },
+      "entity_version": 2
+    },
+    "deferral": {
+      "id": 597,
+      "task_id": 6678,
+      "state": "active",
+      "kind": "until_event",
+      "reason": "D173 S9 coordination awaits current applicable owner admission and exact source-owner execution scopes; O1/direction activation is insufficient. S1 discovers and routes those acts; dependent effects remain held.",
+      "trigger_ref": "decision:173",
+      "trigger_json": {
+        "condition": "current applicable O2–O7 owner records and exact admitted execution tasks established",
+        "automatic_permission": false
+      },
+      "defer_until": null,
+      "review_at": null,
+      "created_at": "2026-10-04T14:28:29.206977817+00:00",
+      "created_by": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+      "resolved_at": null,
+      "resolved_by": null,
+      "resolution_note": null
+    }
+  }
+]

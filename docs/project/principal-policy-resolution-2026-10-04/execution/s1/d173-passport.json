@@ -1,0 +1,433 @@
+{
+  "decision": {
+    "id": 173,
+    "scope": "company",
+    "repo_scope": null,
+    "title": "Principal policy settlement: standing appointed technical initiative, exact one-use inert birth exception to D68, D167 lineage and main-first source conformance",
+    "rfc_ref": "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r3.md",
+    "significance_tier": "architecture",
+    "state": "unblocked",
+    "review_mode": "independent_architecture_review",
+    "review_closure_mode": "bootstrap_single_track",
+    "review_outcome": "ready_for_adr",
+    "adr_ref": "docs/decisions/2026-10-04-principal-policy-settlement.md",
+    "outcome": "accepted",
+    "evidence_ref": "docs/project/principal-policy-resolution-2026-10-04/lifecycle/owner-acceptance.md",
+    "created_at": "2026-10-04T06:02:42.174011540+00:00",
+    "updated_at": "2026-10-04T13:55:49.183318238+00:00"
+  },
+  "linked_tasks": [
+    {
+      "decision_id": 173,
+      "task_id": 6635,
+      "link_role": "decision_support",
+      "reevaluation_status": "still_valid",
+      "note": "Operator-authorized reevaluation after conditional ADR: original RFC/evidence preparation scope remains valid; no adoption, appointment, birth, implementation or publication expansion; task status/claim/completion unchanged.",
+      "reevaluated_at": "2026-10-04T13:55:47.071084555+00:00"
+    },
+    {
+      "decision_id": 173,
+      "task_id": 6662,
+      "link_role": "decision_support",
+      "reevaluation_status": "still_valid",
+      "note": "Operator owner act receipt 16224 authorizes this bounded lifecycle recording/planning/reevaluation/unblocking slice; no O2–O7 grants or source/runtime execution.",
+      "reevaluated_at": "2026-10-04T13:55:48.043195054+00:00"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 1509,
+      "decision_id": 173,
+      "artifact_kind": "problem_brief",
+      "artifact_ref": "/home/tryinget/ai-society/softwareco/docs/project/principal-policy-resolution-2026-10-04/evidence-and-acceptance.md",
+      "review_outcome": null,
+      "note": "Problem/significance section; proposed policy settlement only, not implementation authority.",
+      "artifact_sequence": 1,
+      "created_at": "2026-10-04T06:03:22.501868942+00:00"
+    },
+    {
+      "id": 1510,
+      "decision_id": 173,
+      "artifact_kind": "evidence_note",
+      "artifact_ref": "/home/tryinget/ai-society/softwareco/docs/project/principal-policy-resolution-2026-10-04/evidence-and-acceptance.md",
+      "review_outcome": null,
+      "note": "Source observations and falsifiers; no independent inspection or runtime proof.",
+      "artifact_sequence": 2,
+      "created_at": "2026-10-04T06:03:24.183377064+00:00"
+    },
+    {
+      "id": 1511,
+      "decision_id": 173,
+      "artifact_kind": "review_set_plan",
+      "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/review-set-plan-r2.md",
+      "review_outcome": null,
+      "note": "Fresh review-set plan for revised RFC docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r2.md",
+      "artifact_sequence": 3,
+      "created_at": "2026-10-04T08:29:02.587775583+00:00"
+    },
+    {
+      "id": 1512,
+      "decision_id": 173,
+      "artifact_kind": "evidence_note",
+      "artifact_ref": "/home/tryinget/ai-society/softwareco/docs/project/principal-policy-resolution-2026-10-04/evidence-r2.md",
+      "review_outcome": null,
+      "note": "R2 proposal-level disposition of all review findings, improvements and questions; construction/source checks only, no independent review or activation proof.",
+      "artifact_sequence": 4,
+      "created_at": "2026-10-04T08:29:03.977183138+00:00"
+    },
+    {
+      "id": 1513,
+      "decision_id": 173,
+      "artifact_kind": "review_set_plan",
+      "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/review-set-plan-r3.md",
+      "review_outcome": null,
+      "note": "Fresh review-set plan for revised RFC docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r3.md",
+      "artifact_sequence": 5,
+      "created_at": "2026-10-04T11:27:27.871558248+00:00"
+    },
+    {
+      "id": 1514,
+      "decision_id": 173,
+      "artifact_kind": "evidence_note",
+      "artifact_ref": "/home/tryinget/ai-society/softwareco/docs/project/principal-policy-resolution-2026-10-04/evidence-r3.md",
+      "review_outcome": null,
+      "note": "R3 parent-right consumption and reissue/recovery dispositions; authored construction checks only, no actual O3/O6 authority, birth or independent review proof.",
+      "artifact_sequence": 6,
+      "created_at": "2026-10-04T11:27:31.077943266+00:00"
+    },
+    {
+      "id": 1517,
+      "decision_id": 173,
+      "artifact_kind": "review_memo",
+      "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/inspection-01a106ff/inspection-memo.md",
+      "review_outcome": "ready_for_adr",
+      "note": "Operator-authorized native recording of actual fresh independent Pi inspection session-01a106ff-1134-7a28-af1d-be5c69550640; exact R3 hashes unchanged and artifacts now tracked. One inspector, three lenses; no acceptance or runtime proof.",
+      "artifact_sequence": 7,
+      "created_at": "2026-10-04T13:50:15.913194118+00:00"
+    },
+    {
+      "id": 1518,
+      "decision_id": 173,
+      "artifact_kind": "implementation_plan",
+      "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/lifecycle/implementation-plan.md",
+      "review_outcome": null,
+      "note": "After native ADR recording: owner-admitted successor decomposition only; no O2–O7 grants or execution under this lifecycle task.",
+      "artifact_sequence": 8,
+      "created_at": "2026-10-04T13:55:33.854675107+00:00"
+    },
+    {
+      "id": 1519,
+      "decision_id": 173,
+      "artifact_kind": "validation_rollout_rollback",
+      "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/lifecycle/validation-rollout-rollback.md",
+      "review_outcome": null,
+      "note": "After native ADR recording: staged native/receiver evidence, refusal boundaries and phase-specific rollback; no runtime pass or rollout asserted.",
+      "artifact_sequence": 9,
+      "created_at": "2026-10-04T13:55:34.368126495+00:00"
+    }
+  ],
+  "legal_review_closure": {
+    "artifact_id": 1517,
+    "artifact_kind": "review_memo",
+    "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/inspection-01a106ff/inspection-memo.md",
+    "created_at": "2026-10-04T13:50:15.913194118+00:00",
+    "review_outcome": "ready_for_adr"
+  },
+  "review_closure_truth": {
+    "policy": {
+      "schema_version": 6,
+      "policy_mode": "main_first_conservative",
+      "activation_mode": "single_track_bootstrap",
+      "active_profile": "tier1_architecture_mainfirst",
+      "active_runtime": "pi_sdk",
+      "active_synthesis_mode": "designated_synthesizer",
+      "active_tracks": [
+        "current_track"
+      ],
+      "required_tracks": [
+        "current_track"
+      ],
+      "synthesis_controls_adr_legality": true,
+      "allow_parallel_review": true,
+      "allow_single_active_track_bootstrap": true
+    },
+    "reviewed_artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r3.md",
+    "decision_summary_review_outcome": "ready_for_adr",
+    "summary_aligned_with_legal_closure": true,
+    "legal_review_closure": {
+      "artifact_id": 1517,
+      "artifact_kind": "review_memo",
+      "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/inspection-01a106ff/inspection-memo.md",
+      "created_at": "2026-10-04T13:50:15.913194118+00:00",
+      "review_outcome": "ready_for_adr"
+    },
+    "review_attempts": [
+      {
+        "attempt_id": 655,
+        "artifact_id": 1517,
+        "artifact_kind": "review_memo",
+        "attempt_role": "track_review",
+        "track_id": "current_track",
+        "reviewed_artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r3.md",
+        "review_outcome": "ready_for_adr",
+        "legal_next_move": "open_adr",
+        "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/inspection-01a106ff/inspection-memo.md",
+        "note": "Operator-authorized native recording of actual fresh independent Pi inspection session-01a106ff-1134-7a28-af1d-be5c69550640; exact R3 hashes unchanged and artifacts now tracked. One inspector, three lenses; no acceptance or runtime proof.",
+        "policy_schema_version": 6,
+        "profile_id": "tier1_architecture_mainfirst",
+        "cited_input_attempt_ids": [],
+        "cited_input_artifact_refs": [],
+        "cited_input_track_ids": [],
+        "created_at": "2026-10-04T13:50:15.913194118+00:00"
+      }
+    ],
+    "required_track_coverage": [
+      {
+        "track_id": "current_track",
+        "active": true,
+        "required": true,
+        "runtime": "pi_sdk",
+        "latest_attempt_id": 655,
+        "latest_artifact_id": 1517,
+        "latest_artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/inspection-01a106ff/inspection-memo.md",
+        "latest_review_outcome": "ready_for_adr",
+        "covered": true
+      }
+    ],
+    "missing_required_tracks": [],
+    "review_integrity_truth": {
+      "current_review_set_plan": {
+        "artifact_id": 1513,
+        "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/review-set-plan-r3.md",
+        "note": "Fresh review-set plan for revised RFC docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r3.md",
+        "artifact_sequence": 5,
+        "created_at": "2026-10-04T11:27:27.871558248+00:00",
+        "attached_before_legal_closure": true
+      },
+      "review_set_plan_required_for_legal_closure": false,
+      "review_set_plan_present_for_legal_closure": true,
+      "review_set_plan_attached_before_legal_closure": true,
+      "missing_integrity_inputs": [],
+      "warnings": []
+    },
+    "review_artifacts": [
+      {
+        "artifact_id": 1517,
+        "artifact_kind": "review_memo",
+        "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/inspection-01a106ff/inspection-memo.md",
+        "review_outcome": "ready_for_adr",
+        "note": "Operator-authorized native recording of actual fresh independent Pi inspection session-01a106ff-1134-7a28-af1d-be5c69550640; exact R3 hashes unchanged and artifacts now tracked. One inspector, three lenses; no acceptance or runtime proof.",
+        "artifact_sequence": 7,
+        "created_at": "2026-10-04T13:50:15.913194118+00:00",
+        "is_legal_closure": true
+      }
+    ]
+  },
+  "post_adr_continuation_truth": {
+    "adr_recorded": true,
+    "adr_ref": "docs/decisions/2026-10-04-principal-policy-settlement.md",
+    "decision_outcome": "accepted",
+    "current_implementation_plan": {
+      "artifact_id": 1518,
+      "artifact_kind": "implementation_plan",
+      "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/lifecycle/implementation-plan.md",
+      "note": "After native ADR recording: owner-admitted successor decomposition only; no O2–O7 grants or execution under this lifecycle task.",
+      "artifact_sequence": 8,
+      "created_at": "2026-10-04T13:55:33.854675107+00:00",
+      "is_current_for_kind": true
+    },
+    "current_validation_rollout_rollback": {
+      "artifact_id": 1519,
+      "artifact_kind": "validation_rollout_rollback",
+      "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/lifecycle/validation-rollout-rollback.md",
+      "note": "After native ADR recording: staged native/receiver evidence, refusal boundaries and phase-specific rollback; no runtime pass or rollout asserted.",
+      "artifact_sequence": 9,
+      "created_at": "2026-10-04T13:55:34.368126495+00:00",
+      "is_current_for_kind": true
+    },
+    "continuation_artifacts": [
+      {
+        "artifact_id": 1518,
+        "artifact_kind": "implementation_plan",
+        "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/lifecycle/implementation-plan.md",
+        "note": "After native ADR recording: owner-admitted successor decomposition only; no O2–O7 grants or execution under this lifecycle task.",
+        "artifact_sequence": 8,
+        "created_at": "2026-10-04T13:55:33.854675107+00:00",
+        "is_current_for_kind": true
+      },
+      {
+        "artifact_id": 1519,
+        "artifact_kind": "validation_rollout_rollback",
+        "artifact_ref": "docs/project/principal-policy-resolution-2026-10-04/lifecycle/validation-rollout-rollback.md",
+        "note": "After native ADR recording: staged native/receiver evidence, refusal boundaries and phase-specific rollback; no runtime pass or rollout asserted.",
+        "artifact_sequence": 9,
+        "created_at": "2026-10-04T13:55:34.368126495+00:00",
+        "is_current_for_kind": true
+      }
+    ],
+    "missing_execution_artifacts": [],
+    "pending_linked_task_reevaluations": [],
+    "ready_for_post_adr_execution_tracking": true,
+    "ready_for_unblocked": true,
+    "ready_for_kes_learning_closure": false
+  },
+  "artifact_statuses": [
+    {
+      "kind": "rfc_ref",
+      "present": true,
+      "refs": [
+        "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r3.md"
+      ]
+    },
+    {
+      "kind": "review_outcome",
+      "present": true,
+      "refs": [
+        "ready_for_adr"
+      ]
+    },
+    {
+      "kind": "legal_review_closure",
+      "present": true,
+      "refs": [
+        "review_memo:docs/project/principal-policy-resolution-2026-10-04/inspection-01a106ff/inspection-memo.md#ready_for_adr"
+      ]
+    },
+    {
+      "kind": "problem_brief",
+      "present": true,
+      "refs": [
+        "/home/tryinget/ai-society/softwareco/docs/project/principal-policy-resolution-2026-10-04/evidence-and-acceptance.md"
+      ]
+    },
+    {
+      "kind": "evidence_note",
+      "present": true,
+      "refs": [
+        "/home/tryinget/ai-society/softwareco/docs/project/principal-policy-resolution-2026-10-04/evidence-and-acceptance.md",
+        "/home/tryinget/ai-society/softwareco/docs/project/principal-policy-resolution-2026-10-04/evidence-r2.md",
+        "/home/tryinget/ai-society/softwareco/docs/project/principal-policy-resolution-2026-10-04/evidence-r3.md"
+      ]
+    },
+    {
+      "kind": "review_set_plan",
+      "present": true,
+      "refs": [
+        "docs/project/principal-policy-resolution-2026-10-04/review-set-plan-r2.md",
+        "docs/project/principal-policy-resolution-2026-10-04/review-set-plan-r3.md"
+      ]
+    },
+    {
+      "kind": "review_memo",
+      "present": true,
+      "refs": [
+        "docs/project/principal-policy-resolution-2026-10-04/inspection-01a106ff/inspection-memo.md"
+      ]
+    },
+    {
+      "kind": "review_synthesis",
+      "present": false,
+      "refs": []
+    },
+    {
+      "kind": "implementation_plan",
+      "present": true,
+      "refs": [
+        "docs/project/principal-policy-resolution-2026-10-04/lifecycle/implementation-plan.md"
+      ]
+    },
+    {
+      "kind": "validation_rollout_rollback",
+      "present": true,
+      "refs": [
+        "docs/project/principal-policy-resolution-2026-10-04/lifecycle/validation-rollout-rollback.md"
+      ]
+    },
+    {
+      "kind": "cross_repo_fanout",
+      "present": false,
+      "refs": []
+    },
+    {
+      "kind": "kes_learning",
+      "present": false,
+      "refs": []
+    },
+    {
+      "kind": "adr_ref",
+      "present": true,
+      "refs": [
+        "docs/decisions/2026-10-04-principal-policy-settlement.md"
+      ]
+    }
+  ],
+  "readiness_checks": [
+    {
+      "name": "ready_for_decision_pending",
+      "ready": true,
+      "missing": []
+    },
+    {
+      "name": "review_closure_integrity",
+      "ready": true,
+      "missing": []
+    },
+    {
+      "name": "ready_for_adr_required",
+      "ready": true,
+      "missing": []
+    },
+    {
+      "name": "ready_for_adr_recorded",
+      "ready": true,
+      "missing": []
+    },
+    {
+      "name": "ready_for_post_adr_execution_tracking",
+      "ready": true,
+      "missing": []
+    },
+    {
+      "name": "ready_for_unblocked",
+      "ready": true,
+      "missing": []
+    },
+    {
+      "name": "ready_for_kes_learning_closure",
+      "ready": false,
+      "missing": [
+        "kes_learning"
+      ]
+    }
+  ],
+  "next_transitions": [
+    {
+      "to_state": "superseded",
+      "outcome": null,
+      "command": "ak decision advance 173 --state superseded --authority <authority> --superseded-by <decision_id>",
+      "ready": true,
+      "missing": [],
+      "readiness_check": null
+    }
+  ],
+  "legal_next_step": {
+    "review_outcome": "ready_for_adr",
+    "legal_next_move": "open_adr",
+    "next_command": null,
+    "routes": [
+      {
+        "target_state": "adr_required",
+        "target_outcome": "accepted",
+        "status": "unreachable",
+        "commands": []
+      }
+    ],
+    "command": null
+  },
+  "supersession": {
+    "superseded_by": null,
+    "live_successor": null,
+    "needs_disposition": [],
+    "disposition_commands": []
+  }
+}

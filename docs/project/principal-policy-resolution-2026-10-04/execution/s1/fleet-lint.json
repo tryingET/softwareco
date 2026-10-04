@@ -1,0 +1,378 @@
+{
+  "schema": "ai-society.agent-fleet-lint/1",
+  "kind": "immutable_observation",
+  "authorityEffect": "none",
+  "roots": [
+    "agents/agent-*"
+  ],
+  "profileSource": {
+    "path": "engineering-core/skills/profiles.json",
+    "schema": "engineering-core.skill-profiles/1",
+    "rawSha256": "b75965b5d5d56cf834a22e16231aa70c1a7ee1019b4e0740898f437b970b8e78",
+    "commit": "b1c73140eb84443f41ac2d2f38e9cd54aea6ce1f",
+    "blobOid": "66bf96ec0325cdb01d3ef4a321c7d80a333017b3",
+    "committedSha256": "b75965b5d5d56cf834a22e16231aa70c1a7ee1019b4e0740898f437b970b8e78",
+    "status": "bound"
+  },
+  "policy": {
+    "staleAfterDays": 90,
+    "lifecycleAuthority": "advisory_signal_only",
+    "dispatchPosture": "fleet_phase_0_disabled"
+  },
+  "repositories": [
+    {
+      "repo": "agents/agent-adoption-steward",
+      "repoName": "agent-adoption-steward",
+      "revision": {
+        "commit": "1c3b98527af99d5488434410f3aece66448015b4",
+        "treeOid": "fb50bc9e960801c4418fe43992433a79520a317f",
+        "status": "clean_observed",
+        "statusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "snapshotSha256": "c49e0b6c462c8043e39cf36868d88e0dfb49ab7f2852afb2ea980603ee406ae3"
+      },
+      "manifest": {
+        "present": true,
+        "schema": "ai-society.agent/1",
+        "name": "agent-adoption-steward",
+        "blobOid": "fe411aec0a9d96beba4a46904362edd074ec15c4",
+        "sha256": "3e185cc57699dcf0d573417e71a52f74e8f3c4672106ce46b5dbc3713435e105"
+      },
+      "profile": {
+        "requested": "ec-full",
+        "resolved": "ec-full",
+        "status": "canonical"
+      },
+      "prompt": {
+        "status": "stale",
+        "actualSha256": "c68b2add3b4b78e21366e7cce5853918e6c79b2dda64869df42857057603cf94",
+        "expectedSha256": "7e6f9488f34e1696ccde505a30d5c6aa0162574c70517e8943bd14e7e628f543",
+        "inputSha256": "7f3d062de000343635caabd678a84b14b60dffbc1d87e006ad2d3dbf5b23d88c",
+        "compilerContract": "ai-society.agent-prompt-compiler/1"
+      },
+      "template": {
+        "mode": "unknown",
+        "provenanceStatus": "unbound"
+      },
+      "lifecycle": {
+        "signal": "recent_activity",
+        "latestActivityAt": "2026-08-27T07:54:04+02:00",
+        "authorityEffect": "none"
+      },
+      "diagnostics": [
+        {
+          "code": "manifest.creation_task_missing",
+          "severity": "error",
+          "repo": "agents/agent-adoption-steward",
+          "path": "agent.json",
+          "message": "manifest has no exact AK creation-task provenance"
+        },
+        {
+          "code": "manifest.role_missing",
+          "severity": "error",
+          "repo": "agents/agent-adoption-steward",
+          "path": "agent.json",
+          "message": "manifest has no canonical role binding"
+        },
+        {
+          "code": "prompt.compiled_stale",
+          "severity": "error",
+          "repo": "agents/agent-adoption-steward",
+          "path": "docs/person/system-prompt.md",
+          "message": "compiled system prompt does not match canonical manifest/persona inputs"
+        },
+        {
+          "code": "skill.extra_revision_unbound",
+          "severity": "error",
+          "repo": "agents/agent-adoption-steward",
+          "path": "agent.json",
+          "message": "extra skill ai-society-runtime-recipes is not bound in the committed agent or engineering-core snapshot"
+        },
+        {
+          "code": "template.provenance_missing",
+          "severity": "warning",
+          "repo": "agents/agent-adoption-steward",
+          "path": ".copier-answers.yml",
+          "message": "repository has no committed Copier provenance answers",
+          "hint": "provenance remains unverifiable; do not re-render or infer template currentness"
+        }
+      ]
+    },
+    {
+      "repo": "agents/agent-consent-steward",
+      "repoName": "agent-consent-steward",
+      "revision": {
+        "commit": "969918fcb4b1e6181369d0c561a8a9aa2dc90a78",
+        "treeOid": "5bb4f0f9f86be73902deb7a6d288de25e3c3c994",
+        "status": "clean_observed",
+        "statusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "snapshotSha256": "f989cf3dc09beaf29f1606edd6930825ce0ec63e177649debd18fba7233710df"
+      },
+      "manifest": {
+        "present": false
+      },
+      "prompt": {
+        "status": "unverifiable",
+        "compilerContract": "ai-society.agent-prompt-compiler/1"
+      },
+      "template": {
+        "mode": "legacy",
+        "provenanceStatus": "unbound",
+        "answersSha256": "611c793ef56d02f8d1115df3ef3c2905a44f2762704ce3c9f57b1586d07ebf1a"
+      },
+      "lifecycle": {
+        "signal": "stale_candidate",
+        "latestActivityAt": "2026-01-17T15:47:05+01:00",
+        "authorityEffect": "none"
+      },
+      "diagnostics": [
+        {
+          "code": "fleet.manifest_missing",
+          "severity": "error",
+          "repo": "agents/agent-consent-steward",
+          "path": "agent.json",
+          "message": "canonical agent repository has no committed root agent.json",
+          "hint": "backfill additively under one exact owner-authorized AK task; preserve persona bytes"
+        },
+        {
+          "code": "lifecycle.stale_candidate",
+          "severity": "warning",
+          "repo": "agents/agent-consent-steward",
+          "message": "no committed diary or learning activity observed within 90 days"
+        },
+        {
+          "code": "template.revision_unbound",
+          "severity": "warning",
+          "repo": "agents/agent-consent-steward",
+          "path": ".copier-answers.yml",
+          "message": "template provenance lacks a verifiable source path and immutable revision",
+          "hint": "record exact source revision only through the owning template propagation contract"
+        }
+      ]
+    },
+    {
+      "repo": "agents/agent-health",
+      "repoName": "agent-health",
+      "revision": {
+        "commit": "c91a76e995435478202afd1fede3c648535e795e",
+        "treeOid": "9e9bb87f6a1ee899edcda651976a75e67e394673",
+        "status": "clean_observed",
+        "statusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "snapshotSha256": "2f21775dc339701cbde53061008d77c969eaaa7474feee9e19228f1a2929a400"
+      },
+      "manifest": {
+        "present": false
+      },
+      "prompt": {
+        "status": "unverifiable",
+        "compilerContract": "ai-society.agent-prompt-compiler/1"
+      },
+      "template": {
+        "mode": "legacy",
+        "provenanceStatus": "unbound",
+        "answersSha256": "47807130eddb9cd95277e0357c7bef362ec53d2c1fd7254ce8c8977f6261a7fd"
+      },
+      "lifecycle": {
+        "signal": "stale_candidate",
+        "latestActivityAt": "2026-01-06T16:00:23+01:00",
+        "authorityEffect": "none"
+      },
+      "diagnostics": [
+        {
+          "code": "fleet.manifest_missing",
+          "severity": "error",
+          "repo": "agents/agent-health",
+          "path": "agent.json",
+          "message": "canonical agent repository has no committed root agent.json",
+          "hint": "backfill additively under one exact owner-authorized AK task; preserve persona bytes"
+        },
+        {
+          "code": "lifecycle.stale_candidate",
+          "severity": "warning",
+          "repo": "agents/agent-health",
+          "message": "no committed diary or learning activity observed within 90 days"
+        },
+        {
+          "code": "template.revision_unbound",
+          "severity": "warning",
+          "repo": "agents/agent-health",
+          "path": ".copier-answers.yml",
+          "message": "template provenance lacks a verifiable source path and immutable revision",
+          "hint": "record exact source revision only through the owning template propagation contract"
+        }
+      ]
+    },
+    {
+      "repo": "agents/agent-triage",
+      "repoName": "agent-triage",
+      "revision": {
+        "commit": "33897f4a8460c314ba963b5cb85066a4823640c3",
+        "treeOid": "2b90e3229f521db406f7a64fc19c6518dfb4b788",
+        "status": "clean_observed",
+        "statusSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "snapshotSha256": "51459f02b2410dd368e12fa6d30a693909575f143dd0330c119708f58ea6116d"
+      },
+      "manifest": {
+        "present": false
+      },
+      "prompt": {
+        "status": "unverifiable",
+        "compilerContract": "ai-society.agent-prompt-compiler/1"
+      },
+      "template": {
+        "mode": "legacy",
+        "provenanceStatus": "unbound",
+        "answersSha256": "1e16bab5ce8b03e60169167ed919df01176eb37b30b78a227341e67154cb19e1"
+      },
+      "lifecycle": {
+        "signal": "stale_candidate",
+        "latestActivityAt": "2026-01-15T20:26:44+01:00",
+        "authorityEffect": "none"
+      },
+      "diagnostics": [
+        {
+          "code": "fleet.manifest_missing",
+          "severity": "error",
+          "repo": "agents/agent-triage",
+          "path": "agent.json",
+          "message": "canonical agent repository has no committed root agent.json",
+          "hint": "backfill additively under one exact owner-authorized AK task; preserve persona bytes"
+        },
+        {
+          "code": "lifecycle.stale_candidate",
+          "severity": "warning",
+          "repo": "agents/agent-triage",
+          "message": "no committed diary or learning activity observed within 90 days"
+        },
+        {
+          "code": "template.revision_unbound",
+          "severity": "warning",
+          "repo": "agents/agent-triage",
+          "path": ".copier-answers.yml",
+          "message": "template provenance lacks a verifiable source path and immutable revision",
+          "hint": "record exact source revision only through the owning template propagation contract"
+        }
+      ]
+    }
+  ],
+  "collisions": [],
+  "diagnostics": [
+    {
+      "code": "manifest.creation_task_missing",
+      "severity": "error",
+      "repo": "agents/agent-adoption-steward",
+      "path": "agent.json",
+      "message": "manifest has no exact AK creation-task provenance"
+    },
+    {
+      "code": "manifest.role_missing",
+      "severity": "error",
+      "repo": "agents/agent-adoption-steward",
+      "path": "agent.json",
+      "message": "manifest has no canonical role binding"
+    },
+    {
+      "code": "prompt.compiled_stale",
+      "severity": "error",
+      "repo": "agents/agent-adoption-steward",
+      "path": "docs/person/system-prompt.md",
+      "message": "compiled system prompt does not match canonical manifest/persona inputs"
+    },
+    {
+      "code": "skill.extra_revision_unbound",
+      "severity": "error",
+      "repo": "agents/agent-adoption-steward",
+      "path": "agent.json",
+      "message": "extra skill ai-society-runtime-recipes is not bound in the committed agent or engineering-core snapshot"
+    },
+    {
+      "code": "template.provenance_missing",
+      "severity": "warning",
+      "repo": "agents/agent-adoption-steward",
+      "path": ".copier-answers.yml",
+      "message": "repository has no committed Copier provenance answers",
+      "hint": "provenance remains unverifiable; do not re-render or infer template currentness"
+    },
+    {
+      "code": "fleet.manifest_missing",
+      "severity": "error",
+      "repo": "agents/agent-consent-steward",
+      "path": "agent.json",
+      "message": "canonical agent repository has no committed root agent.json",
+      "hint": "backfill additively under one exact owner-authorized AK task; preserve persona bytes"
+    },
+    {
+      "code": "lifecycle.stale_candidate",
+      "severity": "warning",
+      "repo": "agents/agent-consent-steward",
+      "message": "no committed diary or learning activity observed within 90 days"
+    },
+    {
+      "code": "template.revision_unbound",
+      "severity": "warning",
+      "repo": "agents/agent-consent-steward",
+      "path": ".copier-answers.yml",
+      "message": "template provenance lacks a verifiable source path and immutable revision",
+      "hint": "record exact source revision only through the owning template propagation contract"
+    },
+    {
+      "code": "fleet.manifest_missing",
+      "severity": "error",
+      "repo": "agents/agent-health",
+      "path": "agent.json",
+      "message": "canonical agent repository has no committed root agent.json",
+      "hint": "backfill additively under one exact owner-authorized AK task; preserve persona bytes"
+    },
+    {
+      "code": "lifecycle.stale_candidate",
+      "severity": "warning",
+      "repo": "agents/agent-health",
+      "message": "no committed diary or learning activity observed within 90 days"
+    },
+    {
+      "code": "template.revision_unbound",
+      "severity": "warning",
+      "repo": "agents/agent-health",
+      "path": ".copier-answers.yml",
+      "message": "template provenance lacks a verifiable source path and immutable revision",
+      "hint": "record exact source revision only through the owning template propagation contract"
+    },
+    {
+      "code": "fleet.manifest_missing",
+      "severity": "error",
+      "repo": "agents/agent-triage",
+      "path": "agent.json",
+      "message": "canonical agent repository has no committed root agent.json",
+      "hint": "backfill additively under one exact owner-authorized AK task; preserve persona bytes"
+    },
+    {
+      "code": "lifecycle.stale_candidate",
+      "severity": "warning",
+      "repo": "agents/agent-triage",
+      "message": "no committed diary or learning activity observed within 90 days"
+    },
+    {
+      "code": "template.revision_unbound",
+      "severity": "warning",
+      "repo": "agents/agent-triage",
+      "path": ".copier-answers.yml",
+      "message": "template provenance lacks a verifiable source path and immutable revision",
+      "hint": "record exact source revision only through the owning template propagation contract"
+    }
+  ],
+  "summary": {
+    "status": "unhealthy",
+    "candidateRepositories": 4,
+    "includedRepositories": 4,
+    "omittedRepositories": 0,
+    "manifests": 1,
+    "errors": 7,
+    "warnings": 7,
+    "infos": 0,
+    "recentActivitySignals": 1,
+    "staleCandidateSignals": 3,
+    "unknownLifecycleSignals": 0
+  },
+  "observedAt": "2026-10-04T14:55:07.216Z",
+  "stateSha256": "dde9614b83249ff0c40cbdb727934165fd0dc9011fc18d60b7c53362737bb9d3",
+  "reportSha256": "1483f8dc31031159bfc18ac5942753c45e602a9f3023155baaeba9bc9a3bc68c"
+}

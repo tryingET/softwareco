@@ -1,0 +1,418 @@
+[
+  {
+    "task_id": 6671,
+    "repo": "/home/tryinget/ai-society/softwareco",
+    "title": "D173 S2: coordinate actual D24 bridge and role clearance, enduring identity/intended-subject binding and appointment contract; preserve creator versus subject distinctions; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+    "status": "pending",
+    "done_contract": {
+      "id": 1557,
+      "task_id": 6671,
+      "entity_version": 1,
+      "contract": {
+        "completion_kind": "owner_coordination",
+        "required_outcomes": [
+          "Actual semantic-owner bridge/role decision and attributable identity/intended-subject references; current appointment terms prepared for separately authorized issue before activation; no unborn-subject authority fiction"
+        ],
+        "required_validation": [
+          "Fresh source-owner/AK readback plus applicable R3 V01–V09 native observations and actual receiver judgment; documents and synthetic fixtures cannot substitute"
+        ],
+        "required_evidence_classes": [
+          "owner_native_records",
+          "runtime_observations",
+          "receiver_disposition"
+        ],
+        "review_questions": [
+          "Are effects and qualification proved by the actual owning surfaces, with no inferred O2–O7 authority or manufactured completion?"
+        ]
+      },
+      "created_at": "2026-10-04 14:27:48",
+      "updated_at": "2026-10-04 14:27:48"
+    },
+    "guardrails": {
+      "id": 1557,
+      "task_id": 6671,
+      "entity_version": 1,
+      "guardrails": {
+        "invariants": [
+          "D173 O1 policy and direction/task creation grant no O2–O7 acts; current issuer/capacity/task/profile admission is required at each actual boundary",
+          "Actor, role, appointment, session, authenticated principal, repository, memory and commitment stay distinct; one canonical parent start right across all permits"
+        ],
+        "anti_goals": [
+          "No company-coordination task mutates another source repo, appoints itself, invents grants, launches extra sessions or performs publication/private disclosure/live effects"
+        ],
+        "constraints": [
+          "Allowed paths are company evidence only; actual implementation and reserved acts require separately admitted exact owner-native tasks and permissions; preserve existing dirty work"
+        ],
+        "rollback_boundaries": [
+          "Hold/fence unknown effects and preserve evidence; source rollback/cleanup/new IDs never unspend an O3 right or reverse disclosure"
+        ]
+      },
+      "created_at": "2026-10-04 14:27:49",
+      "updated_at": "2026-10-04 14:27:49"
+    }
+  },
+  {
+    "task_id": 6672,
+    "repo": "/home/tryinget/ai-society/softwareco",
+    "title": "D173 S3: coordinate qualified route-A instruction/source correction and exact company pin/answers/adoption; reuse AK6351 without widening it; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+    "status": "pending",
+    "done_contract": {
+      "id": 1558,
+      "task_id": 6672,
+      "entity_version": 1,
+      "contract": {
+        "completion_kind": "owner_coordination",
+        "required_outcomes": [
+          "Actual corrected canonical source/tests and governed exact commit/pin/answers/adoption receipts with real pinned-L0 lineage/render compatibility, delivered by admitted source-owner leaves"
+        ],
+        "required_validation": [
+          "Fresh source-owner/AK readback plus applicable R3 V01–V09 native observations and actual receiver judgment; documents and synthetic fixtures cannot substitute"
+        ],
+        "required_evidence_classes": [
+          "owner_native_records",
+          "runtime_observations",
+          "receiver_disposition"
+        ],
+        "review_questions": [
+          "Are effects and qualification proved by the actual owning surfaces, with no inferred O2–O7 authority or manufactured completion?"
+        ]
+      },
+      "created_at": "2026-10-04 14:27:55",
+      "updated_at": "2026-10-04 14:27:55"
+    },
+    "guardrails": {
+      "id": 1558,
+      "task_id": 6672,
+      "entity_version": 1,
+      "guardrails": {
+        "invariants": [
+          "D173 O1 policy and direction/task creation grant no O2–O7 acts; current issuer/capacity/task/profile admission is required at each actual boundary",
+          "Actor, role, appointment, session, authenticated principal, repository, memory and commitment stay distinct; one canonical parent start right across all permits"
+        ],
+        "anti_goals": [
+          "No company-coordination task mutates another source repo, appoints itself, invents grants, launches extra sessions or performs publication/private disclosure/live effects"
+        ],
+        "constraints": [
+          "Allowed paths are company evidence only; actual implementation and reserved acts require separately admitted exact owner-native tasks and permissions; preserve existing dirty work"
+        ],
+        "rollback_boundaries": [
+          "Hold/fence unknown effects and preserve evidence; source rollback/cleanup/new IDs never unspend an O3 right or reverse disclosure"
+        ]
+      },
+      "created_at": "2026-10-04 14:27:57",
+      "updated_at": "2026-10-04 14:27:57"
+    }
+  },
+  {
+    "task_id": 6673,
+    "repo": "/home/tryinget/ai-society/softwareco",
+    "title": "D173 S4: coordinate and obtain native parent-right/custodian qualification for aliases, reservation, revocation, fencing and original-attempt recovery; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+    "status": "pending",
+    "done_contract": {
+      "id": 1559,
+      "task_id": 6673,
+      "entity_version": 1,
+      "contract": {
+        "completion_kind": "owner_coordination",
+        "required_outcomes": [
+          "Actual issuer-named custodian and native multi-permit/alias race, partial/reissue/lost-receipt/revocation/fence/recovery boundary evidence; at most one durable start per canonical O3 right"
+        ],
+        "required_validation": [
+          "Fresh source-owner/AK readback plus applicable R3 V01–V09 native observations and actual receiver judgment; documents and synthetic fixtures cannot substitute"
+        ],
+        "required_evidence_classes": [
+          "owner_native_records",
+          "runtime_observations",
+          "receiver_disposition"
+        ],
+        "review_questions": [
+          "Are effects and qualification proved by the actual owning surfaces, with no inferred O2–O7 authority or manufactured completion?"
+        ]
+      },
+      "created_at": "2026-10-04 14:28:01",
+      "updated_at": "2026-10-04 14:28:01"
+    },
+    "guardrails": {
+      "id": 1559,
+      "task_id": 6673,
+      "entity_version": 1,
+      "guardrails": {
+        "invariants": [
+          "D173 O1 policy and direction/task creation grant no O2–O7 acts; current issuer/capacity/task/profile admission is required at each actual boundary",
+          "Actor, role, appointment, session, authenticated principal, repository, memory and commitment stay distinct; one canonical parent start right across all permits"
+        ],
+        "anti_goals": [
+          "No company-coordination task mutates another source repo, appoints itself, invents grants, launches extra sessions or performs publication/private disclosure/live effects"
+        ],
+        "constraints": [
+          "Allowed paths are company evidence only; actual implementation and reserved acts require separately admitted exact owner-native tasks and permissions; preserve existing dirty work"
+        ],
+        "rollback_boundaries": [
+          "Hold/fence unknown effects and preserve evidence; source rollback/cleanup/new IDs never unspend an O3 right or reverse disclosure"
+        ]
+      },
+      "created_at": "2026-10-04 14:28:02",
+      "updated_at": "2026-10-04 14:28:02"
+    }
+  },
+  {
+    "task_id": 6674,
+    "repo": "/home/tryinget/ai-society/softwareco",
+    "title": "D173 S5: obtain actual fleet placement admission and installed discovery/lint/collision qualification for the intended Principal artifact; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+    "status": "pending",
+    "done_contract": {
+      "id": 1560,
+      "task_id": 6674,
+      "entity_version": 1,
+      "contract": {
+        "completion_kind": "owner_coordination",
+        "required_outcomes": [
+          "Actual fleet/runtime owner admission and installed discovery/lint/collision evidence for exact intended destination and subject; source patterns alone cannot pass"
+        ],
+        "required_validation": [
+          "Fresh source-owner/AK readback plus applicable R3 V01–V09 native observations and actual receiver judgment; documents and synthetic fixtures cannot substitute"
+        ],
+        "required_evidence_classes": [
+          "owner_native_records",
+          "runtime_observations",
+          "receiver_disposition"
+        ],
+        "review_questions": [
+          "Are effects and qualification proved by the actual owning surfaces, with no inferred O2–O7 authority or manufactured completion?"
+        ]
+      },
+      "created_at": "2026-10-04 14:28:07",
+      "updated_at": "2026-10-04 14:28:07"
+    },
+    "guardrails": {
+      "id": 1560,
+      "task_id": 6674,
+      "entity_version": 1,
+      "guardrails": {
+        "invariants": [
+          "D173 O1 policy and direction/task creation grant no O2–O7 acts; current issuer/capacity/task/profile admission is required at each actual boundary",
+          "Actor, role, appointment, session, authenticated principal, repository, memory and commitment stay distinct; one canonical parent start right across all permits"
+        ],
+        "anti_goals": [
+          "No company-coordination task mutates another source repo, appoints itself, invents grants, launches extra sessions or performs publication/private disclosure/live effects"
+        ],
+        "constraints": [
+          "Allowed paths are company evidence only; actual implementation and reserved acts require separately admitted exact owner-native tasks and permissions; preserve existing dirty work"
+        ],
+        "rollback_boundaries": [
+          "Hold/fence unknown effects and preserve evidence; source rollback/cleanup/new IDs never unspend an O3 right or reverse disclosure"
+        ]
+      },
+      "created_at": "2026-10-04 14:28:08",
+      "updated_at": "2026-10-04 14:28:08"
+    }
+  },
+  {
+    "task_id": 6675,
+    "repo": "/home/tryinget/ai-society/softwareco",
+    "title": "D173 S6: coordinate one separately authorized inert birth with O3 right/O6 permit and native receiver-accepted provenance; no activation or retry by new ID; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+    "status": "pending",
+    "done_contract": {
+      "id": 1561,
+      "task_id": 6675,
+      "entity_version": 1,
+      "contract": {
+        "completion_kind": "owner_coordination",
+        "required_outcomes": [
+          "One actual conformant inert artifact with exact E/O3/P/T/task/inputs/fence receipt, native checks and designated receiver acceptance; parent remains spent, active operation excluded"
+        ],
+        "required_validation": [
+          "Fresh source-owner/AK readback plus applicable R3 V01–V09 native observations and actual receiver judgment; documents and synthetic fixtures cannot substitute"
+        ],
+        "required_evidence_classes": [
+          "owner_native_records",
+          "runtime_observations",
+          "receiver_disposition"
+        ],
+        "review_questions": [
+          "Are effects and qualification proved by the actual owning surfaces, with no inferred O2–O7 authority or manufactured completion?"
+        ]
+      },
+      "created_at": "2026-10-04 14:28:12",
+      "updated_at": "2026-10-04 14:28:12"
+    },
+    "guardrails": {
+      "id": 1561,
+      "task_id": 6675,
+      "entity_version": 1,
+      "guardrails": {
+        "invariants": [
+          "D173 O1 policy and direction/task creation grant no O2–O7 acts; current issuer/capacity/task/profile admission is required at each actual boundary",
+          "Actor, role, appointment, session, authenticated principal, repository, memory and commitment stay distinct; one canonical parent start right across all permits"
+        ],
+        "anti_goals": [
+          "No company-coordination task mutates another source repo, appoints itself, invents grants, launches extra sessions or performs publication/private disclosure/live effects"
+        ],
+        "constraints": [
+          "Allowed paths are company evidence only; actual implementation and reserved acts require separately admitted exact owner-native tasks and permissions; preserve existing dirty work"
+        ],
+        "rollback_boundaries": [
+          "Hold/fence unknown effects and preserve evidence; source rollback/cleanup/new IDs never unspend an O3 right or reverse disclosure"
+        ]
+      },
+      "created_at": "2026-10-04 14:28:13",
+      "updated_at": "2026-10-04 14:28:13"
+    }
+  },
+  {
+    "task_id": 6676,
+    "repo": "/home/tryinget/ai-society/softwareco",
+    "title": "D173 S7: coordinate owned-host bounded M0 experiment with real cognition, frozen-resource confinement, egress/custody/crash recovery and accepted/rejected disposition; no language adoption by assumption; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+    "status": "pending",
+    "done_contract": {
+      "id": 1562,
+      "task_id": 6676,
+      "entity_version": 1,
+      "contract": {
+        "completion_kind": "owner_coordination",
+        "required_outcomes": [
+          "Real receiver-valued M0 result and failure-cut/recovery/export evidence under identical candidate obligations, including resource confinement and egress; recommendation with reversal conditions and no unproved substrate adoption"
+        ],
+        "required_validation": [
+          "Fresh source-owner/AK readback plus applicable R3 V01–V09 native observations and actual receiver judgment; documents and synthetic fixtures cannot substitute"
+        ],
+        "required_evidence_classes": [
+          "owner_native_records",
+          "runtime_observations",
+          "receiver_disposition"
+        ],
+        "review_questions": [
+          "Are effects and qualification proved by the actual owning surfaces, with no inferred O2–O7 authority or manufactured completion?"
+        ]
+      },
+      "created_at": "2026-10-04 14:28:16",
+      "updated_at": "2026-10-04 14:28:16"
+    },
+    "guardrails": {
+      "id": 1562,
+      "task_id": 6676,
+      "entity_version": 1,
+      "guardrails": {
+        "invariants": [
+          "D173 O1 policy and direction/task creation grant no O2–O7 acts; current issuer/capacity/task/profile admission is required at each actual boundary",
+          "Actor, role, appointment, session, authenticated principal, repository, memory and commitment stay distinct; one canonical parent start right across all permits"
+        ],
+        "anti_goals": [
+          "No company-coordination task mutates another source repo, appoints itself, invents grants, launches extra sessions or performs publication/private disclosure/live effects"
+        ],
+        "constraints": [
+          "Allowed paths are company evidence only; actual implementation and reserved acts require separately admitted exact owner-native tasks and permissions; preserve existing dirty work"
+        ],
+        "rollback_boundaries": [
+          "Hold/fence unknown effects and preserve evidence; source rollback/cleanup/new IDs never unspend an O3 right or reverse disclosure"
+        ]
+      },
+      "created_at": "2026-10-04 14:28:17",
+      "updated_at": "2026-10-04 14:28:17"
+    }
+  },
+  {
+    "task_id": 6677,
+    "repo": "/home/tryinget/ai-society/softwareco",
+    "title": "D173 S8: coordinate independently authored OptMem/Souls-inspired memory control/candidate trial under current data/provider/retention/withdrawal profiles; no unauthorized reuse/private ingestion; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+    "status": "pending",
+    "done_contract": {
+      "id": 1563,
+      "task_id": 6677,
+      "entity_version": 1,
+      "contract": {
+        "completion_kind": "owner_coordination",
+        "required_outcomes": [
+          "Actual admitted control/candidate recall measurements preserving corrections/exceptions/supersession, denial canaries, derivative withdrawal and stale-reingestion denial; data-owner/receiver fitness disposition"
+        ],
+        "required_validation": [
+          "Fresh source-owner/AK readback plus applicable R3 V01–V09 native observations and actual receiver judgment; documents and synthetic fixtures cannot substitute"
+        ],
+        "required_evidence_classes": [
+          "owner_native_records",
+          "runtime_observations",
+          "receiver_disposition"
+        ],
+        "review_questions": [
+          "Are effects and qualification proved by the actual owning surfaces, with no inferred O2–O7 authority or manufactured completion?"
+        ]
+      },
+      "created_at": "2026-10-04 14:28:22",
+      "updated_at": "2026-10-04 14:28:22"
+    },
+    "guardrails": {
+      "id": 1563,
+      "task_id": 6677,
+      "entity_version": 1,
+      "guardrails": {
+        "invariants": [
+          "D173 O1 policy and direction/task creation grant no O2–O7 acts; current issuer/capacity/task/profile admission is required at each actual boundary",
+          "Actor, role, appointment, session, authenticated principal, repository, memory and commitment stay distinct; one canonical parent start right across all permits"
+        ],
+        "anti_goals": [
+          "No company-coordination task mutates another source repo, appoints itself, invents grants, launches extra sessions or performs publication/private disclosure/live effects"
+        ],
+        "constraints": [
+          "Allowed paths are company evidence only; actual implementation and reserved acts require separately admitted exact owner-native tasks and permissions; preserve existing dirty work"
+        ],
+        "rollback_boundaries": [
+          "Hold/fence unknown effects and preserve evidence; source rollback/cleanup/new IDs never unspend an O3 right or reverse disclosure"
+        ]
+      },
+      "created_at": "2026-10-04 14:28:23",
+      "updated_at": "2026-10-04 14:28:23"
+    }
+  },
+  {
+    "task_id": 6678,
+    "repo": "/home/tryinget/ai-society/softwareco",
+    "title": "D173 S9: coordinate actual owner-issued appointment/active profiles, long-running fenced operation, one receiver-accepted useful routine outcome and evidence-backed KES disposition; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+    "status": "pending",
+    "done_contract": {
+      "id": 1564,
+      "task_id": 6678,
+      "entity_version": 1,
+      "contract": {
+        "completion_kind": "owner_coordination",
+        "required_outcomes": [
+          "Current actual appointment and all activated owner profiles; demonstrated useful continued routine operation and fenced recovery, receiver acceptance of one substantive result, actual KES disposition and residual obligation/rollback accounting"
+        ],
+        "required_validation": [
+          "Fresh source-owner/AK readback plus applicable R3 V01–V09 native observations and actual receiver judgment; documents and synthetic fixtures cannot substitute"
+        ],
+        "required_evidence_classes": [
+          "owner_native_records",
+          "runtime_observations",
+          "receiver_disposition"
+        ],
+        "review_questions": [
+          "Are effects and qualification proved by the actual owning surfaces, with no inferred O2–O7 authority or manufactured completion?"
+        ]
+      },
+      "created_at": "2026-10-04 14:28:26",
+      "updated_at": "2026-10-04 14:28:26"
+    },
+    "guardrails": {
+      "id": 1564,
+      "task_id": 6678,
+      "entity_version": 1,
+      "guardrails": {
+        "invariants": [
+          "D173 O1 policy and direction/task creation grant no O2–O7 acts; current issuer/capacity/task/profile admission is required at each actual boundary",
+          "Actor, role, appointment, session, authenticated principal, repository, memory and commitment stay distinct; one canonical parent start right across all permits"
+        ],
+        "anti_goals": [
+          "No company-coordination task mutates another source repo, appoints itself, invents grants, launches extra sessions or performs publication/private disclosure/live effects"
+        ],
+        "constraints": [
+          "Allowed paths are company evidence only; actual implementation and reserved acts require separately admitted exact owner-native tasks and permissions; preserve existing dirty work"
+        ],
+        "rollback_boundaries": [
+          "Hold/fence unknown effects and preserve evidence; source rollback/cleanup/new IDs never unspend an O3 right or reverse disclosure"
+        ]
+      },
+      "created_at": "2026-10-04 14:28:27",
+      "updated_at": "2026-10-04 14:28:27"
+    }
+  }
+]

@@ -1,0 +1,1050 @@
+[
+  {
+    "task": 6670,
+    "readback": {
+      "id": 6670,
+      "repo": "/home/tryinget/ai-society/softwareco",
+      "title": "D173 S1: discover current O2–O7 owners, admissions, existing repositories/tasks and receiver inputs; route exact successor scopes without inventing authority; company coordination/evidence only, effects stay in separately admitted source-owner leaves",
+      "description": null,
+      "status": "claimed",
+      "priority": 1,
+      "claimed_by": "session-01a10760-fd27-7413-8a88-a8dded527f50",
+      "claimed_at": "2026-10-04T14:46:43.361077838+00:00",
+      "lease_expires_at": "2026-10-04T15:46:43.361077838+00:00",
+      "depends_on": null,
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-04T14:27:13.294986421+00:00",
+      "completed_at": null,
+      "scope": {
+        "allowed_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s1/**"
+        ],
+        "required_paths": [
+          "docs/project/principal-policy-resolution-2026-10-04/execution/s1/result.md"
+        ],
+        "forbidden_paths": []
+      },
+      "entity_version": 4,
+      "completed_by": null,
+      "broken_commitments": []
+    }
+  },
+  {
+    "task": 6670,
+    "attached_evidence": []
+  },
+  {
+    "task": 6350,
+    "readback": {
+      "id": 6350,
+      "repo": "/home/tryinget/ai-society/holdingco/infra/template-propagator",
+      "title": "Decision 167 step 1: L2 lineage without company copies. An L2 repo's lineage is company + template + L0 commit; trusted-template resolution renders the template from L0 at that commit; every existing _src_path form (about 65 repos, incl. ~/ai-society/<co>/copier/<tpl>, ../copier/<tpl>, <co>-templates/, /home/lightningralf/...) keeps resolving as legacy lineage. Tests per legacy form plus a live fleet lineage report equal to today's. ADR: holdingco/infra/template-propagator/docs/decisions/2026-10-01-company-l2-templates-from-l0.md",
+      "description": null,
+      "status": "done",
+      "priority": 3,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": null,
+      "evidence": null,
+      "result": {
+        "summary": "Copy-independent company/template/L0 lineage implemented and verified; operator accepted both bounded compatibility dispositions after fresh and independent rereview.",
+        "implementation_commit": "97bbb758823626714eea00e5796397648d9f9f80",
+        "acceptance_commit": "58cfb4a9a088b8261fab393d3cb26a614b02d889",
+        "evidence_ids": [
+          11893,
+          12086
+        ],
+        "acceptance_artifact": "diary/evidence/lineage/AK-6350-acceptance-rereview.json",
+        "fresh_fleet_report": "diary/evidence/lineage/AK-6350-rereview-fleet.json",
+        "operator_authorization": "Current-session operator approved both dispositions after rereview: okay, go for both after rereviewing them",
+        "accepted_limits": [
+          "Two valid legacy unknown-to-verified improvements accepted; 60 formerly verified rows preserved with no recorded family changes; exact verdict parity not claimed",
+          "Historical tpl-contrib-repo retained as identified but unavailable, with unknown/manual-review planner posture and refused rendering; no invented alias"
+        ],
+        "verification": "15 focused tests, foundation unit test, fresh live fleet proof, cargo check/clippy, full CI including smoke/cargo test/contracts/ROCS, docs strict all pass",
+        "remaining_scope": "AK6351 must inspect current company copies and recorded residue for actual birth-equivalence proof; AK6351-6353 were not claimed, executed, released or closed",
+        "canonical_company_or_l0_mutation": false
+      },
+      "created_at": "2026-10-01T04:40:46.947947823+00:00",
+      "completed_at": "2026-10-01T17:37:55.038624053+00:00",
+      "scope": null,
+      "entity_version": 5,
+      "completed_by": "session-01a0f678-716c-785f-a310-9a0d2ff48667",
+      "broken_commitments": []
+    }
+  },
+  {
+    "task": 6350,
+    "attached_evidence": [
+      {
+        "id": 11893,
+        "task_id": 6350,
+        "task_ref": 6350,
+        "repo": "/home/tryinget/ai-society/holdingco/infra/template-propagator",
+        "repo_scope": "/home/tryinget/ai-society/holdingco/infra/template-propagator",
+        "check_type": "ak6350_implementation_checks",
+        "result": "pass",
+        "details": {
+          "commit": "97bbb758823626714eea00e5796397648d9f9f80",
+          "published_to": "origin/main",
+          "source_l0_commit": "c14dc59ba50bb3b3e3561cff496acf321b350ee8",
+          "artifact": "diary/evidence/lineage/AK-6350-validation.json",
+          "fleet_report": "diary/evidence/lineage/AK-6350-fleet.json",
+          "owner_render_report": "diary/evidence/lineage/AK-6350-owner-render.json",
+          "diary": "diary/2026-10-01--feat-copy-independent-l2-lineage-ak6350.md",
+          "focused_tests_passed": 14,
+          "live_proofs_passed": 2,
+          "cargo_check": "pass",
+          "cargo_clippy_all_targets": "pass",
+          "ci_full": "pass",
+          "docs_strict": "pass",
+          "families_unchanged": true,
+          "previously_verified_regressions": 0,
+          "exact_verdict_parity": false,
+          "unknown_to_verified": 2,
+          "unavailable_legacy_template": "tpl-contrib-repo",
+          "project_copy_target_only_files": 5,
+          "task_complete": false,
+          "remaining_acceptance": "Owner disposition of exact evidence-parity wording and unavailable historical contrib identity; no alias invented. No AK6351-6353 execution. Birth equivalence not claimed.",
+          "canonical_company_or_l0_mutation": false
+        },
+        "checked_at": "2026-10-01T09:01:34.396765509+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 12086,
+        "task_id": 6350,
+        "task_ref": 6350,
+        "repo": "/home/tryinget/ai-society/holdingco/infra/template-propagator",
+        "repo_scope": "/home/tryinget/ai-society/holdingco/infra/template-propagator",
+        "check_type": "ak6350_operator_acceptance_rereview",
+        "result": "pass",
+        "details": {
+          "commit": "58cfb4a9a088b8261fab393d3cb26a614b02d889",
+          "published_to": "origin/main",
+          "artifact": "diary/evidence/lineage/AK-6350-acceptance-rereview.json",
+          "fresh_fleet_report": "diary/evidence/lineage/AK-6350-rereview-fleet.json",
+          "prior_evidence": 11893,
+          "authorization_source": "current_session_operator_statement",
+          "operator_statement": "okay, go for both after rereviewing them",
+          "rereview_condition_satisfied": true,
+          "accepted_dispositions": [
+            "Accept two valid company-bound unknown-to-verified improvements; no formerly verified regressions",
+            "Keep tpl-contrib-repo identified but unavailable, without alias or render fallback"
+          ],
+          "formerly_verified_rows_preserved": 60,
+          "recorded_family_changes": 0,
+          "exact_verdict_parity_claimed": false,
+          "focused_tests_passed": 15,
+          "foundation_lineage_test": "pass",
+          "fresh_fleet_test": "pass",
+          "cargo_check": "pass",
+          "cargo_clippy_all_targets": "pass",
+          "ci_full": "pass",
+          "docs_strict": "pass",
+          "independent_review_dispatch": "dispatch-1790875696369",
+          "independent_review_scope": "two acceptance dispositions; static inspection, not comprehensive audit",
+          "contrib_planner": "unknown/manual_review",
+          "contrib_render": "refused",
+          "birth_equivalence_claimed": false,
+          "later_tasks_executed": false,
+          "canonical_company_or_l0_mutation": false
+        },
+        "checked_at": "2026-10-01T17:37:35.883912005+00:00",
+        "checked_by": "cli"
+      }
+    ]
+  },
+  {
+    "task": 6351,
+    "readback": {
+      "id": 6351,
+      "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+      "title": "Decision 167 step 2 (after step 1): new-repo-from-copier.sh births an L2 repo from a render of the company at its pinned L0 commit (seal l0_source_sha) and records the new lineage; ownership map reserves company-owned copier-overlay/**; architecture doc (layer-taxonomy-and-propagation-architecture.md): an L1 contributes configuration, company-owned files and later overlays, not template copies. Validation: a birth per template equals one from today's company copy at the same L0 commit except provenance. ADR: holdingco/infra/template-propagator/docs/decisions/2026-10-01-company-l2-templates-from-l0.md",
+      "description": null,
+      "status": "pending",
+      "priority": 3,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": null,
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-01T04:40:47.412004653+00:00",
+      "completed_at": null,
+      "scope": null,
+      "entity_version": 11,
+      "completed_by": null,
+      "broken_commitments": [
+        {
+          "receipt_id": 15263,
+          "recorded_at": "2026-10-01T23:14:56.842630153+00:00",
+          "detected_by": "record_lapses",
+          "claimant": "session-01a0f678-716c-785f-a310-9a0d2ff48667",
+          "claimed_at": "2026-10-01T19:05:17.520557971+00:00",
+          "lease_expires_at": "2026-10-01T23:05:17.520557971+00:00",
+          "source": "commitment_receipt"
+        },
+        {
+          "receipt_id": 15296,
+          "recorded_at": "2026-10-02T17:21:44.255399150+00:00",
+          "detected_by": "claim_takeover",
+          "claimant": "session-01a0f678-716c-785f-a310-9a0d2ff48667",
+          "claimed_at": "2026-10-02T13:19:47.927897226+00:00",
+          "lease_expires_at": "2026-10-02T17:19:47.927897226+00:00",
+          "source": "commitment_receipt"
+        }
+      ]
+    }
+  },
+  {
+    "task": 6351,
+    "attached_evidence": [
+      {
+        "id": 12202,
+        "task_id": 6351,
+        "task_ref": 6351,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "ak6351_owner_followup_authorization",
+        "result": "pass",
+        "details": {
+          "source": "current_session_operator_interview",
+          "session": "session-01a0f678-716c-785f-a310-9a0d2ff48667",
+          "birth_parity": "Accept the four obsolete-output omissions as an explicit birth-parity exception; do not restore them",
+          "accepted_project_outputs_omitted": [
+            ".gitlab-ci.yml",
+            "gitlab/ci/rocs.yml",
+            "governance/work-items.cue",
+            "governance/work-items.json"
+          ],
+          "exact_old_copy_parity_claimed": false,
+          "verification_budget": "Re-measure and recalibrate finite L0 verification budgets, document the change, then rerun the full owner check",
+          "production_execution_timeouts_and_filesystem_safeguards_unchanged": true,
+          "metadata": "Authorize bounded metadata-only repairs and rerun repo-wide docs strictness",
+          "metadata_scope": "Eight previously reported findings only, preserving fixture meaning and performing AGENTS/CLAUDE loader preflight",
+          "task_complete": false,
+          "later_tasks_or_per_company_deletion_wave_release_authorized": false
+        },
+        "checked_at": "2026-10-02T17:22:20.601869860+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 12449,
+        "task_id": 6351,
+        "task_ref": 6351,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "ak6351_native_verification_pr_readiness",
+        "result": "pass",
+        "details": {
+          "implementation_branch": "feat/ak6351-pinned-l0-births",
+          "published_head": "45b01ec277a480ee6e71b1c756fb3abf87f9c83f",
+          "verified_code_commit": "44d43b1",
+          "pull_request": "https://github.com/tryingET/core_tpl-template-repo/pull/10",
+          "native_owner_check": {
+            "passed": 7,
+            "failed": 0,
+            "skipped": 0,
+            "exit_code": 0,
+            "elapsed_seconds": 3362.13
+          },
+          "focused_source_wrapper_tests": 45,
+          "real_copier_tests": 2,
+          "docs_strict": "pass; default AK closure reconciliation skipped",
+          "native_evidence_path": "diary/ak6351-pinned-runner-portability/",
+          "integrated_published_main": "a9d2125e3d004cee3cafe2f2e57459f732d58dc0",
+          "owner_authorization_evidence": 12202,
+          "birth_parity_exception": "Four obsolete project-only outputs omitted with explicit operator approval; exact/fleet equivalence not claimed",
+          "production_timeouts_sandbox_pins_snapshots_descriptor_writes": "preserved",
+          "hosted_run": "37091323548",
+          "hosted_result": "failure",
+          "hosted_prerequisites_missing": [
+            "bwrap",
+            "installed AK",
+            "docs-ref-check tooling",
+            "required ancestor history"
+          ],
+          "hosted_green_claimed": false,
+          "hosted_waiver_claimed": false,
+          "task_complete": false,
+          "source_pr_merge_or_admission": "pending",
+          "canonical_checkout_or_companies_mutated": false,
+          "later_tasks_executed": false
+        },
+        "checked_at": "2026-10-03T03:09:49.819848127+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 12450,
+        "task_id": 6351,
+        "task_ref": 6351,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "ak6351_hosted_source_admission",
+        "result": "fail",
+        "details": {
+          "pull_request": "https://github.com/tryingET/core_tpl-template-repo/pull/10",
+          "head": "45b01ec277a480ee6e71b1c756fb3abf87f9c83f",
+          "run_id": "37091323548",
+          "run_url": "https://github.com/tryingET/core_tpl-template-repo/actions/runs/37091323548",
+          "result": "failure",
+          "observed_errors": [
+            "No such file or directory: bwrap",
+            "AK creation gate requires installed ak",
+            "could not resolve docs-ref-check script",
+            "retired_by is not an L0 ancestor commit"
+          ],
+          "uv_path_portability_regression": "fixed and natively verified in this head",
+          "native_verification_evidence": 12449,
+          "source_admission": "pending; no bypass/waiver or hosted-green claim",
+          "task_complete": false,
+          "infrastructure_followup_owner": "existing hosted-CI track AK6160; no mutation of that task performed"
+        },
+        "checked_at": "2026-10-03T03:10:17.652276745+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 12467,
+        "task_id": 6351,
+        "task_ref": 6351,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "ak6351_ci_dependency_publication_authorization",
+        "result": "pass",
+        "details": {
+          "source": "operator interview in session-01a0ffd7-c705-7ed4-87ea-1eb822a5bb16",
+          "authorization": "Authorize publishing the exact docs-ref-check runtime and minimal imported modules from agent-scripts commit 81fa62b9fcf312a9939f8b4e8f6270951f1dfab0 in this public PR, with provenance/checksums.",
+          "target": "https://github.com/tryingET/core_tpl-template-repo/pull/10",
+          "owner_implementation_changes": false,
+          "merge_or_task_completion_authorized": false
+        },
+        "checked_at": "2026-10-03T03:46:05.102589252+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 12563,
+        "task_id": 6351,
+        "task_ref": 6351,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "ak6351_ci_native_owner_verification",
+        "result": "pass",
+        "details": {
+          "code_commit": "29be298f74e00274277dcf1235249999afa819ea",
+          "published_head": "dd067dd69445672ee3fad07bfb72b68403fe947d",
+          "actual_owner_command": "heavy-job run --label ak6351-ci-native-owner-check --task 6351 -- bash -c umask022-and-bash-scripts/check-l0.sh",
+          "exit_code": 0,
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "elapsed_seconds": 3508.283,
+          "warnings": [
+            "Git re-init ignored --initial-branch=main",
+            "Git re-init ignored --initial-branch=work"
+          ],
+          "focused_tests": 8,
+          "strict_docs": "pass; default AK closure reconciliation separately skipped",
+          "docs_refs": {
+            "files": 4,
+            "refs": 29,
+            "result": "pass"
+          },
+          "vendor_byte_comparison": "seven files equal owner commit81fa62b9fcf312a9939f8b4e8f6270951f1dfab0",
+          "publication_authorization_evidence": 12467,
+          "evidence_path": "diary/ak6351-hosted-ci-native/",
+          "hosted_run": "37098493655",
+          "hosted_result": "in_progress; real sandbox provisioning passed",
+          "task_complete": false,
+          "merge_authorized": false,
+          "prior_evidence_write": "exit75 before AK process/DB effect; gate contention; reattempt after successful live read and no admission-lock holder observed"
+        },
+        "checked_at": "2026-10-03T05:02:40.818134174+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 12610,
+        "task_id": 6351,
+        "task_ref": 6351,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "ak6351_ci_hosted_verification",
+        "result": "fail",
+        "details": {
+          "head": "dd067dd69445672ee3fad07bfb72b68403fe947d",
+          "run": "37098493655",
+          "url": "https://github.com/tryingET/core_tpl-template-repo/actions/runs/37098493655",
+          "job": "check",
+          "job_id": 111133190421,
+          "result": "failure",
+          "passed_leaves": 6,
+          "failed_leaves": 1,
+          "skipped_leaves": 0,
+          "failing_leaf": "check-l0-generation",
+          "failing_tests": [
+            "CompanyOntologyTests.test_old_readers_upgrade_through_a_receipted_preparatory_refresh",
+            "CompanyOntologyTests.test_real_forward_and_receipted_reverse_restore_ownership"
+          ],
+          "root_cause": "test harness full-CI subprocesses do not bind synthetic AK_CMD; task-snapshot shell prerequisite tries missing ambient ak",
+          "original_prerequisites": "bwrap/AppArmor/full-history/docs vendor/golden births all passed hosted",
+          "task_complete": false,
+          "fix_in_progress": true
+        },
+        "checked_at": "2026-10-03T05:47:47.498137539+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 12975,
+        "task_id": 6351,
+        "task_ref": 6351,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "ak6351_ci_causal_tdd_native_verification",
+        "result": "pass",
+        "details": {
+          "code_commit": "e2ec8191ededa6b80082dbb12ee93825d4435a19",
+          "red": [
+            {
+              "revision": "dd067dd69445672ee3fad07bfb72b68403fe947d",
+              "tests": 2,
+              "exit": 1,
+              "cause": "real full-CI subprocesses lack synthetic AK_CMD; missing ambient ak",
+              "seconds": 353.447
+            },
+            {
+              "revision": "d6cf555",
+              "tests": 1,
+              "exit": 1,
+              "cause": "focused child SourceFileLoader creates template-source cache"
+            },
+            {
+              "revision": "b09ce28707eaf2164cc7e88dec7970b685b3472c",
+              "exit": 1,
+              "cause": "golden owner fixture uses ambient identity; isolated HOME exposes drift"
+            }
+          ],
+          "green": {
+            "focused_tests": 11,
+            "focused_exit": 0,
+            "focused_seconds": 848.752,
+            "focused_fixtures_exit": 0,
+            "full_native": {
+              "command": "heavy-job run --label ak6351-final-tdd-native-owner --task 6351 -- bash tdd-final-green.sh -> bash scripts/check-l0.sh",
+              "exit": 0,
+              "passed": 7,
+              "failed": 0,
+              "skipped": 0,
+              "seconds": 3893.343
+            }
+          },
+          "private_AK_on_PATH": false,
+          "workstation_HOME_used": false,
+          "ROCS_source_pin": "ac75e95e30d66b3543abca27cb79d69a9dc01e93",
+          "source_cache_after_focused_and_full": "empty",
+          "strict_docs": "pass; default AK closure reconciliation disclosed separately",
+          "diff_check": "pass",
+          "evidence_path": "diary/ak6351-ci-tdd/",
+          "hosted_green_claimed": false,
+          "task_complete": false,
+          "merge_authorized": false
+        },
+        "checked_at": "2026-10-03T11:16:34.760574827+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 13036,
+        "task_id": 6351,
+        "task_ref": 6351,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "ak6351_ci_hosted_source_verification",
+        "result": "pass",
+        "details": {
+          "pull_request": "https://github.com/tryingET/core_tpl-template-repo/pull/10",
+          "head": "f4713a901f288054c4b858df3bae1f6f355054d9",
+          "verified_code_commit": "e2ec8191ededa6b80082dbb12ee93825d4435a19",
+          "run_id": 37119321922,
+          "run_url": "https://github.com/tryingET/core_tpl-template-repo/actions/runs/37119321922",
+          "job": "check",
+          "job_id": 111192200464,
+          "job_status": "completed",
+          "job_conclusion": "success",
+          "completed_at": "2026-10-03T12:31:20Z",
+          "job_seconds": 4271,
+          "all_steps": "success",
+          "owner_checks": {
+            "passed": 7,
+            "failed": 0,
+            "skipped": 0,
+            "guardrails_seconds": 1023,
+            "generation_seconds": 2715,
+            "adversarial_seconds": 411,
+            "fixtures_seconds": 105
+          },
+          "unittest_cohorts": [
+            {
+              "tests": 113,
+              "seconds": 1020.058,
+              "result": "OK"
+            },
+            {
+              "tests": 4,
+              "seconds": 0.168,
+              "result": "OK"
+            },
+            {
+              "tests": 36,
+              "seconds": 1460.261,
+              "result": "OK"
+            }
+          ],
+          "real_ROCS": {
+            "source_commit": "ac75e95e30d66b3543abca27cb79d69a9dc01e93",
+            "version": "0.4.6",
+            "lock": "frozen",
+            "provisioning": "success",
+            "no_core_skip": "absent"
+          },
+          "remaining_optional_notices": [
+            "Two pre-existing optional UBS pre-commit hook notices: helper unavailable; UBS scan not executed. This is not one of the seven declared owner checks.",
+            "Existing Git re-init and pathspec deprecation notices",
+            "actions Node20 deprecation/ubuntu-latest migration annotations"
+          ],
+          "full_log_sha256": "bf726cb346f566236655867cadf6f8d10cef3bd4b2d1f99b96e1bf9513309509",
+          "full_log_local_path": "/home/tryinget/.local/state/pi-quests/tmp/ak6351-ci-01a0ffd7-c705-7ed4-87ea-1eb822a5bb16/hosted-final.log",
+          "native_tdd_evidence": 12975,
+          "earlier_hosted_red_evidence": 12610,
+          "publication_authorization_evidence": 12467,
+          "diff_check": "pass",
+          "tracked_status": "clean",
+          "production_template_and_fixture_output_diff": "empty",
+          "PR_state": "OPEN",
+          "merge_performed": false,
+          "task_complete": false,
+          "next_required_authority": "source admission/merge and AK6351 completion remain separate operator acts; ordered6352/6353 and6512/6530 not executed"
+        },
+        "checked_at": "2026-10-03T12:33:05.615654272+00:00",
+        "checked_by": "cli"
+      }
+    ]
+  },
+  {
+    "task": 6614,
+    "readback": {
+      "id": 6614,
+      "repo": "/home/tryinget/ai-society/softwareco/owned/project-xeno",
+      "title": "Define the bounded agent-harness-facing XENO contract and next evolution slice; current-source discovery and contract design only",
+      "description": null,
+      "status": "pending",
+      "priority": 1,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": null,
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-04T02:09:43.856793544+00:00",
+      "completed_at": null,
+      "scope": {
+        "allowed_paths": [
+          "docs/project/harness-bridge-2026-10-04/**"
+        ],
+        "required_paths": [
+          "docs/project/harness-bridge-2026-10-04/requirements-and-contract.md"
+        ],
+        "forbidden_paths": []
+      },
+      "entity_version": 3,
+      "completed_by": null,
+      "broken_commitments": []
+    }
+  },
+  {
+    "task": 6614,
+    "attached_evidence": []
+  },
+  {
+    "task": 6615,
+    "readback": {
+      "id": 6615,
+      "repo": "/home/tryinget/ai-society/softwareco/owned/agent-harness",
+      "title": "Kasser-informed receiver requirements and executable-specification candidates for the owned agent host; derive minimal complete mission and high-value Gherkin scenarios",
+      "description": null,
+      "status": "pending",
+      "priority": 1,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": null,
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-04T02:09:45.519935171+00:00",
+      "completed_at": null,
+      "scope": {
+        "allowed_paths": [
+          "docs/project/agent-host-requirements-2026-10-04/**"
+        ],
+        "required_paths": [
+          "docs/project/agent-host-requirements-2026-10-04/requirements.md",
+          "docs/project/agent-host-requirements-2026-10-04/scenarios.feature"
+        ],
+        "forbidden_paths": []
+      },
+      "entity_version": 3,
+      "completed_by": null,
+      "broken_commitments": []
+    }
+  },
+  {
+    "task": 6615,
+    "attached_evidence": []
+  },
+  {
+    "task": 6616,
+    "readback": {
+      "id": 6616,
+      "repo": "/home/tryinget/ai-society/softwareco/owned/agent-harness",
+      "title": "Reopen owned agent-host language and execution-substrate choice from requirements, statecharts, pure computation and explicit effects; comparative decision evidence, no adoption",
+      "description": null,
+      "status": "pending",
+      "priority": 1,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": null,
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-04T02:09:47.180478619+00:00",
+      "completed_at": null,
+      "scope": {
+        "allowed_paths": [
+          "docs/project/agent-host-language-2026-10-04/**"
+        ],
+        "required_paths": [
+          "docs/project/agent-host-language-2026-10-04/decision-brief.md"
+        ],
+        "forbidden_paths": []
+      },
+      "entity_version": 3,
+      "completed_by": null,
+      "broken_commitments": []
+    }
+  },
+  {
+    "task": 6616,
+    "attached_evidence": []
+  },
+  {
+    "task": 6623,
+    "readback": {
+      "id": 6623,
+      "repo": "/home/tryinget/ai-society/softwareco/owned/agent-harness",
+      "title": "Preserve both-session agent-principal intent and source-bound evidence in a gated bootstrap contract: L7 outcome ownership under CEO mandate, no artificial budget or per-task approval; planning/docs only, no agent creation, implementation, adoption, launch or lifecycle closeout",
+      "description": null,
+      "status": "pending",
+      "priority": 1,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": null,
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-04T04:14:51.445769057+00:00",
+      "completed_at": null,
+      "scope": {
+        "allowed_paths": [
+          "docs/project/agent-principal-bootstrap-2026-10-04/**"
+        ],
+        "required_paths": [
+          "docs/project/agent-principal-bootstrap-2026-10-04/README.md",
+          "docs/project/agent-principal-bootstrap-2026-10-04/SOURCES.sha256",
+          "docs/project/agent-principal-bootstrap-2026-10-04/acceptance.feature",
+          "docs/project/agent-principal-bootstrap-2026-10-04/coverage.md"
+        ],
+        "forbidden_paths": []
+      },
+      "entity_version": 5,
+      "completed_by": null,
+      "broken_commitments": []
+    }
+  },
+  {
+    "task": 6623,
+    "attached_evidence": [
+      {
+        "id": 13409,
+        "task_id": 6623,
+        "task_ref": 6623,
+        "repo": "/home/tryinget/ai-society/softwareco/owned/agent-harness",
+        "repo_scope": "/home/tryinget/ai-society/softwareco/owned/agent-harness",
+        "check_type": "document_check",
+        "result": "pass",
+        "details": {
+          "scope": "AK6623 proposed gated bootstrap packet only",
+          "artifacts": [
+            {
+              "sha256": "9de3108680b6d70982dcbf1456fb311d58b24f0e60c032662a511cface2f74e5",
+              "path": "docs/project/agent-principal-bootstrap-2026-10-04/README.md"
+            },
+            {
+              "sha256": "be4a438ef92513309473b3269156c951bf0557452143100a0a5f925a541bc647",
+              "path": "docs/project/agent-principal-bootstrap-2026-10-04/SOURCES.sha256"
+            },
+            {
+              "sha256": "bd6ad43b3fb07b3455a7730cc8fdf2e8a9f9e5b9be9fd67799bc5eb2bc8d20cb",
+              "path": "docs/project/agent-principal-bootstrap-2026-10-04/acceptance.feature"
+            },
+            {
+              "sha256": "43e1e531b6b179d63c60b2e47f336d708c02f477b5b995a190b360fd959f9ac0",
+              "path": "docs/project/agent-principal-bootstrap-2026-10-04/coverage.md"
+            }
+          ],
+          "checks": {
+            "source_hashes": {
+              "passed": 26
+            },
+            "references": {
+              "markdown_files": 2,
+              "resolved": 11
+            },
+            "strict_docs_metadata": "pass",
+            "new_file_whitespace": "pass",
+            "independent_inspection": {
+              "dispatch_id": "dispatch-1791087697550",
+              "initial_findings": "corrected",
+              "follow_up": "no remaining material proposal-level blocker"
+            }
+          },
+          "author_coordination": {
+            "windows": [
+              762,
+              763,
+              759
+            ],
+            "replies_received": 3,
+            "proof": "attributable initial-README inspections only"
+          },
+          "limits": [
+            "No exhaustive reconstruction of old raw conversation",
+            "No receiver acceptance, canonical appointment, adoption or implementation",
+            "No runtime or Gherkin execution, provider calls, launch, install, private ingestion, live XENO, commits or pushes"
+          ],
+          "operator_supersession": "No invented 12-call/60-minute budget; standing outcome ownership, no per-task human approval",
+          "task_disposition": "No terminal closeout; release claim on stopping"
+        },
+        "checked_at": "2026-10-04T04:25:35.258314388+00:00",
+        "checked_by": "cli"
+      }
+    ]
+  },
+  {
+    "task": 6658,
+    "readback": {
+      "id": 6658,
+      "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+      "title": "Unblock AK6648 kernel v0.4.0 default PR11 publication: native standalone 7-leaf check passes at 71dca023877efcf37ee902e57bc9a8a87806e473, but hosted l0-check run37201539274 fails on absent history/retired_by ancestry, missing docs-ref-check and installed ak. Repair the repo-owned CI environment through its own PR; preserve exact ontology pins and fail-closed checks, no admin merge bypass. Source candidate and failed hosted receipts on AK6648.",
+      "description": null,
+      "status": "pending",
+      "priority": 1,
+      "claimed_by": null,
+      "claimed_at": null,
+      "lease_expires_at": null,
+      "depends_on": null,
+      "evidence": null,
+      "result": null,
+      "created_at": "2026-10-04T12:22:05.758865758+00:00",
+      "completed_at": null,
+      "scope": null,
+      "entity_version": 3,
+      "completed_by": null,
+      "broken_commitments": []
+    }
+  },
+  {
+    "task": 6658,
+    "attached_evidence": [
+      {
+        "id": 13570,
+        "task_id": 6658,
+        "task_ref": 6658,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "hosted_ci_blocker",
+        "result": "fail",
+        "details": {
+          "coordinator": 6648,
+          "pr": 11,
+          "run": 37201539274,
+          "head": "71dca023877efcf37ee902e57bc9a8a87806e473",
+          "check": "l0-check/check",
+          "result": "failure",
+          "errors": [
+            "historical/retired_by refs absent or not ancestors in hosted checkout",
+            "docs-ref-check script not resolvable",
+            "installed ak unavailable"
+          ],
+          "local_standalone_full_exit": 0,
+          "log": "/home/tryinget/.local/state/pi-quests/tmp/ak6648-v040/evidence/l0-hosted-failure.log",
+          "disposition": "No red-check merge or CI threshold exemption."
+        },
+        "checked_at": "2026-10-04T12:23:09.631384818+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 13581,
+        "task_id": 6658,
+        "task_ref": 6658,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "handoff_dispatched",
+        "result": "pass",
+        "details": {
+          "by": "claude-session-75988d83",
+          "handoff": "/home/tryinget/.local/state/pi-quests/tmp/handoffs/2026-10-04-ak6658-l0-hosted-ci-handoff.md",
+          "diagnosis": "shallow checkout (fetch-depth 1), docs-ref-check unresolved, ak absent on the runner"
+        },
+        "checked_at": "2026-10-04T12:25:50.497296292+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 13587,
+        "task_id": 6658,
+        "task_ref": 6658,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "docs_checker_publication_authorization",
+        "result": "pass",
+        "details": {
+          "owner_response": "Authorize publishing only the exact pinned docs-ref-check runtime and its import dependencies under tools/agent-scripts in this public repo, with provenance and hash checks (no independent fork)",
+          "scope": "Seven runtime files from tryingET/agent-scripts d30dabe63500e8f0e2acc4c62f9458e22245fece, only tools/agent-scripts in public L0",
+          "source": "Explicit operator interview response in session-01a106e0-9e99-71ae-bd9f-5e634f1f0f58",
+          "ci_secrets": false
+        },
+        "checked_at": "2026-10-04T12:35:40.287980534+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 13591,
+        "task_id": 6658,
+        "task_ref": 6658,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "l0_local_ci_repair",
+        "result": "pass",
+        "details": {
+          "commit": "e4ef582e768aab6bb001dd8836aa88d63647e5dc",
+          "command": "bash ./scripts/check-l0.sh",
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "warnings": 2,
+          "warning_detail": "existing git re-init initial-branch warnings",
+          "fixture_ak": "installed local ak, not CI override",
+          "independent_inspection": "No blockers; dispatch-1791117412800; 15 focused tests and fixture matrix passed; no template or ontology pin changes"
+        },
+        "checked_at": "2026-10-04T12:50:14.208227764+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 13597,
+        "task_id": 6658,
+        "task_ref": 6658,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "l0_ci_repair_attempts",
+        "result": "fail",
+        "details": {
+          "superseded_attempts": [
+            {
+              "run": 37203487549,
+              "head": "e4ef582e768aab6bb001dd8836aa88d63647e5dc",
+              "jobs": 0,
+              "correction": "runner context moved from job env to step env"
+            },
+            {
+              "run": 37203603649,
+              "head": "e1d7797df85d3526ebddb71ae188ef89130845d4",
+              "failure": "guardrails timeout after 300s"
+            }
+          ],
+          "local_ci_environment": {
+            "head": "e1d7797df85d3526ebddb71ae188ef89130845d4",
+            "passed": 5,
+            "failed": 2,
+            "cause": "global AK_CMD overrides generated task-scope scratch AK"
+          },
+          "corrections": "creation-only subshell injection and bounded hosted 900s/1800s limits",
+          "no_skips_added": true
+        },
+        "checked_at": "2026-10-04T13:00:32.133314979+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 13606,
+        "task_id": 6658,
+        "task_ref": 6658,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "l0_scoped_ci_environment",
+        "result": "pass",
+        "details": {
+          "commit": "f8583562e82a24629a52375fa686d9baf959f648",
+          "command": "L0_CREATION_AK_CMD=$PWD/tests/fixtures/ak-creation-task bash ./scripts/check-l0.sh",
+          "passed": 7,
+          "failed": 0,
+          "skipped": 0,
+          "warnings": 2,
+          "timeouts": {
+            "base": 300,
+            "generation": 600
+          },
+          "independent_inspection": "dispatch-1791117412800 follow-up: old global AK_CMD failure reproduced; nested scratch simulator passes with creation-only injection and ambient ak sentinel unused; no blockers",
+          "hosted_run": 37204090540,
+          "hosted_status": "not yet verified"
+        },
+        "checked_at": "2026-10-04T13:13:50.192376879+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 13610,
+        "task_id": 6658,
+        "task_ref": 6658,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "l0_hosted_company_gate_dependency",
+        "result": "fail",
+        "details": {
+          "run": 37204090540,
+          "head": "f8583562e82a24629a52375fa686d9baf959f648",
+          "aggregate": {
+            "passed": 6,
+            "failed": 1,
+            "skipped": 0
+          },
+          "failure": "two real company ownership gate tests still required ambient ak for empty snapshot executable check",
+          "correction": "explicit existing fixture AK injection only for full.sh, no production changes; nested check-template-ci retains independent scratch simulator",
+          "focused_correction_tests": {
+            "passed": 3,
+            "seconds": 116.834
+          },
+          "existing_optional_probe": "real-core ROCS unavailable on runner, existing named warning/skip; remains run locally"
+        },
+        "checked_at": "2026-10-04T13:30:15.731980073+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 13617,
+        "task_id": 6658,
+        "task_ref": 6658,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "l0_ci_repair_verified",
+        "result": "pass",
+        "details": {
+          "pr": "https://github.com/tryingET/core_tpl-template-repo/pull/12",
+          "head": "b941de2f36baa4c7a0924bcedf4afe5036cc84da",
+          "hosted": {
+            "run": 37205851397,
+            "url": "https://github.com/tryingET/core_tpl-template-repo/actions/runs/37205851397",
+            "conclusion": "success",
+            "passed": 7,
+            "failed": 0,
+            "skipped": 0,
+            "warnings": 3,
+            "coverage_limit": "pre-existing optional real-core ROCS probe named skip: no compatible workspace core on runner",
+            "seconds": {
+              "guardrails": 402,
+              "generation": 917,
+              "adversarial": 171,
+              "fixtures": 28
+            }
+          },
+          "local": {
+            "command": "L0_CREATION_AK_CMD=$PWD/tests/fixtures/ak-creation-task bash ./scripts/check-l0.sh",
+            "passed": 7,
+            "failed": 0,
+            "skipped": 0,
+            "warnings": 2,
+            "optional_real_core_probe": "executed"
+          },
+          "inspection": "dispatch-1791117412800 final inspection: no blockers; seven focused tests passed independently",
+          "main": "unchanged a9d2125e3d004cee3cafe2f2e57459f732d58dc0",
+          "merge": "owner only, not performed"
+        },
+        "checked_at": "2026-10-04T13:57:28.140458692+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 13629,
+        "task_id": 6658,
+        "task_ref": 6658,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "repin_rebase_worktree_probe",
+        "result": "fail",
+        "details": {
+          "head": "597f0eed21bfc4ee1178a4b3a62d4dd9d804ccb7",
+          "command": "full check-l0 from linked worktree",
+          "passed": 5,
+          "failed": 2,
+          "skipped": 0,
+          "failure": "raw Copier historical-base upgrade render lacked legacy answer template in linked worktree; hosted standalone checkout passes",
+          "disposition": "verify same head in no-hardlinks standalone clone, do not weaken history proof or change templates",
+          "original_repin_patch_equivalence": "git range-diff: both rebased commits equal original patches"
+        },
+        "checked_at": "2026-10-04T14:15:35.499188445+00:00",
+        "checked_by": "cli"
+      },
+      {
+        "id": 13641,
+        "task_id": 6658,
+        "task_ref": 6658,
+        "repo": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "repo_scope": "/home/tryinget/ai-society/core/tpl-template-repo",
+        "check_type": "repin_pr11_rebased_verified",
+        "result": "pass",
+        "details": {
+          "pr": "https://github.com/tryingET/core_tpl-template-repo/pull/11",
+          "head": "597f0eed21bfc4ee1178a4b3a62d4dd9d804ccb7",
+          "base_ci_commit": "b941de2f36baa4c7a0924bcedf4afe5036cc84da",
+          "hosted": {
+            "run": 37207500073,
+            "url": "https://github.com/tryingET/core_tpl-template-repo/actions/runs/37207500073",
+            "conclusion": "success",
+            "passed": 7,
+            "failed": 0,
+            "skipped": 0,
+            "warnings": 3
+          },
+          "local": {
+            "mode": "no-hardlinks standalone clone of exact head",
+            "command": "bash ./scripts/check-l0.sh",
+            "creation_ak": "installed ak, no CI override",
+            "passed": 7,
+            "failed": 0,
+            "skipped": 0,
+            "warnings": 2,
+            "optional_real_core_rocs_probe": "executed",
+            "seconds": {
+              "guardrails": 175,
+              "generation": 488,
+              "adversarial": 96,
+              "fixtures": 14
+            }
+          },
+          "rebase": {
+            "original": "71dca023877efcf37ee902e57bc9a8a87806e473",
+            "push": "explicit exact old-head force-with-lease",
+            "range_diff": "Both original repin commits patch-equal after rebase; no added template changes"
+          },
+          "retained_limitation": "raw Copier historical source proof fails in linked local worktree; same head passes hosted and standalone native; failed evidence13629 retained",
+          "merge_order": "owner merges PR12 before PR11; neither merged"
+        },
+        "checked_at": "2026-10-04T14:31:24.630067451+00:00",
+        "checked_by": "cli"
+      }
+    ]
+  }
+]

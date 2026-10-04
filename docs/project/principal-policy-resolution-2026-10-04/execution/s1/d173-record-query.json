@@ -1,0 +1,92 @@
+{
+  "ontology_ref": "core.DecisionRecord",
+  "decision_id": 173,
+  "title": "Principal policy settlement: standing appointed technical initiative, exact one-use inert birth exception to D68, D167 lineage and main-first source conformance",
+  "state": "unblocked",
+  "schema_version": 46,
+  "records_available": false,
+  "consent_rounds": [],
+  "authorizations": [],
+  "dissents": [],
+  "escalated_objections": [],
+  "legacy_consent_mode": [
+    {
+      "receipt_id": 16108,
+      "concern": "architecture-decision-task-link",
+      "to_state": "unlinked",
+      "consent_mode": "explicit_command",
+      "created_at": "2026-10-04T06:03:39.011131973+00:00"
+    },
+    {
+      "receipt_id": 16141,
+      "concern": "architecture-decision",
+      "to_state": "review_pending",
+      "consent_mode": "explicit_command",
+      "created_at": "2026-10-04T08:29:02.587775583+00:00"
+    },
+    {
+      "receipt_id": 16163,
+      "concern": "architecture-decision",
+      "to_state": "review_pending",
+      "consent_mode": "explicit_command",
+      "created_at": "2026-10-04T11:27:27.871558248+00:00"
+    },
+    {
+      "receipt_id": 16222,
+      "concern": "architecture-decision",
+      "to_state": "in_review",
+      "consent_mode": "independent_architecture_review",
+      "created_at": "2026-10-04T13:50:15.391945814+00:00"
+    },
+    {
+      "receipt_id": 16223,
+      "concern": "architecture-decision",
+      "to_state": "decision_pending",
+      "consent_mode": "independent_architecture_review",
+      "created_at": "2026-10-04T13:50:16.470054747+00:00"
+    },
+    {
+      "receipt_id": 16225,
+      "concern": "architecture-decision",
+      "to_state": "adr_required",
+      "consent_mode": "independent_architecture_review",
+      "created_at": "2026-10-04T13:51:43.874882035+00:00"
+    },
+    {
+      "receipt_id": 16227,
+      "concern": "architecture-decision",
+      "to_state": "adr_recorded",
+      "consent_mode": "independent_architecture_review",
+      "created_at": "2026-10-04T13:55:33.341798801+00:00"
+    },
+    {
+      "receipt_id": 16228,
+      "concern": "architecture-decision",
+      "to_state": "tasks_reevaluation_pending",
+      "consent_mode": "independent_architecture_review",
+      "created_at": "2026-10-04T13:55:36.523436645+00:00"
+    },
+    {
+      "receipt_id": 16229,
+      "concern": "architecture-decision",
+      "to_state": "tasks_reevaluation_pending",
+      "consent_mode": "independent_architecture_review",
+      "created_at": "2026-10-04T13:55:47.071084555+00:00"
+    },
+    {
+      "receipt_id": 16230,
+      "concern": "architecture-decision",
+      "to_state": "tasks_reevaluation_pending",
+      "consent_mode": "independent_architecture_review",
+      "created_at": "2026-10-04T13:55:48.043195054+00:00"
+    },
+    {
+      "receipt_id": 16231,
+      "concern": "architecture-decision",
+      "to_state": "unblocked",
+      "consent_mode": "independent_architecture_review",
+      "created_at": "2026-10-04T13:55:49.225256167+00:00"
+    }
+  ],
+  "legacy_consent_mode_meaning": "the invocation mode of a transition (automatic, operator, explicit_command, a review mode, ...); it records no consent round and is not consent"
+}
