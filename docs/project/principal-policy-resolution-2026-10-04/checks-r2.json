@@ -1,0 +1,134 @@
+{
+  "schema": "principal-policy.r2-local-construction-check/1",
+  "observed_at": "2026-10-04T08:30:20.253045+00:00",
+  "authority_effect": "none from these checks; separate native revision receipt records reference update",
+  "records": [
+    {
+      "command": [
+        "node",
+        "core/agent-scripts/scripts/docs-ref-check.mjs",
+        "--path",
+        "softwareco/docs/project/principal-policy-resolution-2026-10-04",
+        "--repo-root",
+        "/home/tryinget/ai-society",
+        "--json"
+      ],
+      "exit_code": 0,
+      "result": {
+        "ok": true,
+        "files": 9,
+        "referenceCount": 43,
+        "issues": [],
+        "scanWarnings": []
+      }
+    },
+    {
+      "command": [
+        "node",
+        "core/agent-scripts/scripts/docs-list.mjs",
+        "--docs",
+        "softwareco/docs/project/principal-policy-resolution-2026-10-04",
+        "--strict",
+        "--json"
+      ],
+      "exit_code": 0,
+      "result": {
+        "ok": true,
+        "files": 9,
+        "strictViolations": [],
+        "warnings": []
+      }
+    },
+    {
+      "command": [
+        "sha256sum",
+        "-c",
+        "softwareco/docs/project/principal-policy-resolution-2026-10-04/OUTPUTS.sha256"
+      ],
+      "exit_code": 0,
+      "result": {
+        "entries": 4,
+        "meaning": "exact selected bytes only"
+      }
+    },
+    {
+      "command": [
+        "sha256sum",
+        "-c",
+        "softwareco/docs/project/principal-policy-resolution-2026-10-04/SOURCES.sha256"
+      ],
+      "exit_code": 0,
+      "result": {
+        "entries": 12,
+        "meaning": "exact selected bytes only"
+      }
+    },
+    {
+      "command": [
+        "sha256sum",
+        "-c",
+        "softwareco/docs/project/principal-policy-resolution-2026-10-04/SOURCES-R2.sha256"
+      ],
+      "exit_code": 0,
+      "result": {
+        "entries": 20,
+        "meaning": "exact selected bytes only"
+      }
+    },
+    {
+      "check": "synthetic construction and document binding consistency",
+      "result": {
+        "passed": true,
+        "clauses": 9,
+        "clause_checks": 9,
+        "owner_slots": 7,
+        "reviewer_answers": 5,
+        "synthetic_cases": 28,
+        "declared_birth_transitions": 12,
+        "forbidden_birth_pairs": 7,
+        "unknown_not_permission": true,
+        "runtime_implementation_exercised": false
+      }
+    },
+    {
+      "command": [
+        "ak",
+        "decision",
+        "passport",
+        "173",
+        "-F",
+        "json"
+      ],
+      "exit_code": 0,
+      "result": {
+        "decision": {
+          "id": 173,
+          "scope": "company",
+          "repo_scope": null,
+          "title": "Principal policy settlement: standing appointed technical initiative, exact one-use inert birth exception to D68, D167 lineage and main-first source conformance",
+          "rfc_ref": "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r2.md",
+          "significance_tier": "architecture",
+          "state": "review_pending",
+          "review_mode": "independent_architecture_review",
+          "review_closure_mode": "bootstrap_single_track",
+          "review_outcome": null,
+          "adr_ref": null,
+          "outcome": null,
+          "evidence_ref": null,
+          "created_at": "2026-10-04T06:02:42.174011540+00:00",
+          "updated_at": "2026-10-04T08:29:02.587775583+00:00"
+        },
+        "legal_review_closure": null,
+        "meaning": "R2 reference registered, no acceptance or review closure"
+      }
+    }
+  ],
+  "not_proven": [
+    "deployed admission classification or owner authenticity",
+    "atomic cross-process reservation or physical no-effect",
+    "fencing, remaining-step safety, rollback or crash recovery",
+    "resource confinement, provider disclosure, custody or receiver fitness",
+    "owner approval or policy adoption",
+    "independent review or ADR readiness"
+  ]
+}

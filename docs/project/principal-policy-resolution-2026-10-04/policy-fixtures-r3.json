@@ -1,0 +1,136 @@
+{
+  "schema": "principal-policy.synthetic-oracle-proposal/3",
+  "status": "specified-not-runtime-executed-not-adopted",
+  "authority_effect": "none",
+  "data_class": "entirely-synthetic",
+  "counter_meaning": "new_starts counts additional admitted starts of this case's requested action, not historical starts, physical writes or proof of no prior effect. Cases are independent scenarios, not a single cumulative live ledger.",
+  "baseline_file": "policy-fixtures-r2.json",
+  "baseline_sha256": "b4175dba479120557c762e4830f6d6f999d3bc1c14b82a4418b9250b261a12ac",
+  "baseline_meaning": "Retain 28 R2 construction cases. R2 birth positives are conditional on R3's additional parent-right facts; no old permit-only case establishes native admission or R3 sufficiency.",
+  "parent_consumption_values": ["unused", "spent", "unknown"],
+  "parent_admission_values": ["open", "held", "revoked"],
+  "baseline_parent_extensions": {
+    "F15": {"canonical_right": "fixture:E", "consumption": "unused", "admission": "open", "known_prestart_refusal": true},
+    "F16": {"canonical_right": "fixture:E", "consumption_before": "unused", "admission": "open", "atomic_reservation_scope": "canonical_exception_right", "consumption_after": "spent", "original_attempt": "fixture:T1"},
+    "F17": {"canonical_right": "fixture:E", "consumption": "unknown", "admission": "held", "block_all_child_permits": true},
+    "F18": {"canonical_right": "fixture:E", "consumption": "spent", "admission": "held", "original_attempt": "fixture:T1"},
+    "F19": {"canonical_right": "fixture:E", "consumption": "spent", "admission": "open", "confirmed_original_attempt": "fixture:T1", "new_start_admissions": 0},
+    "F20": {"canonical_right": "fixture:E", "consumption": "spent", "admission": "held", "confirmed_original_attempt": "fixture:T1", "new_start_admissions": 0},
+    "F21": {"canonical_right": "fixture:E", "consumption": "spent", "admission": "revoked", "artifact_disposition": "complete", "new_start_admissions": 0},
+    "F22": {"canonical_right": "fixture:E", "consumption": "spent", "admission": "open", "artifact_disposition": "complete", "new_start_admissions": 0}
+  },
+  "cases": [
+    {
+      "id": "G01", "check": "V05", "action": "competing_new_starts",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "unused", "admission": "open"},
+      "input": {"permits": ["fixture:P1", "fixture:P2"], "same_o3_right": true, "different_processes": true, "qualified_atomic_parent_reservation": true, "creator_authority_and_other_guards": true},
+      "expected": {"admission": "admit_one", "new_starts": 1, "new_right_issued": false, "reservation_key": "fixture:E", "parent_consumption_after": "spent", "winner_attempt": "fixture:T1", "second_contender_starts": 0}
+    },
+    {
+      "id": "G02", "check": "V05", "action": "new_start",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "spent", "admission": "open", "original_attempt": "fixture:T1"},
+      "input": {"new_permit": "fixture:P2", "child_says_available": true, "old_artifact": "partial", "same_o3_right": true},
+      "expected": {"admission": "denied", "reason": "parent_spent", "new_starts": 0, "parent_consumption_after": "spent"}
+    },
+    {
+      "id": "G03", "check": "V05", "action": "new_start",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "spent", "admission": "open"},
+      "input": {"new_permit": "fixture:P3", "old_partial_artifact_quarantined": true, "destination_now_absent": true, "same_o3_right": true},
+      "expected": {"admission": "denied", "reason": "cleanup_not_renewal", "new_starts": 0, "parent_consumption_after": "spent"}
+    },
+    {
+      "id": "G04", "check": "V05", "action": "new_start",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "spent", "admission": "open"},
+      "input": {"new_permit": "fixture:P4", "submitted_right_alias": "fixture:E-alias", "owner_resolves_alias_to": "fixture:E", "same_o3_right": true},
+      "expected": {"admission": "denied", "reason": "canonical_parent_spent", "new_starts": 0, "parent_consumption_after": "spent"}
+    },
+    {
+      "id": "G05", "check": "V05", "action": "replacement_start",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "spent", "admission": "revoked"},
+      "input": {"new_permit": "fixture:P5", "o6_reissues": true, "fresh_o3_act": false, "same_o3_right": true},
+      "expected": {"admission": "denied", "reason": "o6_cannot_renew_o3", "new_starts": 0, "new_right_issued": false, "parent_consumption_after": "spent"}
+    },
+    {
+      "id": "G06", "check": "V05", "action": "replacement_start",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "spent", "admission": "open"},
+      "input": {"requested_right_string": "fixture:E2", "reused_o3_act": "fixture:O3-1", "fresh_o3_act": false, "owner_new_slot_authorization": false, "same_o3_right": true},
+      "expected": {"admission": "denied", "reason": "new_string_not_new_o3_authority", "new_starts": 0, "new_right_issued": false, "parent_consumption_after": "spent"}
+    },
+    {
+      "id": "G07", "check": "V05", "action": "replacement_start",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "spent", "admission": "revoked", "original_attempt": "fixture:T1"},
+      "input": {"fresh_o3_act": true, "new_o3_act": "fixture:O3-2", "new_canonical_right": "fixture:E2", "o3_links_old_right_and_attempt": true, "old_attempt_disposition_established": true, "new_right_unused_and_open": true, "creator_authority_and_other_guards": true, "qualified_atomic_parent_reservation": true, "same_o3_right": false},
+      "expected": {"admission": "admit_one", "reason": "fresh_o3_replacement_and_guards", "new_starts": 1, "new_right_issued": true, "reservation_key": "fixture:E2", "parent_consumption_after": "spent", "new_right_consumption_after": "spent", "new_attempt": "fixture:T2", "old_history_retained": true}
+    },
+    {
+      "id": "G08", "check": "V05", "action": "replacement_start",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "spent", "admission": "revoked"},
+      "input": {"fresh_o3_act": true, "new_o3_act": "fixture:O3-2", "new_canonical_right": "fixture:E2", "o3_links_old_right_and_attempt": true, "new_right_unused_and_open": true, "other_guards_known_at_issue_but_unestablished_at_start": true, "old_executor_fenced": false, "collision_or_effect_disposition": "unknown", "creator_authority_and_other_guards": false, "same_o3_right": false},
+      "expected": {"admission": "unavailable", "reason": "fresh_o3_does_not_waive_guards", "new_starts": 0, "new_right_issued": true, "parent_consumption_after": "spent", "new_right_consumption_after": "unused"}
+    },
+    {
+      "id": "G09", "check": "V05", "action": "new_start",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "unknown", "admission": "held"},
+      "input": {"new_permit": "fixture:P9", "child_says_available": true, "parent_receipt_lookup": "inaccessible", "same_o3_right": true},
+      "expected": {"admission": "unavailable", "reason": "parent_unknown_blocks_all_permits", "new_starts": 0, "parent_consumption_after": "unknown", "nonexecution_inferred": false}
+    },
+    {
+      "id": "G10", "check": "V05", "action": "same_attempt_recovery",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "spent", "admission": "open", "original_attempt": "fixture:T1", "original_permit": "fixture:P1"},
+      "input": {"confirmed_original_parent_start": true, "attempt": "fixture:T1", "original_permit_correlation": true, "fresh_recovery_authority": true, "old_executor_fenced": true, "unchanged_inputs_and_subject": true, "remaining_step_proved": true, "creator_authority_and_other_guards": true},
+      "expected": {"admission": "admit_recovery_only", "reason": "confirmed_original_remaining_step", "new_starts": 0, "parent_consumption_after": "spent", "attempt_preserved": "fixture:T1", "new_right_issued": false}
+    },
+    {
+      "id": "G11", "check": "V05", "action": "same_attempt_recovery",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "spent", "admission": "open", "original_attempt": "fixture:T1"},
+      "input": {"attempt": "fixture:T2", "label_says_recovery": true, "confirmed_original_parent_start": false, "same_o3_right": true},
+      "expected": {"admission": "denied", "reason": "new_attempt_not_original_recovery", "new_starts": 0, "parent_consumption_after": "spent"}
+    },
+    {
+      "id": "G12", "check": "V01", "action": "new_start",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "unused", "admission": "open"},
+      "input": {"creator_current_authority": true, "creator_identity": "fixture:creator-C", "intended_artifact_subject": "fixture:principal-S", "intended_subject_actor_association": "fixture:creator-C", "prospective_principal_appointed": false, "intended_subject_association_approved": true, "creator_authority_and_other_guards": true, "qualified_atomic_parent_reservation": true},
+      "expected": {"admission": "admit_one", "new_starts": 1, "reservation_key": "fixture:E", "parent_consumption_after": "spent", "principal_appointment_inferred": false, "principal_activation_inferred": false, "creator_authority_binding_separate_from_subject": true, "different_actor_required": false}
+    },
+    {
+      "id": "G13", "check": "V01", "action": "new_start",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "unused", "admission": "open"},
+      "input": {"creator_current_authority": false, "persona_calls_itself_principal": true, "prospective_subject_claims_birth_permission": true, "creator_authority_and_other_guards": false},
+      "expected": {"admission": "denied", "reason": "creator_authority_missing", "new_starts": 0, "parent_consumption_after": "unused", "self_appointment_allowed": false}
+    },
+    {
+      "id": "G14", "check": "V05", "action": "proved_prestart_refusal",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "unused", "admission": "open"},
+      "input": {"proved_no_parent_reservation": true, "proved_no_birth_write_admitted": true},
+      "expected": {"admission": "denied", "reason": "known_prestart_refusal", "new_starts": 0, "parent_consumption_after": "unused", "parent_spent_inferred": false}
+    },
+    {
+      "id": "G15", "check": "V05", "action": "new_start",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "unused", "admission": "held"},
+      "input": {"earlier_start_settlement_unknown": true, "later_no_start_proof": true, "o6_clears_hold_itself": true, "fresh_o3_act": false, "same_o3_right": true},
+      "expected": {"admission": "denied", "reason": "hold_disposition_requires_o3", "new_starts": 0, "parent_consumption_after": "unused", "evidence_of_no_start_is_not_retry_permission": true}
+    },
+    {
+      "id": "G16", "check": "V05", "action": "replacement_start",
+      "parent": {"canonical_right": "fixture:E", "o3_act": "fixture:O3-1", "consumption": "spent", "admission": "revoked"},
+      "input": {"same_human_holds_o3_and_o6_roles": true, "only_o6_execution_approval_recorded": true, "fresh_o3_act": false, "same_o3_right": true},
+      "expected": {"admission": "denied", "reason": "same_person_not_same_authority_act", "new_starts": 0, "new_right_issued": false, "parent_consumption_after": "spent"}
+    }
+  ],
+  "construction_checks_only": [
+    "baseline exact bytes and coverage retained",
+    "each G case has valid parent facts, role and expected counters",
+    "spent history never becomes unused; unknown not inferred as nonexecution",
+    "new starts require unused/open parent or explicit fresh O3 right plus all guards",
+    "different permits, aliases, artifact cleanup and O6 reissue do not renew same parent",
+    "same-attempt recovery preserves original attempt and adds zero starts",
+    "creator authority is separate from prospective Principal appointment"
+  ],
+  "not_proven": [
+    "actual O3 issuance, canonical alias resolution or consumption custody",
+    "atomic parent-level reservation and physical no-effect across processes",
+    "current revocation, identity authentication, executor fencing or remaining-step safety",
+    "actual render, birth, provider, memory, custody or host behavior",
+    "independent review, ADR readiness, owner acceptance or policy adoption"
+  ]
+}

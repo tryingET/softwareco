@@ -1,0 +1,42 @@
+{
+  "observed_at": "2026-10-04T13:03:10.990516+00:00",
+  "session": "01a106ff-1134-7a28-af1d-be5c69550640",
+  "original_directory_files": {
+    "docs/project/principal-policy-resolution-2026-10-04/OUTPUTS-R2.sha256": "83547a08d44ed6e7effe3144ca84db921ccafa729c40db7cd6bb5b375d1fbf8c",
+    "docs/project/principal-policy-resolution-2026-10-04/OUTPUTS-R3.sha256": "bec191381f177f8ab2ac80fde1e9d14cd2247381b1ecfdb603009048f44a29fa",
+    "docs/project/principal-policy-resolution-2026-10-04/OUTPUTS.sha256": "a346e23f8b93ebe548ae163903d063fe5d9cedff41048e5c475166e9b336241e",
+    "docs/project/principal-policy-resolution-2026-10-04/SOURCES-R2.sha256": "4c02b1af4fad87eed75d0667cf5e042330df50a1234e83d5a63ec9882d0ce99f",
+    "docs/project/principal-policy-resolution-2026-10-04/SOURCES-R3.sha256": "ab87a3fc842eccc89912a364674d2bbff5b9a47ae07c3feeac50bd48aa0be42f",
+    "docs/project/principal-policy-resolution-2026-10-04/SOURCES.sha256": "b4fb510c2b1d4291f403ae736f2cadc0c6f3bf70c6e89b9992e0118a28ff765f",
+    "docs/project/principal-policy-resolution-2026-10-04/checks-r2.json": "3e308b48b9b2a5479bcd0860bf2035b83432ad0300f128999af1340faa1cd0bc",
+    "docs/project/principal-policy-resolution-2026-10-04/checks-r3.json": "4bbd7ad747a53fd1b89017597d737b78710af1442d7e4ef06077d67709f7fc52",
+    "docs/project/principal-policy-resolution-2026-10-04/construction-check-r3.md": "fa7acf8394fb19031e7bc3dbc4e4c9da84185341750e5c11368d991a729272fe",
+    "docs/project/principal-policy-resolution-2026-10-04/contracts-r2.md": "7700cf3e27ad7f2c3de5853909bd0487fbb28abc0ae4147d9f470abcabba264a",
+    "docs/project/principal-policy-resolution-2026-10-04/contracts-r3.md": "83bded5d9e4caa95bf9689fffc1e5eebce5a0d695acbb1429859dd769471caf0",
+    "docs/project/principal-policy-resolution-2026-10-04/diagnostic-replay-r3.json": "650d8a74a5d20b01684801094d60c45359896812c74785c885e11c88d3ca7271",
+    "docs/project/principal-policy-resolution-2026-10-04/evidence-and-acceptance.md": "cfca40d80a41736ddfe5057a4f5282990d707afef31981c6ad97c2c6b0c50735",
+    "docs/project/principal-policy-resolution-2026-10-04/evidence-r2.md": "36d676eb0d9f274ea560ebd2831e6ecd2d08b60acb3f165db8875fe57c83c0e5",
+    "docs/project/principal-policy-resolution-2026-10-04/evidence-r3.md": "6e01ba5edf70b4b118e3ec641cfe72748c1fab0b39056a5cd8e61654c7e5815a",
+    "docs/project/principal-policy-resolution-2026-10-04/fresh-review-handoff.md": "de8a1b8349bdbd40e7a614877ee69f111270c424f59e7a2a27c3b9cd1696edeb",
+    "docs/project/principal-policy-resolution-2026-10-04/policy-fixtures-r2.json": "b4175dba479120557c762e4830f6d6f999d3bc1c14b82a4418b9250b261a12ac",
+    "docs/project/principal-policy-resolution-2026-10-04/policy-fixtures-r3.json": "6cec29af03778414f7ccae50e834b9d3384aee86ae7df6afccab434325f35f8e",
+    "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r2.md": "8ca4d166b270d60332950701d09c6e9523b67fedc39f1331cb2412cd0ea6c2af",
+    "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r3.md": "2eb577b70e96a33d0e68483741f85b4d6ebe6eff6b1453cfcad7977468f819cd",
+    "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc.md": "82a996042ce16a26d8ef073130e118bd3350d6d0df6a612f79dd0b5042bfcaca",
+    "docs/project/principal-policy-resolution-2026-10-04/review-checklist.md": "b824c2f59cba27ca9b7cff17518b4dcc2ae2a1fbd816126719be72678cfa7bcf",
+    "docs/project/principal-policy-resolution-2026-10-04/review-findings-r1.md": "6eaf8d547a6716372837b2b9a707b4b2ffb05a1015c20912f2143b48b55d02b1",
+    "docs/project/principal-policy-resolution-2026-10-04/review-findings-r2.md": "fee3b1abed17e0917697f4c2f1320e1c76d5d4e6488ceb02e19e730e601fa080",
+    "docs/project/principal-policy-resolution-2026-10-04/review-set-plan-r2.md": "193746a0aba57930e9660dd814d00a4dd79b55d965fc68fb94c5e52950818741",
+    "docs/project/principal-policy-resolution-2026-10-04/review-set-plan-r3.md": "d0edebc44a90b15cf6aec61907304328d75dcaf6033db35d298c6b1e6cd233b1",
+    "docs/project/principal-policy-resolution-2026-10-04/reviewer-answers-r2.md": "3a913eb1fba974099ce2c078206e77dc7946b1b3e90c70eb4ee8ed04851eebff",
+    "docs/project/principal-policy-resolution-2026-10-04/reviewer-answers-r3.md": "d4ee84c9afd75d90ddd226dad8a5f6234e0e5cedabeba21c7f9687e2a0ba9c45",
+    "docs/project/principal-policy-resolution-2026-10-04/revision-receipt-r2.json": "2f08097d09d314f98efe214b2a8e95a4d835d564a5424599b1fdd369856970a0",
+    "docs/project/principal-policy-resolution-2026-10-04/revision-receipt-r3.json": "0e2a922488254cb0dfcd9cfc838d8152f61551fe29e6823ab5d52f7dc8671726"
+  },
+  "git": {
+    "head": "89cf83824a5e6bb73021dbe7bf109c7479c82f71",
+    "status": "## main...origin/main\n M contrib/ontology/src/system4d.yaml\n M fork/ontology/src/system4d.yaml\n M governance/ontology-dist/authority-receipt.build.json\n M governance/ontology-dist/authority-receipt.json\n M governance/ontology-dist/authority-receipt.validate.json\n M governance/ontology-dist/resolve.json\n M governance/ontology-dist/summary.json\n M infra/issue-tracker\n M infra/ontology/src/system4d.yaml\n M ontology\n M owned/docs/project/engineering-core-adoption-dashboard.md\n M owned/governance/engineering-core-adoption-scan.json\n M owned/ontology/src/system4d.yaml\n?? docs/project/principal-policy-resolution-2026-10-04/\n",
+    "tracked_diff_sha256": "d0cb1e0f09fe83cb2c735d954dc9ccae9e29d67c7e0e208eea53bf555e5fef29",
+    "index_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

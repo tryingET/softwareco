@@ -1,0 +1,155 @@
+{
+  "schema": "principal-policy.r3-local-construction-check/1",
+  "observed_at": "2026-10-04T11:28:25.356386+00:00",
+  "records": [
+    {
+      "command": [
+        "node",
+        "core/agent-scripts/scripts/docs-ref-check.mjs",
+        "--path",
+        "softwareco/docs/project/principal-policy-resolution-2026-10-04",
+        "--repo-root",
+        "/home/tryinget/ai-society",
+        "--json"
+      ],
+      "exit_code": 0,
+      "result": {
+        "ok": true,
+        "files": 16,
+        "referenceCount": 79,
+        "issues": [],
+        "scanWarnings": []
+      }
+    },
+    {
+      "command": [
+        "node",
+        "core/agent-scripts/scripts/docs-list.mjs",
+        "--docs",
+        "softwareco/docs/project/principal-policy-resolution-2026-10-04",
+        "--strict",
+        "--json"
+      ],
+      "exit_code": 0,
+      "result": {
+        "ok": true,
+        "files": 16,
+        "strictViolations": [],
+        "warnings": []
+      }
+    },
+    {
+      "command": [
+        "sha256sum",
+        "-c",
+        "softwareco/docs/project/principal-policy-resolution-2026-10-04/OUTPUTS.sha256"
+      ],
+      "exit_code": 0,
+      "entries": 4,
+      "proof": "selected exact bytes, not owner truth"
+    },
+    {
+      "command": [
+        "sha256sum",
+        "-c",
+        "softwareco/docs/project/principal-policy-resolution-2026-10-04/OUTPUTS-R2.sha256"
+      ],
+      "exit_code": 0,
+      "entries": 10,
+      "proof": "selected exact bytes, not owner truth"
+    },
+    {
+      "command": [
+        "sha256sum",
+        "-c",
+        "softwareco/docs/project/principal-policy-resolution-2026-10-04/SOURCES-R2.sha256"
+      ],
+      "exit_code": 0,
+      "entries": 20,
+      "proof": "selected exact bytes, not owner truth"
+    },
+    {
+      "command": [
+        "sha256sum",
+        "-c",
+        "softwareco/docs/project/principal-policy-resolution-2026-10-04/SOURCES-R3.sha256"
+      ],
+      "exit_code": 0,
+      "entries": 12,
+      "proof": "selected exact bytes, not owner truth"
+    },
+    {
+      "authored_diagnostic_replay": {
+        "schema": "principal-policy.r3-authored-diagnostic-replay/1",
+        "observed_at": "2026-10-04T11:25:29.097520+00:00",
+        "diagnostic_artifact_sha256": "fa7acf8394fb19031e7bc3dbc4e4c9da84185341750e5c11368d991a729272fe",
+        "records": [
+          {
+            "retained_command_sha256": "284d3443ea9b6d836acdd9c741bb229a688c9226d6980d2f678a493b3e5d1766",
+            "exit_code": 0,
+            "result": {
+              "baseline_cases": 28,
+              "clause_checks": 9,
+              "construction_check": "passed",
+              "new_cases": 16,
+              "owner_approval_proven": false,
+              "owner_slots": 7,
+              "reviewer_answers": 4,
+              "runtime_implementation_exercised": false,
+              "total_cases": 44
+            }
+          },
+          {
+            "retained_command_sha256": "b7c32b617250b9f0c7fb09a9d03cd602887be8f4e12a2766d639465abab36f7a",
+            "exit_code": 0,
+            "result": {
+              "construction_probes_rejected": 5,
+              "runtime_implementation_exercised": false
+            }
+          }
+        ],
+        "proof_scope": "author-created fixture/mapping/digest construction and inconsistent-oracle rejection only",
+        "owner_approval_proven": false
+      },
+      "proof": "fixture/mapping/digest construction and bad-oracle rejection only"
+    },
+    {
+      "command": [
+        "ak",
+        "decision",
+        "passport",
+        "173",
+        "-F",
+        "json"
+      ],
+      "exit_code": 0,
+      "result": {
+        "decision": {
+          "id": 173,
+          "scope": "company",
+          "repo_scope": null,
+          "title": "Principal policy settlement: standing appointed technical initiative, exact one-use inert birth exception to D68, D167 lineage and main-first source conformance",
+          "rfc_ref": "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r3.md",
+          "significance_tier": "architecture",
+          "state": "review_pending",
+          "review_mode": "independent_architecture_review",
+          "review_closure_mode": "bootstrap_single_track",
+          "review_outcome": null,
+          "adr_ref": null,
+          "outcome": null,
+          "evidence_ref": null,
+          "created_at": "2026-10-04T06:02:42.174011540+00:00",
+          "updated_at": "2026-10-04T11:27:27.871558248+00:00"
+        },
+        "legal_review_closure": null
+      }
+    }
+  ],
+  "not_proven": [
+    "actual O3 issuance/consumption custody and canonical alias resolution",
+    "parent-level atomic native admission/fencing/current revocation",
+    "physical no-effect, birth or original-attempt recovery",
+    "independent inspection, ADR readiness, owner acceptance or policy adoption"
+  ],
+  "authority_effect": "none from these checks; native revision receipt separately records reference change"
+}

@@ -1,0 +1,12 @@
+0dde1497a9db58ecb8e8f48a67a4ddf0e1eecbd56de3cb77472e254f01a9d840  softwareco/docs/org/governance.md
+d1ccb58401b5415e8d0de303961fc2b5eb4fff3871904d13d82d2221c02bc911  softwareco/docs/org/cto-agent-charter.md
+e16de9a9eb93f076d19f1ed4eb33fc36d349f932876ad1bdce9560e2d4d56ced  softwareco/docs/decisions/2026-07-18-softwareco-cto-agent-template-activation.md
+0cf55e065b72466e206f2527354a19df61f95d00fd858f929350701ccf522b98  softwareco/docs/project/2026-07-18-softwareco-cto-template-activation-rfc.md
+40f14e769a2900778cec9158f395071530a3bac15808c13062dc7812a82c3b44  holdingco/infra/template-propagator/docs/decisions/2026-10-01-company-l2-templates-from-l0.md
+4ba76e065b0e477aeea2ae269f22996f1b1f6cc6b4b56556071a84998d790f41  holdingco/org-handbook/docs/decisions/2026-09-26-vocabulary-model-ufo-stewardship-round-3.md
+1153a50931d7f34a82c7a3a682b26b9d04b8a75045042838da8f1499ff08d2cd  holdingco/org-handbook/docs/km/mito-books/mito-reference.md
+4553b9412325885b1e050b8b769a548b854375446c4eddb5775ec34fb3920f39  holdingco/governance-kernel/docs/dev/decision-lifecycle.md
+d04a9e704cc02c27620b4a3fd22a6ef73fd0819d516b3fd5c99fc088a943737d  softwareco/copier/tpl-agent-repo/AGENTS.md.j2
+d04a9e704cc02c27620b4a3fd22a6ef73fd0819d516b3fd5c99fc088a943737d  core/tpl-template-repo/copier-template/copier/tpl-agent-repo/AGENTS.md.j2
+28d3d51ca0b4a14391a5bd5efd06d90c0471c3cde3943c3ceffddf3e6ce10d9f  softwareco/owned/pi-extensions/packages/pi-agent-registry/src/registry.ts
+c6aab439069e3f9700952f549bfd3764ead5ae9a48a98ae894e303317a1f240c  softwareco/owned/agent-harness/docs/project/agent-host-requirements-2026-10-04/requirements.md

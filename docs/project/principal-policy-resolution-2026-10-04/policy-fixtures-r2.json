@@ -1,0 +1,195 @@
+{
+  "schema": "principal-policy.synthetic-oracle-proposal/2",
+  "status": "specified-not-runtime-executed-not-adopted",
+  "authority_effect": "none",
+  "data_class": "entirely-synthetic",
+  "purpose": "Concrete input/expected-result cases for R2; not an owner record, permission issuer, admission implementation or production schema.",
+  "clause_checks": {
+    "P01": "V01", "P02": "V02", "P03": "V03", "P04": "V04", "P05": "V05",
+    "P06": "V06", "P07": "V07", "P08": "V08", "P09": "V09"
+  },
+  "birth_states": ["available", "started", "completed", "uncertain_partial", "revoked"],
+  "birth_transitions": [
+    {"from": "available", "event": "durable_start", "to": "started", "guards": ["current_birth_authority", "all_preflight_proved", "atomic_exclusive_reservation", "exact_subject_path_inputs", "write_fence_bound"], "new_start_admissions": 1},
+    {"from": "available", "event": "start_settlement_unknown", "to": "uncertain_partial", "guards": ["unknown_actual_admission"], "new_start_admissions": "unknown"},
+    {"from": "available", "event": "proved_prestart_refusal", "to": "available", "guards": ["no_start_committed", "no_birth_write_admitted"], "new_start_admissions": 0},
+    {"from": "available", "event": "owner_revocation_or_expiry", "to": "revoked", "guards": ["actual_owner_disposition"], "new_start_admissions": 0},
+    {"from": "started", "event": "native_inert_result_accepted", "to": "completed", "guards": ["required_native_checks", "complete_artifact_proved", "designated_receiver_acceptance"], "new_start_admissions": 0},
+    {"from": "started", "event": "interruption_or_partial_result", "to": "uncertain_partial", "guards": ["retain_attempt_identity_and_evidence"], "new_start_admissions": 0},
+    {"from": "uncertain_partial", "event": "authorized_same_attempt_resume", "to": "started", "guards": ["original_durable_start_confirmed", "fresh_recovery_authority", "old_executor_fenced", "unchanged_subject_path_code_pin_answers", "remaining_step_proved"], "new_start_admissions": 0},
+    {"from": "uncertain_partial", "event": "original_complete_result_reconciled", "to": "completed", "guards": ["original_durable_start_confirmed", "complete_conformant_artifact_proved", "designated_receiver_acceptance", "no_new_birth_writes"], "new_start_admissions": 0},
+    {"from": "started", "event": "owner_revocation_or_expiry", "to": "revoked", "guards": ["actual_owner_disposition", "retain_effect_and_artifact_facts"], "new_start_admissions": 0},
+    {"from": "uncertain_partial", "event": "owner_revocation_or_expiry", "to": "revoked", "guards": ["actual_owner_disposition", "retain_effect_and_artifact_facts"], "new_start_admissions": 0},
+    {"from": "completed", "event": "read_original_status", "to": "completed", "guards": ["current_status_read_permission", "no_write_or_new_start"], "new_start_admissions": 0},
+    {"from": "revoked", "event": "read_original_status", "to": "revoked", "guards": ["separate_current_status_read_permission", "no_write_or_restart"], "new_start_admissions": 0}
+  ],
+  "forbidden_birth_pairs": [
+    ["started", "available"], ["uncertain_partial", "available"], ["completed", "available"],
+    ["revoked", "available"], ["completed", "started"], ["revoked", "started"], ["revoked", "completed"]
+  ],
+  "cases": [
+    {
+      "id": "F01", "check": "V01",
+      "input": {"owner_actor_ref": "fixture:actor-a", "old_configuration": "fixture:config-1", "new_configuration": "fixture:config-2", "owner_identity_replacement_act": false, "role_type_ref": "fixture:system-architect", "repo_copy_present": true},
+      "expected": {"actor_ref": "fixture:actor-a", "configuration_changed": true, "repo_copy_creates_appointment": false, "compatibility_disclosure_checks_still_required": true}
+    },
+    {
+      "id": "F02", "check": "V01",
+      "input": {"two_distinct_owner_actor_refs": ["fixture:actor-a", "fixture:actor-b"], "same_role_type": true, "same_persona_digest": true, "same_memory": true},
+      "expected": {"actors_equal": false, "appointment_inferred": false}
+    },
+    {
+      "id": "F03", "check": "V02",
+      "input": {"trusted_owner_class": "R1", "action": "inert_repo_docs_test_change_preserving_contracts", "current_standing_right": true, "current_target_task_scope": true, "target_owner_profile": true, "reserved_triggers": []},
+      "expected": {"admission": "admit", "another_ceo_action_required": false, "new_effect_requires_actual_boundary_proof": true}
+    },
+    {
+      "id": "F04", "check": "V03",
+      "input": {"caller_label": "routine", "diff_lines": 1, "reversible": true, "trusted_owner_classes": ["X2", "X4"], "action": "live_permission_gate_change", "specific_reserved_authority": false},
+      "expected": {"admission": "denied", "caller_label_controls_classification": false, "new_dependent_effect_count": 0}
+    },
+    {
+      "id": "F05", "check": "V02",
+      "input": {"action": "implement_previously_accepted_shared_interface", "changes_interface_contract": false, "trusted_owner_class": "R1", "accepted_decision_and_target_scope": true, "current_owner_admission": true},
+      "expected": {"admission": "admit", "new_architecture_acceptance_inferred": false}
+    },
+    {
+      "id": "F06", "check": "V03",
+      "input": {"action": "decide_new_shared_interface", "trusted_owner_class": "X1", "unit_tests_pass": true, "affected_owner_architecture_acceptance": false},
+      "expected": {"admission": "denied", "unit_tests_supply_owner_acceptance": false, "new_dependent_effect_count": 0}
+    },
+    {
+      "id": "F07", "check": "V02",
+      "input": {"action": "coordinate_own_already_admitted_tasks", "trusted_owner_class": "R2", "within_accepted_envelopes": true, "changes_other_owner_commitments": false, "current_standing_right": true},
+      "expected": {"admission": "admit", "another_ceo_action_required": false}
+    },
+    {
+      "id": "F08", "check": "V03",
+      "input": {"action": "displace_other_product_capacity", "trusted_owner_class": "X3", "principal_task_exists": true, "affected_owner_acceptance": false},
+      "expected": {"admission": "denied", "task_creation_grants_displacement": false, "unaffected_investigation_may_continue": true}
+    },
+    {
+      "id": "F09", "check": "V03",
+      "input": {"remembered_permission": "fixture:old-grant", "current_owner_state": "revoked", "tool_replay_declaration": "safe"},
+      "expected": {"admission": "denied", "new_dependent_effect_count": 0, "replay_or_memory_revives_permission": false}
+    },
+    {
+      "id": "F10", "check": "V03",
+      "input": {"current_owner_fact": "unavailable", "cached_grant_present": true, "last_snapshot_valid": true},
+      "expected": {"admission": "unavailable", "new_dependent_effect_count": 0, "explicit_owner_denial_inferred": false}
+    },
+    {
+      "id": "F11", "check": "V03",
+      "input": {"authority_subject": "fixture:actor-a", "authenticated_subject": "fixture:actor-b", "content_binding_matches": false},
+      "expected": {"admission": "conflicting", "new_dependent_effect_count": 0, "permissive_synthesis_allowed": false}
+    },
+    {
+      "id": "F12", "check": "V04",
+      "input": {"same_owner_actor": true, "new_session": "fixture:session-b", "old_task_claim_session": "fixture:session-a", "old_task_lease_expired": true, "appointment_still_valid": true},
+      "expected": {"actor_identity_preserved": true, "old_claim_transferred_automatically": false, "new_task_execution_admitted_under_old_lease": false}
+    },
+    {
+      "id": "F13", "check": "V04",
+      "input": {"new_owner_actor": "fixture:actor-b", "same_role_and_memory": true, "commitment_transfer_record": "unavailable"},
+      "expected": {"inherited_commitment_execution": "unavailable", "owner_transfer_required": true, "unaffected_investigation_may_continue": true}
+    },
+    {
+      "id": "F14", "check": "V04",
+      "input": {"review_due": true, "explicit_expiry_reached": false, "current_issuer_state": "valid", "owner_suspension": false},
+      "expected": {"review_obligation_due": true, "permission_automatically_expired": false, "actual_owner_constraints_still_apply": true}
+    },
+    {
+      "id": "F15", "check": "V05",
+      "before": "available", "event": "proved_prestart_refusal", "after": "available",
+      "input": {"no_start_committed": true, "no_birth_write_admitted": true},
+      "expected": {"start_right_consumed": false, "new_start_admissions": 0, "birth_write_count": 0}
+    },
+    {
+      "id": "F16", "check": "V05",
+      "before": "available", "event": "durable_start", "after": "started",
+      "input": {"contenders": ["fixture:process-a", "fixture:process-b"], "permit": "fixture:permit-1", "current_birth_authority": true, "all_preflight_proved": true, "atomic_exclusive_reservation": true, "exact_subject_path_inputs": true, "write_fence_bound": true},
+      "expected": {"start_right_consumed": true, "new_start_admissions": 1, "qualified_native_atomic_fence_proof_required": true}
+    },
+    {
+      "id": "F17", "check": "V05",
+      "before": "available", "event": "start_settlement_unknown", "after": "uncertain_partial",
+      "input": {"unknown_actual_admission": true, "reply_lost": true},
+      "expected": {"actual_start_right_consumed": "unknown", "new_start_admissions": "unknown", "further_start_admission_allowed": false, "automatic_reset_available": false}
+    },
+    {
+      "id": "F18", "check": "V05",
+      "before": "started", "event": "interruption_or_partial_result", "after": "uncertain_partial",
+      "input": {"retain_attempt_identity_and_evidence": true, "original_start_receipt": "fixture:start-1"},
+      "expected": {"start_right_consumed": true, "new_start_admissions": 0, "automatic_rerender_or_new_id_retry_allowed": false}
+    },
+    {
+      "id": "F19", "check": "V05",
+      "before": "uncertain_partial", "event": "authorized_same_attempt_resume", "after": "started",
+      "input": {"original_durable_start_confirmed": true, "fresh_recovery_authority": true, "old_executor_fenced": true, "unchanged_subject_path_code_pin_answers": true, "remaining_step_proved": true},
+      "expected": {"new_start_admissions": 0, "same_attempt_preserved": true, "only_proved_remaining_step_allowed": true}
+    },
+    {
+      "id": "F20", "check": "V05",
+      "before": "uncertain_partial", "event": "authorized_same_attempt_resume", "after": "uncertain_partial",
+      "input": {"original_durable_start_confirmed": true, "fresh_recovery_authority": true, "old_executor_fenced": false, "unchanged_subject_path_code_pin_answers": true, "remaining_step_proved": true},
+      "expected": {"transition_admitted": false, "new_start_admissions": 0, "new_birth_writes": 0}
+    },
+    {
+      "id": "F21", "check": "V05",
+      "before": "revoked", "event": "read_original_status", "after": "revoked",
+      "input": {"separate_current_status_read_permission": true, "no_write_or_restart": true, "artifact_disposition_after_reconciliation": "complete"},
+      "expected": {"permission_stays_revoked": true, "complete_artifact_fact_preserved": true, "activation_inferred": false, "new_start_admissions": 0}
+    },
+    {
+      "id": "F22", "check": "V05",
+      "before": "completed", "event": "read_original_status", "after": "completed",
+      "input": {"current_status_read_permission": true, "no_write_or_new_start": true},
+      "expected": {"new_start_admissions": 0, "second_birth_allowed": false, "host_activation_inferred": false}
+    },
+    {
+      "id": "F23", "check": "V06",
+      "input": {"company_pin": "fixture:l0-old", "actual_birth_source": "fixture:l0-corrected-new", "new_pin_adoption_receipt": false},
+      "expected": {"birth_route_qualification": "denied", "source_parity_alone_qualifies_pin": false}
+    },
+    {
+      "id": "F24", "check": "V06",
+      "input": {"selected_route": "B", "default_admitted_route": "A", "specific_route_b_owner_disposition": false, "legacy_reader_exists": true},
+      "expected": {"birth_route_qualification": "denied", "legacy_compatibility_issues_birth_permission": false}
+    },
+    {
+      "id": "F25", "check": "V07",
+      "input": {"actual_rendered_workflow": "branches-and-MRs-only", "admitted_company_workflow": "main-first", "fixture_compiler_check_passed": true},
+      "expected": {"rendered_policy_conformance": false, "compiler_check_qualifies_semantics": false, "source_owner_fix_required": true}
+    },
+    {
+      "id": "F26", "check": "V08",
+      "input": {"query_company": "SoftwareCo", "relevant_other_project_record_admitted": false, "kes_learning": "candidate", "policy_changed_before_release": true},
+      "expected": {"private_text_or_metadata_disclosed": false, "stale_view_released": false, "kes_learning_promoted": false, "withdrawal_and_reingestion_checks_required": true}
+    },
+    {
+      "id": "F27", "check": "V09",
+      "input": {"worker_completed": true, "designated_receiver_custody_receipt": false, "scripted_cognition_only": true, "policy_fixtures_consistent": true},
+      "expected": {"custody_accepted": false, "complete_m0_qualified": false, "receiver_cognition_validation_passed": false}
+    },
+    {
+      "id": "F28", "check": "V09",
+      "input": {"first_render_crash_records_intact": true, "final_rejected_disposition_lost_before_export_recovery": true},
+      "expected": {"complete_m0_qualified": false, "honest_loss_is_recovery_success": false, "acceptance_and_rejection_both_required": true}
+    }
+  ],
+  "construction_checks_only": [
+    "unique case identities and all V01-V09 covered",
+    "declared birth states/events and forbidden pairs are internally consistent",
+    "positive transition cases include every declared guard as true",
+    "negative transition example fails a real declared guard and preserves state",
+    "no positive case resets or repeats a consumed/unknown/revoked start",
+    "unknown consumption is never converted into permission or claimed nonexecution"
+  ],
+  "not_proven": [
+    "deployed admission classification or owner authenticity",
+    "atomic cross-process reservation or physical no-effect",
+    "fencing, remaining-step safety, rollback or crash recovery",
+    "resource confinement, provider disclosure, custody or receiver fitness",
+    "owner approval or policy adoption"
+  ]
+}

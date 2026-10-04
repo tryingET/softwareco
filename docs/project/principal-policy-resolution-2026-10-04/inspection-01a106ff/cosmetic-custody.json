@@ -1,0 +1,27 @@
+{
+  "author": "session-01a106ff-1134-7a28-af1d-be5c69550640",
+  "purpose": "optional line wrapping only; not a newly selected or independently inspected revision",
+  "patch_sha256": "254ab1c2f87a6ac7b2cf7e63f8b2503c4efb3cf1408a7081b0da96e5bf04dd15",
+  "bindings": [
+    {
+      "path": "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r3.md",
+      "frozen_sha256": "2eb577b70e96a33d0e68483741f85b4d6ebe6eff6b1453cfcad7977468f819cd",
+      "candidate_text_sha256": "9b3838b6096f9cc8c3d4f99747f273c599a38ace922401d71cf3dfaa58dd5ee0",
+      "nonwhitespace_tokens_identical": true,
+      "applied": false
+    },
+    {
+      "path": "docs/project/principal-policy-resolution-2026-10-04/contracts-r3.md",
+      "frozen_sha256": "83bded5d9e4caa95bf9689fffc1e5eebce5a0d695acbb1429859dd769471caf0",
+      "candidate_text_sha256": "56e8a03a3fe081c881f8f4172804922c6a82713c2758a855764d597a5f037f42",
+      "nonwhitespace_tokens_identical": true,
+      "applied": false
+    }
+  ],
+  "git_apply_check": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "authority_effect": "none; patch unapplied"
+}

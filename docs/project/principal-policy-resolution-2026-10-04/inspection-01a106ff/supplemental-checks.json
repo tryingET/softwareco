@@ -1,0 +1,9 @@
+{
+  "observed_at": "2026-10-04T13:05:34.081922+00:00",
+  "command_artifact": "verification-replay.md",
+  "command_sha256": "6060b96399f94652ed55eeaf37b52b86b94a522c151ae68591c7b0838db5ac2d",
+  "cwd": "/home/tryinget/ai-society",
+  "exit_code": 0,
+  "stdout": "{\"observations\": [{\"probe\": \"second-winning-contender\", \"retained_main_checker_accepts\": true, \"supplemental_guard_rejects\": true}, {\"probe\": \"recovery-composite-guards-false\", \"retained_main_checker_accepts\": true, \"supplemental_guard_rejects\": true}], \"owner_approval_proven\": false, \"retained\": [{\"baseline_cases\": 28, \"clause_checks\": 9, \"construction_check\": \"passed\", \"new_cases\": 16, \"owner_approval_proven\": false, \"owner_slots\": 7, \"reviewer_answers\": 4, \"runtime_implementation_exercised\": false, \"total_cases\": 44}, {\"construction_probes_rejected\": 5, \"runtime_implementation_exercised\": false}], \"runtime_implementation_exercised\": false, \"supplemental_positive_cases\": 16}\n",
+  "stderr": ""
+}

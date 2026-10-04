@@ -1,0 +1,29 @@
+--- a/docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r3.md
++++ b/docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r3.md
+@@ -117,9 +117,10 @@
+ binding is separate from the intended Principal artifact/role-subject binding. These
+ roles may concern the same already identified actor only when its creator authority
+ is independently current; future/intended appointment supplies no permission.
+-Creator authority is checked at birth, not invented or required from an unborn subject. The owner binds the intended
+-artifact/role association before birth and confirms actual actor identity before
+-appointment/activation. [Identity rules](contracts-r3.md#identity-and-d24)
++Creator authority is checked at birth, not invented or required from an unborn
++subject. The owner binds the intended artifact/role association before birth and
++confirms actual actor identity before appointment/activation.
++[Identity rules](contracts-r3.md#identity-and-d24)
+ state the conditions and exceptions.
+ 
+ Holding D24's roles-with-memory direction remains authoritative. R3 retains R2's proposed
+--- a/docs/project/principal-policy-resolution-2026-10-04/contracts-r3.md
++++ b/docs/project/principal-policy-resolution-2026-10-04/contracts-r3.md
+@@ -58,8 +58,8 @@
+ for an executor. These binding categories remain separate even if an already owner-
+ identified actor holds both roles under independently current creator authority.
+ No different-person/actor requirement is imposed merely by the diagram. An owner-
+-approved intended association/reference is sufficient
+-to name the inert artifact; it is not proof of an already appointed Principal.
++approved intended association/reference is sufficient to name the inert artifact;
++it is not proof of an already appointed Principal.
+ The creator's current authority must resolve before writes. The Principal's D24
+ bridge/actual actor binding and appointment resolve before its own activation.
+ No unborn actor must sign, appoint itself or authorize its birth.

@@ -1,0 +1,32 @@
+{
+  "schema": "principal-policy.r3-authored-diagnostic-replay/1",
+  "observed_at": "2026-10-04T11:25:29.097520+00:00",
+  "diagnostic_artifact_sha256": "fa7acf8394fb19031e7bc3dbc4e4c9da84185341750e5c11368d991a729272fe",
+  "records": [
+    {
+      "retained_command_sha256": "284d3443ea9b6d836acdd9c741bb229a688c9226d6980d2f678a493b3e5d1766",
+      "exit_code": 0,
+      "result": {
+        "baseline_cases": 28,
+        "clause_checks": 9,
+        "construction_check": "passed",
+        "new_cases": 16,
+        "owner_approval_proven": false,
+        "owner_slots": 7,
+        "reviewer_answers": 4,
+        "runtime_implementation_exercised": false,
+        "total_cases": 44
+      }
+    },
+    {
+      "retained_command_sha256": "b7c32b617250b9f0c7fb09a9d03cd602887be8f4e12a2766d639465abab36f7a",
+      "exit_code": 0,
+      "result": {
+        "construction_probes_rejected": 5,
+        "runtime_implementation_exercised": false
+      }
+    }
+  ],
+  "proof_scope": "author-created fixture/mapping/digest construction and inconsistent-oracle rejection only",
+  "owner_approval_proven": false
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "decision_id": 173,
+  "expected_rfc_ref": "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc.md",
+  "previous_rfc_ref": "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc.md",
+  "rfc_ref": "docs/project/principal-policy-resolution-2026-10-04/resolution-rfc-r2.md",
+  "review_set_plan_ref": "docs/project/principal-policy-resolution-2026-10-04/review-set-plan-r2.md",
+  "review_set_plan_artifact_id": 1511,
+  "previous_state": "review_pending",
+  "state": "review_pending",
+  "previous_review_outcome": null,
+  "invalidated_review_attempt_ids": [],
+  "invalidated_legal_closure_artifact_id": null,
+  "invalidated_placeholder_review_artifact_ids": [],
+  "governance_receipt_id": 16141,
+  "actor": "session-01a1052c-34bc-7950-839c-37dd319477a6",
+  "reason": "Operator requested high-rigor revision after author self-inspection: identity/artifact/D24 bridge, concrete rights and owner composition, durable-start consumption/recovery, fair compatibility alternative and clause verification; preserve R1 and require fresh actual R2 review, no policy acceptance.",
+  "evidence_ref": "/home/tryinget/ai-society/softwareco/docs/project/principal-policy-resolution-2026-10-04/evidence-r2.md"
+}
