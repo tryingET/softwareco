@@ -67,7 +67,7 @@ this updated artifact; the later binding needs its own release/pack identity.
 
 | Wire fact | Actual owner contract consumed |
 |---|---|
-| Producer | `@tryinget/pi-little-helpers`, `0.9.0`, interface `pi.task-session.classification.v1` |
+| Producer | `@tryinget/pi-little-helpers`, `0.9.0` (re-pinned 2026-10-06 to `0.10.5`, pi-extensions main `14f1fb059`; interface unchanged), interface `pi.task-session.classification.v1` |
 | Discovery | `pi-task-session identity`, no input/options; exact `pi.task-session.installed-identity.v1` configured descriptor |
 | Descriptor binding | `akInstance`, namespace id/generation/snapshotDigest, exact classification export/request schema and SHA256 identityDigest |
 | Classification | `pi-task-session classify-installed`; exact fields `schema,requestId,taskIds,cwd`; schema `pi.task-session.classify-installed-request.v1` |

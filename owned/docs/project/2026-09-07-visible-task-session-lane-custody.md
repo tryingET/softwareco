@@ -8,6 +8,19 @@ type: runbook
 
 # Decision151 — lane custody and reinstatement
 
+## Current state (2026-10-06)
+
+The owner turned Decision 151 on (AK6358, option B). Route and blockers:
+[agent-kernel activation route](../../agent-kernel/docs/project/2026-10-06-ak6358-d151-activation-route.md).
+
+- `pi-task-session` is not installed, so the legacy launcher refuses **every** request today, dry
+  runs included ("DB-free classification unavailable"): this refusal has been in force since the
+  gate landed on 2026-09-07. Agent sessions are started through `agent-window` instead.
+- The lane consumer is re-pinned to the current emitted producer (`pi-little-helpers` 0.10.5,
+  pi-extensions main `14f1fb059`); `just check` with `TASK_SESSION_PRODUCER_DIST` passes 23/23.
+- No checkout is nominated. compass-c, the only nomination, stays "unknown writers, do not
+  enroll" (AK evidence 8504) until its owner gives the facts in the packet below.
+
 ## Status and authority
 
 This is a runbook, **not an enrollment record or permission to launch**. No live
@@ -58,13 +71,13 @@ Do not place operational truth in this lane document.
 |---|---|---|
 | Existing canonical checkout identity | Repo owner: physical path, common-Git identity, overlapping checkouts and declared shared-effect domains; reconcile aliases/symlinks | Unprovided |
 | Controller/session/manual custody | Controller and repo owner: all known sessions/controllers, manual shell/editor routes, prior launch history and descendants; observation-only commitment throughout occupied/unresolved/recovery custody | Unprovided |
-| Lane/direct/copied recipes | Lane and actual users: installed gate identity, alias/function/private-copy inventory and explicit support withdrawal/acknowledgments | Source-only gate; actual routes unprovided |
+| Lane/direct/copied recipes | Lane and actual users: installed gate identity, alias/function/private-copy inventory and explicit support withdrawal/acknowledgments | 2026-10-06 discovery: the checked-in launcher is gated; no alias or copy found in shell rc files, `~/.local/bin`, `~/bin` or the workspace/workstation scripts. `~/.local/bin/agent-window` starts pi, claude, codex or angelX in any directory with no task binding: it must refuse the enrolled checkout, or its owner must withdraw it there |
 | Editor/watch/build/automation | Actual owners: triggers, queued/in-flight/restart paths, owner-authorized stop/drain/disposition and disabled readback; named reinstatement owner | Unprovided |
 | Candidate common-Git participation | Candidate owner: native inventory, admissions withheld, prior work drained/disposed; no borrowed permit | Unprovided |
 | AK affected authority writers | AK owner: mutation/maintenance/import/policy/identity/recovery routes, stop-and-dispose-before-change throughout affected attempts | Unprovided |
-| DB-wide recovery triggering | AK/trigger owners: actual trigger inventory including queue/restart/in-flight paths; authorized suspension/readback and explicit reinstatement owner; source code is not proof of a daemon | Unprovided |
+| DB-wide recovery triggering | AK owner: once AK6743 is in the live pin, release-expired, ordinary claims and ordinary unclaims keep a task-session claim natively, so the 15-minute lease timer (AK6386) is not suspended; before that, the timer would release a lapsed task-session claim | AK6743 written, not yet live |
 | Tool/descendant/external effects | Each effect owner: prior/current started effects and retained uncertainty; closure/disposition evidence independent of terminal/PID state | Unprovided |
-| Installed producer and inspector | Pi/AK owners: exact immutable package/runtime/native/SDK/provider/adapter identities, compatible DB-free inspector, tested canonical account/namespace/policy identity | Unprovided |
+| Installed producer and inspector | Pi/AK owners: exact immutable package/runtime/native/SDK/provider/adapter identities, compatible DB-free inspector, tested canonical account/namespace/policy identity | Not installed: no host-v1, no account namespace, `pi-task-session` not on PATH |
 | Budgets and rollback | Controller and owners: useful explicit task/context/lease/credential budgets; compatible withdrawal/inspection/recovery route rehearsed | Unprovided |
 
 Unknown owner, missing fact or inseparable competing route blocks eligibility.

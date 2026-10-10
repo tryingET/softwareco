@@ -17,9 +17,9 @@ import test_ghostty_task_session as legacy
 import test_ghostty_task_session_compatibility as compatibility
 
 PINS = {
-    'installed-identity.js': 'ab7eba6c56ee636db2884ed1bbef0cf79ac02dc22924301f1b7a46ce01b99544',
-    'classify.js': '6f1f5768995bc8b7a318d54a3da102b8e798f81b55e602ff9a93646fbac44fbd',
-    'state.js': '7cfdf64b021a02b8ec2c6f10216f9012d55f6ba0be3533c5a6e738539b7c663b',
+    'installed-identity.js': 'c8b1804c8de466cc342d5bf9f916cf0d87671de4646f588f40eab63c057469b1',
+    'classify.js': 'ea714789ce1a45eb4ed596e6498b1e32bab9464a9945a15ef45e15f057f1aeb2',
+    'state.js': 'b2303b1438b12105bbccfc6e466a56d9236173ca3da043d623f167bcd8d64106',
     'json.js': '39575888a264343d386d9f97c2f909d89ec99c6d95a4c74e49e07696c5e7a673',
     'native.js': 'a34ed26e977bbd9a85eb2bf76ac85a771aa0f1a409e0975af4ed903b80aea3ac',
 }
@@ -146,9 +146,27 @@ try {{
                 self.state = copy.deepcopy(original)
                 target = self.state['domains'][0]
                 protected = copy.deepcopy(self.state['domains'][1])
+                # Enrolled domains must be physically real: the producer refuses a recorded path whose
+                # inode or Git topology differs on disk (D151-I01) before it classifies anything.
+                physical = lambda p: f'{p.stat().st_dev}:{p.stat().st_ino}'
                 if kind == 'task-only': protected['taskId'] = 1
-                if kind == 'common-git': protected['commonGit'] = target['commonGit']
-                if kind == 'overlap': protected['checkout'] = str(self.repo / 'nested')
+                if kind == 'common-git':
+                    # A linked worktree of the target's repository: same common Git directory.
+                    shared = Path(target['commonGit'])
+                    worktree = self.base / 'linked-worktree'
+                    admin = shared / 'worktrees' / 'linked'
+                    admin.mkdir(parents=True, exist_ok=True)
+                    (admin / 'commondir').write_text('../..\n')
+                    worktree.mkdir(exist_ok=True)
+                    (worktree / '.git').write_text(f'gitdir: {admin}\n')
+                    protected['checkout'] = str(worktree)
+                    protected['commonGit'] = target['commonGit']
+                    protected['physical'] = {'checkout': physical(worktree), 'commonGit': physical(shared)}
+                if kind == 'overlap':
+                    nested = self.repo / 'nested'
+                    (nested / '.git').mkdir(parents=True, exist_ok=True)
+                    protected['checkout'], protected['commonGit'] = str(nested), str(nested / '.git')
+                    protected['physical'] = {'checkout': physical(nested), 'commonGit': physical(nested / '.git')}
                 if kind == 'shared-effect':
                     protected['sharedEffects'] = target['sharedEffects'] = ['external-effect']
                 if kind == 'unresolved':
