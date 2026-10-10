@@ -7,29 +7,29 @@ type: "generated-report"
 
 # Engineering-core adoption coverage
 
-Generated: 2026-09-27T05:28:08.995294+00:00
+Generated: 2026-10-01T17:05:44.217676+00:00
 
 ## Summary
 
 - Scopes: `1`
 - Repo discovery: `immediate`
-- Completeness: `partial`
-- Omissions: `4`
+- Completeness: `complete`
+- Omissions: `0`
 - Per-path failures: `0`
 - Include scope root: `False`
-- Package/member surfaces included: `True`
-- Repos: `50`
-- Packages/member surfaces: `76`
-- Total records: `126`
-- Structural status counts: `{"adopted": 118, "doc-only": 1, "legacy-mixed": 1, "legacy-only": 1, "missing": 1, "partial": 4}`
-- Semantic status counts: `{"likely-incomplete": 9, "needs-review": 2, "ok": 115}`
-- Loop validation status counts: `{"absent": 34, "complete": 92}`
+- Package/member surfaces included: `False`
+- Repos: `53`
+- Packages/member surfaces: `0`
+- Total records: `53`
+- Structural status counts: `{"adopted": 44, "doc-only": 1, "legacy-mixed": 1, "legacy-only": 1, "missing": 3, "partial": 3}`
+- Semantic status counts: `{"likely-incomplete": 2, "needs-review": 4, "ok": 47}`
+- Loop validation status counts: `{"absent": 17, "complete": 36}`
 
 ## Scope summaries
 
 | Scope | Repos | Packages | Total | Structural counts | Semantic counts | Loop validation counts |
 |---|---:|---:|---:|---|---|---|
-| /home/tryinget/ai-society/softwareco/owned | 50 | 76 | 126 | `{"adopted": 118, "doc-only": 1, "legacy-mixed": 1, "legacy-only": 1, "missing": 1, "partial": 4}` | `{"likely-incomplete": 9, "needs-review": 2, "ok": 115}` | `{"absent": 34, "complete": 92}` |
+| /home/tryinget/ai-society/softwareco/owned | 53 | 0 | 53 | `{"adopted": 44, "doc-only": 1, "legacy-mixed": 1, "legacy-only": 1, "missing": 3, "partial": 3}` | `{"likely-incomplete": 2, "needs-review": 4, "ok": 47}` | `{"absent": 17, "complete": 36}` |
 
 ## Review candidates
 
@@ -37,18 +37,13 @@ Generated: 2026-09-27T05:28:08.995294+00:00
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | owned | crawlgithub | crawlgithub | repo | partial | ok | complete | - | validation, security-privacy, documentation | yes | yes | no | yes | yes | no lane declared |
 | owned | email-triage | email-triage | repo | legacy-only | needs-review | absent | - | - | no | no | yes | no | yes | legacy tech-stack surface still present; missing_engineering_doc_for_semantic_review |
+| owned | experimentation | experimentation | repo | missing | needs-review | absent | - | - | no | no | no | no | no | missing_engineering_doc_for_semantic_review |
 | owned | niri-desktop-continuity | niri-desktop-continuity | repo | partial | likely-incomplete | absent | py | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | no | yes | missing one or more catalog/list command fields; missing_expected_discipline:accessibility:ui_or_frontend_surface; missing_expected_discipline:design-system:ui_or_frontend_surface |
 | owned | obsidian-plugins | obsidian-plugins | repo | legacy-mixed | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning, accessibility | yes | yes | yes | yes | yes | legacy tech-stack surface still present |
 | owned | pi-web | pi-web | repo | partial | likely-incomplete | absent | - | validation, security-privacy, documentation | yes | yes | no | yes | yes | no lane declared; missing_expected_discipline:accessibility:ui_or_frontend_surface; missing_expected_discipline:design-system:ui_or_frontend_surface |
 | owned | taschenschach | taschenschach | repo | doc-only | ok | absent | - | - | no | yes | no | no | yes | docs/engineering.local.md exists without policy/engineering-lane.json |
+| owned | to-sort | to-sort | repo | missing | needs-review | absent | - | - | no | no | no | no | no | missing_engineering_doc_for_semantic_review |
 | owned | zufallsrad | zufallsrad | repo | missing | needs-review | absent | - | - | no | no | no | no | no | missing_engineering_doc_for_semantic_review |
-| owned | appmapp-platform/apps/comparison-web | appmapp-platform:apps/comparison-web | package | adopted | likely-incomplete | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | missing_expected_discipline:accessibility:ui_or_frontend_surface; missing_expected_discipline:design-system:ui_or_frontend_surface |
-| owned | appmapp-platform/packages/comparison-contract | appmapp-platform:packages/comparison-contract | package | adopted | likely-incomplete | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | missing_expected_discipline:specification-and-dsls:schema_contract_policy_surface |
-| owned | appmapp-platform/packages/diagram-trace | appmapp-platform:packages/diagram-trace | package | adopted | likely-incomplete | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | missing_expected_discipline:observability:runtime_or_service_surface |
-| owned | appmapp-platform/packages/runtime-protocol | appmapp-platform:packages/runtime-protocol | package | adopted | likely-incomplete | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | missing_expected_discipline:observability:runtime_or_service_surface |
-| owned | misegraph-kitchen/apps/kitchen-server | misegraph-kitchen:apps/kitchen-server | package | adopted | likely-incomplete | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | missing_expected_discipline:observability:runtime_or_service_surface |
-| owned | misegraph-kitchen/packages/kitchen-contracts | misegraph-kitchen:packages/kitchen-contracts | package | adopted | likely-incomplete | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | missing_expected_discipline:specification-and-dsls:schema_contract_policy_surface |
-| owned | taschenschach/.build/tmp/rocs-workspace/core/ontology-kernel | taschenschach:.build/tmp/rocs-workspace/core/ontology-kernel | package | partial | likely-incomplete | absent | - | validation, security-privacy, documentation | yes | yes | no | yes | no | no lane declared; missing_expected_discipline:accessibility:ui_or_frontend_surface; missing_expected_discipline:design-system:ui_or_frontend_surface; missing_expected_discipline:specification-and-dsls:schema_contract_policy_surface |
 
 ## Full coverage
 
@@ -71,6 +66,7 @@ Generated: 2026-09-27T05:28:08.995294+00:00
 | owned | dspx | dspx | repo | adopted | ok | complete | py | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | yes | - |
 | owned | email-copilot | email-copilot | repo | adopted | ok | complete | py, ts, ts-frontend | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning, design-system, accessibility | yes | yes | no | yes | yes | - |
 | owned | email-triage | email-triage | repo | legacy-only | needs-review | absent | - | - | no | no | yes | no | yes | legacy tech-stack surface still present; missing_engineering_doc_for_semantic_review |
+| owned | experimentation | experimentation | repo | missing | needs-review | absent | - | - | no | no | no | no | no | missing_engineering_doc_for_semantic_review |
 | owned | feedbackApp | feedbackApp | repo | adopted | ok | complete | lane_status:no_first_class_android_kotlin_lane | validation, testing, local-first-data, security-privacy, observability, documentation, dependency-governance, specification-and-dsls, engineering-reasoning, accessibility | yes | yes | no | yes | yes | - |
 | owned | german-tts-voice-lab | german-tts-voice-lab | repo | adopted | ok | complete | py | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | yes | - |
 | owned | kinetic-caption-studio | kinetic-caption-studio | repo | adopted | ok | complete | ts, ts-frontend | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning, design-system, accessibility | yes | yes | no | yes | yes | - |
@@ -78,6 +74,7 @@ Generated: 2026-09-27T05:28:08.995294+00:00
 | owned | lehrplan-viz | lehrplan-viz | repo | adopted | ok | complete | py | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning, accessibility, design-system | yes | yes | no | yes | yes | - |
 | owned | leseOS | leseOS | repo | adopted | ok | complete | ts, ts-frontend | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning, design-system, accessibility | yes | yes | no | yes | yes | - |
 | owned | local-ai-control-plane | local-ai-control-plane | repo | adopted | ok | complete | lane_status:monorepo_control_plane | validation, testing, documentation, dependency-governance, local-first-data, security-privacy, observability, specification-and-dsls | yes | yes | no | yes | yes | - |
+| owned | machraum | machraum | repo | adopted | ok | absent | lane_status:monorepo_control_plane | validation, testing, documentation, dependency-governance | yes | yes | no | yes | yes | - |
 | owned | mathe-machraum | mathe-machraum | repo | adopted | ok | absent | lane_status:monorepo_control_plane | validation, testing, documentation, dependency-governance | yes | yes | no | yes | yes | - |
 | owned | merkschatz | merkschatz | repo | adopted | ok | absent | lane_status:monorepo_control_plane | validation, testing, documentation, dependency-governance | yes | yes | no | yes | yes | - |
 | owned | misegraph | misegraph | repo | adopted | ok | absent | rust | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | yes | - |
@@ -98,96 +95,21 @@ Generated: 2026-09-27T05:28:08.995294+00:00
 | owned | semantic-flow-diff | semantic-flow-diff | repo | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | yes | - |
 | owned | taschenschach | taschenschach | repo | doc-only | ok | absent | - | - | no | yes | no | no | yes | docs/engineering.local.md exists without policy/engineering-lane.json |
 | owned | test-capabilities | test-capabilities | repo | adopted | ok | complete | pi-ts | validation, testing, security-privacy, documentation, dependency-governance, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
+| owned | to-sort | to-sort | repo | missing | needs-review | absent | - | - | no | no | no | no | no | missing_engineering_doc_for_semantic_review |
 | owned | ts-quality | ts-quality | repo | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
 | owned | typREPL | typREPL | repo | adopted | ok | complete | lane_status:no_primary_manifest | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | yes | - |
 | owned | workspace-platform | workspace-platform | repo | adopted | ok | complete | ts, ts-frontend | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning, design-system, accessibility | yes | yes | no | yes | yes | - |
 | owned | workstation-capabilities | workstation-capabilities | repo | adopted | ok | complete | py | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | yes | - |
 | owned | zotero-plugins | zotero-plugins | repo | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning, accessibility | yes | yes | no | yes | yes | - |
 | owned | zufallsrad | zufallsrad | repo | missing | needs-review | absent | - | - | no | no | no | no | no | missing_engineering_doc_for_semantic_review |
-| owned | appmapp-platform/adapters/node | appmapp-platform:adapters/node | package | adopted | ok | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | - |
-| owned | appmapp-platform/apps/comparison-web | appmapp-platform:apps/comparison-web | package | adopted | likely-incomplete | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | missing_expected_discipline:accessibility:ui_or_frontend_surface; missing_expected_discipline:design-system:ui_or_frontend_surface |
-| owned | appmapp-platform/apps/dogfood | appmapp-platform:apps/dogfood | package | adopted | ok | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | - |
-| owned | appmapp-platform/apps/playground | appmapp-platform:apps/playground | package | adopted | ok | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | - |
-| owned | appmapp-platform/apps/vscode | appmapp-platform:apps/vscode | package | adopted | ok | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | - |
-| owned | appmapp-platform/packages/adapter-testkit | appmapp-platform:packages/adapter-testkit | package | adopted | ok | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | - |
-| owned | appmapp-platform/packages/cli | appmapp-platform:packages/cli | package | adopted | ok | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | - |
-| owned | appmapp-platform/packages/comparison-client | appmapp-platform:packages/comparison-client | package | adopted | ok | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | - |
-| owned | appmapp-platform/packages/comparison-contract | appmapp-platform:packages/comparison-contract | package | adopted | likely-incomplete | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | missing_expected_discipline:specification-and-dsls:schema_contract_policy_surface |
-| owned | appmapp-platform/packages/comparison-engine | appmapp-platform:packages/comparison-engine | package | adopted | ok | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | - |
-| owned | appmapp-platform/packages/comparison-workspace | appmapp-platform:packages/comparison-workspace | package | adopted | ok | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | - |
-| owned | appmapp-platform/packages/diagram-dependency | appmapp-platform:packages/diagram-dependency | package | adopted | ok | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | - |
-| owned | appmapp-platform/packages/diagram-flame | appmapp-platform:packages/diagram-flame | package | adopted | ok | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | - |
-| owned | appmapp-platform/packages/diagram-sequence | appmapp-platform:packages/diagram-sequence | package | adopted | ok | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | - |
-| owned | appmapp-platform/packages/diagram-trace | appmapp-platform:packages/diagram-trace | package | adopted | likely-incomplete | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | missing_expected_discipline:observability:runtime_or_service_surface |
-| owned | appmapp-platform/packages/models | appmapp-platform:packages/models | package | adopted | ok | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | - |
-| owned | appmapp-platform/packages/runtime-protocol | appmapp-platform:packages/runtime-protocol | package | adopted | likely-incomplete | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | missing_expected_discipline:observability:runtime_or_service_surface |
-| owned | email-copilot/apps/control-plane-api | email-copilot:apps/control-plane-api | package | adopted | ok | complete | py | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | yes | - |
-| owned | email-copilot/apps/operator-ui | email-copilot:apps/operator-ui | package | adopted | ok | complete | ts, ts-frontend | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning, design-system, accessibility | yes | yes | no | yes | yes | - |
-| owned | email-copilot/packages/api-client | email-copilot:packages/api-client | package | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | email-copilot/packages/contracts | email-copilot:packages/contracts | package | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | email-copilot/packages/ui-consumer-smoke | email-copilot:packages/ui-consumer-smoke | package | adopted | ok | complete | ts | validation, testing, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | learner-worlds/apps/platform-web | learner-worlds:apps/platform-web | package | adopted | ok | complete | ts, ts-frontend | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, accessibility, design-system, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | learner-worlds/packages/progression-model | learner-worlds:packages/progression-model | package | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | leseOS/apps/adult-dashboard | leseOS:apps/adult-dashboard | package | adopted | ok | complete | ts, ts-frontend | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, accessibility, design-system, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | leseOS/apps/audio-pipeline | leseOS:apps/audio-pipeline | package | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, observability, specification-and-dsls, service-api, ai-ml, data-governance | yes | yes | no | yes | no | - |
-| owned | leseOS/apps/learner-client | leseOS:apps/learner-client | package | adopted | ok | complete | ts, ts-frontend | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, accessibility, design-system, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | leseOS/apps/learner-graph | leseOS:apps/learner-graph | package | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | leseOS/apps/session-planner | leseOS:apps/session-planner | package | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | leseOS/apps/verifier | leseOS:apps/verifier | package | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | leseOS/packages/intervention-engine | leseOS:packages/intervention-engine | package | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | leseOS/packages/language-pack-core | leseOS:packages/language-pack-core | package | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | leseOS/packages/skill-graph-core | leseOS:packages/skill-graph-core | package | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | leseOS/packages/ui-system | leseOS:packages/ui-system | package | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, accessibility, design-system, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | local-ai-control-plane/apps/ai-control-cli | local-ai-control-plane:apps/ai-control-cli | package | adopted | ok | complete | py | validation, testing, security-privacy, documentation, dependency-governance, local-first-data | yes | yes | no | yes | no | - |
-| owned | local-ai-control-plane/packages/control-plane-contracts | local-ai-control-plane:packages/control-plane-contracts | package | adopted | ok | complete | py | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, specification-and-dsls | yes | yes | no | yes | no | - |
-| owned | local-ai-control-plane/packages/control-plane-core | local-ai-control-plane:packages/control-plane-core | package | adopted | ok | complete | py | validation, testing, security-privacy, documentation, dependency-governance, local-first-data | yes | yes | no | yes | no | - |
-| owned | local-ai-control-plane/packages/control-plane-runtime-adapters | local-ai-control-plane:packages/control-plane-runtime-adapters | package | adopted | ok | complete | py | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability | yes | yes | no | yes | no | - |
-| owned | local-ai-control-plane/packages/control-plane-testkit | local-ai-control-plane:packages/control-plane-testkit | package | adopted | ok | complete | py | validation, testing, security-privacy, documentation, dependency-governance, local-first-data | yes | yes | no | yes | no | - |
-| owned | misegraph-kitchen/apps/kitchen-server | misegraph-kitchen:apps/kitchen-server | package | adopted | likely-incomplete | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | missing_expected_discipline:observability:runtime_or_service_surface |
-| owned | misegraph-kitchen/packages/kitchen-contracts | misegraph-kitchen:packages/kitchen-contracts | package | adopted | likely-incomplete | absent | ts | validation, testing, security-privacy, documentation, dependency-governance | yes | yes | no | yes | no | missing_expected_discipline:specification-and-dsls:schema_contract_policy_surface |
-| owned | pi-extensions/packages/pi-agent-interaction-canary | pi-extensions:packages/pi-agent-interaction-canary | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-agent-registry | pi-extensions:packages/pi-agent-registry | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-agent-vent | pi-extensions:packages/pi-agent-vent | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-autoresearch | pi-extensions:packages/pi-autoresearch | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-better-openai | pi-extensions:packages/pi-better-openai | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-context-corpus | pi-extensions:packages/pi-context-corpus | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-context-overlay | pi-extensions:packages/pi-context-overlay | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, observability, accessibility, design-system, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-context-packer | pi-extensions:packages/pi-context-packer | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-designmd-foundry | pi-extensions:packages/pi-designmd-foundry | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, design-system, accessibility, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-eval-kernel | pi-extensions:packages/pi-eval-kernel | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-evalset-lab | pi-extensions:packages/pi-evalset-lab | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-evidence-review | pi-extensions:packages/pi-evidence-review | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-interaction | pi-extensions:packages/pi-interaction | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-little-helpers | pi-extensions:packages/pi-little-helpers | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-model-selection | pi-extensions:packages/pi-model-selection | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-modes | pi-extensions:packages/pi-modes | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-ontology-workflows | pi-extensions:packages/pi-ontology-workflows | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning, observability | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-prompt-template-execution | pi-extensions:packages/pi-prompt-template-execution | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning, observability | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-provenance | pi-extensions:packages/pi-provenance | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-semantic-code-intelligence | pi-extensions:packages/pi-semantic-code-intelligence | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-session-compaction | pi-extensions:packages/pi-session-compaction | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-session-insights | pi-extensions:packages/pi-session-insights | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-snapshot-edit | pi-extensions:packages/pi-snapshot-edit | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-society-orchestrator | pi-extensions:packages/pi-society-orchestrator | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-society-startup-context | pi-extensions:packages/pi-society-startup-context | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-telemetry | pi-extensions:packages/pi-telemetry | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-toolbox-discovery | pi-extensions:packages/pi-toolbox-discovery | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-typescript-tool | pi-extensions:packages/pi-typescript-tool | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-vault-client | pi-extensions:packages/pi-vault-client | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions/packages/pi-workstation-inference-provider | pi-extensions:packages/pi-workstation-inference-provider | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions-template/copier-template | pi-extensions-template:copier-template | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | pi-extensions-template/copier-template-monorepo-package | pi-extensions-template:copier-template-monorepo-package | package | adopted | ok | complete | ts, pi-ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | taschenschach/.build/tmp/rocs-workspace/core/ontology-kernel | taschenschach:.build/tmp/rocs-workspace/core/ontology-kernel | package | partial | likely-incomplete | absent | - | validation, security-privacy, documentation | yes | yes | no | yes | no | no lane declared; missing_expected_discipline:accessibility:ui_or_frontend_surface; missing_expected_discipline:design-system:ui_or_frontend_surface; missing_expected_discipline:specification-and-dsls:schema_contract_policy_surface |
-| owned | zotero-plugins/packages/zotero-safe-update-bridge | zotero-plugins:packages/zotero-safe-update-bridge | package | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, local-first-data, observability, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
-| owned | zotero-plugins/packages/zotero-safe-update-contracts | zotero-plugins:packages/zotero-safe-update-contracts | package | adopted | ok | complete | ts | validation, testing, security-privacy, documentation, dependency-governance, specification-and-dsls, engineering-reasoning | yes | yes | no | yes | no | - |
 
 ## Stable diagnostics and ratchet
 
 - Baseline supplied: `False`
-- Current diagnostics: `28`
-- Current counts: `{"advisory": 16, "error": 0, "warning": 12}`
-- New diagnostics: `28`
-- New counts: `{"advisory": 16, "error": 0, "warning": 12}`
+- Current diagnostics: `20`
+- Current counts: `{"advisory": 8, "error": 0, "warning": 12}`
+- New diagnostics: `20`
+- New counts: `{"advisory": 8, "error": 0, "warning": 12}`
 - Resolved baseline issues: `0`
 
 | Severity | Rule | Scope | Path | Confidence | New | Evidence |
@@ -195,28 +117,20 @@ Generated: 2026-09-27T05:28:08.995294+00:00
 | warning | `adoption.partial` | `owned` | `crawlgithub` | 1.00 | yes | no lane declared |
 | warning | `policy.missing-lane` | `owned` | `crawlgithub` | 1.00 | yes | - |
 | warning | `legacy.surfaces` | `owned` | `email-triage` | 1.00 | yes | legacy tech-stack surface still present |
+| warning | `adoption.missing` | `owned` | `experimentation` | 1.00 | yes | - |
 | warning | `adoption.partial` | `owned` | `niri-desktop-continuity` | 1.00 | yes | missing one or more catalog/list command fields |
 | warning | `policy.command-surface` | `owned` | `niri-desktop-continuity` | 1.00 | yes | - |
 | warning | `legacy.surfaces` | `owned` | `obsidian-plugins` | 1.00 | yes | legacy tech-stack surface still present |
 | warning | `adoption.partial` | `owned` | `pi-web` | 1.00 | yes | no lane declared |
 | warning | `policy.missing-lane` | `owned` | `pi-web` | 1.00 | yes | - |
 | warning | `adoption.surface-pair` | `owned` | `taschenschach` | 1.00 | yes | docs/engineering.local.md exists without policy/engineering-lane.json |
-| warning | `adoption.partial` | `owned` | `taschenschach/.build/tmp/rocs-workspace/core/ontology-kernel` | 1.00 | yes | no lane declared |
-| warning | `policy.missing-lane` | `owned` | `taschenschach/.build/tmp/rocs-workspace/core/ontology-kernel` | 1.00 | yes | - |
+| warning | `adoption.missing` | `owned` | `to-sort` | 1.00 | yes | - |
 | warning | `adoption.missing` | `owned` | `zufallsrad` | 1.00 | yes | - |
-| advisory | `semantic.expected-discipline.accessibility` | `owned` | `appmapp-platform/apps/comparison-web` | 0.70 | yes | ui_or_frontend_surface |
-| advisory | `semantic.expected-discipline.design-system` | `owned` | `appmapp-platform/apps/comparison-web` | 0.70 | yes | ui_or_frontend_surface |
-| advisory | `semantic.expected-discipline.specification-and-dsls` | `owned` | `appmapp-platform/packages/comparison-contract` | 0.70 | yes | schema_contract_policy_surface |
-| advisory | `semantic.expected-discipline.observability` | `owned` | `appmapp-platform/packages/diagram-trace` | 0.70 | yes | runtime_or_service_surface |
-| advisory | `semantic.expected-discipline.observability` | `owned` | `appmapp-platform/packages/runtime-protocol` | 0.70 | yes | runtime_or_service_surface |
 | advisory | `semantic.missing-engineering-doc-for-semantic-review` | `owned` | `email-triage` | 0.55 | yes | missing_engineering_doc_for_semantic_review |
-| advisory | `semantic.expected-discipline.observability` | `owned` | `misegraph-kitchen/apps/kitchen-server` | 0.70 | yes | runtime_or_service_surface |
-| advisory | `semantic.expected-discipline.specification-and-dsls` | `owned` | `misegraph-kitchen/packages/kitchen-contracts` | 0.70 | yes | schema_contract_policy_surface |
+| advisory | `semantic.missing-engineering-doc-for-semantic-review` | `owned` | `experimentation` | 0.55 | yes | missing_engineering_doc_for_semantic_review |
 | advisory | `semantic.expected-discipline.accessibility` | `owned` | `niri-desktop-continuity` | 0.70 | yes | ui_or_frontend_surface |
 | advisory | `semantic.expected-discipline.design-system` | `owned` | `niri-desktop-continuity` | 0.70 | yes | ui_or_frontend_surface |
 | advisory | `semantic.expected-discipline.accessibility` | `owned` | `pi-web` | 0.70 | yes | ui_or_frontend_surface |
 | advisory | `semantic.expected-discipline.design-system` | `owned` | `pi-web` | 0.70 | yes | ui_or_frontend_surface |
-| advisory | `semantic.expected-discipline.accessibility` | `owned` | `taschenschach/.build/tmp/rocs-workspace/core/ontology-kernel` | 0.70 | yes | ui_or_frontend_surface |
-| advisory | `semantic.expected-discipline.design-system` | `owned` | `taschenschach/.build/tmp/rocs-workspace/core/ontology-kernel` | 0.70 | yes | ui_or_frontend_surface |
-| advisory | `semantic.expected-discipline.specification-and-dsls` | `owned` | `taschenschach/.build/tmp/rocs-workspace/core/ontology-kernel` | 0.70 | yes | schema_contract_policy_surface |
+| advisory | `semantic.missing-engineering-doc-for-semantic-review` | `owned` | `to-sort` | 0.55 | yes | missing_engineering_doc_for_semantic_review |
 | advisory | `semantic.missing-engineering-doc-for-semantic-review` | `owned` | `zufallsrad` | 0.55 | yes | missing_engineering_doc_for_semantic_review |
