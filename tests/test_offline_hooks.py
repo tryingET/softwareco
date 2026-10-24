@@ -1,6 +1,7 @@
 """AK7597 hook transport regressions; fixture scanners never install in real repos."""
 from pathlib import Path
 import hashlib
+import importlib.util
 import json
 import os
 import shutil
@@ -8,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zlib
 
 OWNER = Path(__file__).resolve().parents[1]
 INSTALLER = OWNER / "local/hooks/install_offline.py"
@@ -20,7 +22,7 @@ import os, subprocess, sys
 assert sys.argv[1:3] == ["--offline", "--index"]
 assert sys.argv[3] == "--base-ref"
 base = sys.argv[4]
-changed = subprocess.check_output(["git", "diff", "--cached", "--name-only", "-z", base]).split(b"\\0")
+changed = subprocess.check_output(["git", "diff", "--no-ext-diff", "--no-textconv", "--ignore-submodules=none", "--no-renames", "--cached", "--name-only", "-z", base]).split(b"\\0")
 if any(p.startswith(b"docs/_core/") for p in changed): sys.exit(1)
 with open(os.environ["HOOK_TEST_LOG"], "a") as f: f.write("native\\n")
 if Path("control").read_text() != "good\\n": sys.exit(1)
@@ -339,6 +341,199 @@ class OfflineHookFeature(unittest.TestCase):
                                 env=self.env, capture_output=True, text=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse((self.common / "softwareco-offline-hooks-v1").exists())
+
+    def relative_index_case(self, linked):
+        root = self.repo
+        if linked:
+            root = self.work / "linked"
+            self.git("worktree", "add", "-qb", "relative-candidate", str(root))
+        self.install(root)
+        sub = root / "sub"
+        sub.mkdir()
+        actual_index = Path(self.git("rev-parse", "--path-format=absolute", "--git-path", "index", root=root).stdout.strip())
+        caller_index = sub / "index"
+        shutil.copy2(actual_index, caller_index)
+        shutil.copy2(actual_index, root / "index")
+        self.put("app.py", "BAD\n", root=root)
+        subprocess.run(["git", "-C", str(root), "add", "app.py"],
+                       env=dict(self.env, GIT_INDEX_FILE=str(caller_index)), check=True, capture_output=True)
+        gitdir = self.git("rev-parse", "--absolute-git-dir", root=root).stdout.strip()
+        for bindings in ({}, {"GIT_DIR": gitdir}, {"GIT_DIR": gitdir, "GIT_WORK_TREE": str(root)}):
+            with self.subTest(linked=linked, bindings=bindings):
+                env = dict(self.env, GIT_INDEX_FILE="index", **bindings)
+                # Git's original-context selection is the oracle, not sub/index
+                # inferred from filesystem cwd. Explicit Git bindings matter.
+                expected = subprocess.check_output(["git", "write-tree"], cwd=sub, env=env, text=True).strip()
+                chosen = Path(subprocess.check_output(["git", "rev-parse", "--path-format=absolute", "--git-path", "index"],
+                                                     cwd=sub, env=env, text=True).strip())
+                before = chosen.read_bytes()
+                content = subprocess.check_output(["git", "show", ":app.py"], cwd=sub, env=env)
+                for command in ([str(self.common / "softwareco-offline-hooks-v1/pre-commit")],
+                                ["git", "hook", "run", "pre-commit"]):
+                    self.log.unlink(missing_ok=True)
+                    result = subprocess.run(command, cwd=sub, env=env, capture_output=True, text=True)
+                    self.assertIn("candidate-index=" + expected, result.stdout + result.stderr)
+                    self.assertEqual(result.returncode == 0, b"BAD" not in content, result.stdout + result.stderr)
+                    self.assertEqual(chosen.read_bytes(), before)
+
+    def test_relative_index_matches_original_git_oracle_standalone(self):
+        self.relative_index_case(False)
+
+    def test_relative_index_matches_original_git_oracle_linked(self):
+        self.relative_index_case(True)
+
+    def symlink_dotdot_index_case(self, linked):
+        root = self.repo
+        if linked:
+            root = self.work / "linked"
+            self.git("worktree", "add", "-qb", "symlink-candidate", str(root))
+        self.install(root)
+        actual = root / "actual"
+        (actual / "deep").mkdir(parents=True)
+        (root / "link").symlink_to("actual/deep", target_is_directory=True)
+        source_index = Path(self.git("rev-parse", "--path-format=absolute", "--git-path", "index", root=root).stdout.strip())
+        shutil.copy2(source_index, actual / "index")
+        shutil.copy2(source_index, root / "index")
+        self.put("app.py", "BAD\n", root=root)
+        subprocess.run(["git", "-C", str(root), "add", "app.py"],
+                       env=dict(self.env, GIT_INDEX_FILE=str(actual / "index")), check=True, capture_output=True)
+        before = (actual / "index").read_bytes()
+        result = subprocess.run([str(self.common / "softwareco-offline-hooks-v1/pre-commit")],
+                                cwd=root, env=dict(self.env, GIT_INDEX_FILE="link/../index"),
+                                capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0, "lexical normalization selected a good decoy index")
+        self.assertEqual((actual / "index").read_bytes(), before)
+        self.assertNotIn("native", self.events())
+
+    def test_actual_git_commit_only_uses_its_temporary_index(self):
+        self.stage("safe.txt", "original\n")
+        self.git("commit", "-qm", "fixture partial-commit input")
+        self.install()
+        self.stage("app.py", "BAD\n")
+        self.put("safe.txt", "partial commit change\n")
+        result = self.git("commit", "--only", "safe.txt", "-m", "fixture real partial commit", check=False)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        committed = self.git("rev-parse", "HEAD^{tree}").stdout.strip()
+        self.assertIn("candidate-index=" + committed, result.stdout + result.stderr)
+        self.assertEqual(self.git("show", "HEAD:app.py").stdout, "print('good')\n")
+        self.assertEqual(self.git("show", ":app.py").stdout, "BAD\n")
+        self.assertEqual(self.events(), ["ubs", "native"])
+
+    def test_symlink_dotdot_caller_index_never_selects_decoy_standalone(self):
+        self.symlink_dotdot_index_case(False)
+
+    def test_symlink_dotdot_caller_index_never_selects_decoy_linked(self):
+        self.symlink_dotdot_index_case(True)
+
+    def installer_control(self):
+        spec = importlib.util.spec_from_file_location("installer_fixture", INSTALLER)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.index_file(self.repo, "scripts/ci/full.sh")
+
+    def test_installer_helper_rejects_tree_disguised_as_native_blob(self):
+        tree = self.git("rev-parse", "HEAD^{tree}").stdout.strip()
+        self.git("update-index", "--cacheinfo", "100755", tree, "scripts/ci/full.sh")
+        with self.assertRaises(RuntimeError):
+            self.installer_control()
+
+    def test_installer_helper_rejects_missing_native_blob(self):
+        self.git("update-index", "--cacheinfo", "100755", "1" * 40, "scripts/ci/full.sh")
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.installer_control()
+
+    def test_installer_helper_rejects_empty_native_blob(self):
+        oid = subprocess.check_output(["git", "-C", str(self.repo), "hash-object", "-w", "--stdin"],
+                                      input=b"", env=self.env).decode().strip()
+        self.git("update-index", "--cacheinfo", "100755", oid, "scripts/ci/full.sh")
+        with self.assertRaises(RuntimeError):
+            self.installer_control()
+
+    def test_installer_helper_checks_native_blob_identity_not_only_type_size(self):
+        oid = self.git("rev-parse", ":scripts/ci/full.sh").stdout.strip()
+        data = (self.repo / "scripts/ci/full.sh").read_bytes()
+        forged = b"blob " + str(len(data)).encode() + b"\0partial"
+        object_path = self.common / "objects" / oid[:2] / oid[2:]
+        object_path.chmod(0o600)  # This test owns its disposable loose object.
+        object_path.write_bytes(zlib.compress(forged))
+        self.assertEqual(self.git("cat-file", "-t", oid).stdout.strip(), "blob")
+        self.assertEqual(self.git("cat-file", "-s", oid).stdout.strip(), str(len(data)))
+        with self.assertRaises((RuntimeError, subprocess.CalledProcessError)):
+            self.installer_control()
+
+    def test_installer_helper_rejects_truncated_compressed_native_blob(self):
+        oid = self.git("rev-parse", ":scripts/ci/full.sh").stdout.strip()
+        object_path = self.common / "objects" / oid[:2] / oid[2:]
+        compressed = object_path.read_bytes()
+        object_path.chmod(0o600)
+        object_path.write_bytes(compressed[:len(compressed) // 2])
+        with self.assertRaises((RuntimeError, subprocess.CalledProcessError)):
+            self.installer_control()
+
+    def test_installer_helper_accepts_actual_readable_native_blob(self):
+        self.assertEqual(self.installer_control(), (self.repo / "scripts/ci/full.sh").read_bytes())
+
+    def configure_root_native_fixture(self):
+        self.put("scripts/ci/smoke.sh", '#!/bin/sh\nprintf "native\\n" >> "$HOOK_TEST_LOG"\n', executable=True)
+        self.git("add", "scripts/ci/smoke.sh")
+        self.install()
+        config = self.common / "softwareco-offline-hooks-v1/config.json"
+        meta = json.loads(config.read_text())
+        # Synthetic root-mode transport fixture, never a production installation.
+        meta["native_mode"] = "softwareco"
+        meta["root_contracts"] = {}
+        config.write_text(json.dumps(meta))
+
+    def test_root_native_mode_accepts_unprotected_candidate(self):
+        self.configure_root_native_fixture()
+        result = self.hook()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.events(), ["ubs", "native"])
+
+    def test_root_native_mode_refuses_staged_protected_path_before_native(self):
+        self.configure_root_native_fixture()
+        self.stage("docs/_core/protected.md", "new staged protected content\n")
+        result = self.hook()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Softwareco protected", result.stderr)
+        self.assertEqual(self.events(), ["ubs"])
+
+    def test_root_native_mode_refuses_ignored_protected_gitlink(self):
+        self.configure_root_native_fixture()
+        self.stage(".gitmodules", '[submodule "protected"]\n path = docs/_core/sub\n url = file:///unused\n ignore = all\n')
+        head = self.git("rev-parse", "HEAD").stdout.strip()
+        self.git("update-index", "--add", "--cacheinfo", "160000", head, "docs/_core/sub")
+        result = self.hook()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Softwareco protected", result.stderr)
+        self.assertEqual(self.events(), ["ubs"])
+
+    def test_tree_object_disguised_as_executable_blob_refuses_before_gates(self):
+        self.install()
+        tree = self.git("rev-parse", "HEAD^{tree}").stdout.strip()
+        self.git("update-index", "--cacheinfo", "100755", tree, "scripts/ci/full.sh")
+        result = self.hook()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.events(), [])
+
+    def test_missing_cached_control_blob_refuses_before_gates(self):
+        self.install()
+        oid = self.git("rev-parse", ":scripts/ci/full.sh").stdout.strip()
+        (self.common / "objects" / oid[:2] / oid[2:]).unlink()
+        result = self.hook()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.events(), [])
+
+    def test_protected_gitlink_and_ignore_all_are_transported_to_native_guard(self):
+        self.stage(".gitmodules", '[submodule "protected"]\n path = docs/_core/sub\n url = file:///unused\n ignore = all\n')
+        head = self.git("rev-parse", "HEAD").stdout.strip()
+        self.git("update-index", "--add", "--cacheinfo", "160000", head, "docs/_core/sub")
+        self.install()
+        result = self.hook()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.events(), ["ubs"])
+        # Native fixture refuses protected input before logging its success event.
+        self.assertNotIn("native", self.events())
 
     def test_metadata_cannot_select_an_alternate_ubs_wrapper(self):
         self.stage("app.py", "print('candidate')\n")

@@ -17,6 +17,9 @@ This is not a fleet rollout, hook exemption, or security clearance.
 
 1. The generated Git pre-commit resolves the actual worktree through Git, then
    verifies installed source hashes and the real UBS service executable hash.
+   Relative index selection follows Git's repository context, not a path inferred
+   by concatenating the shell cwd. Tests compare the captured tree against Git's
+   original-context `write-tree`, including explicit Git directory/worktree bindings.
 2. Linux `unshare --user --map-current-user --net` creates an externally isolated
    network namespace. Unavailable isolation is a refusal, not a network fallback.
 3. A private byte copy of the actual commit index (including `GIT_INDEX_FILE`)
@@ -51,8 +54,10 @@ This is not a fleet rollout, hook exemption, or security clearance.
 
 Softwareco mode is deliberately different: its known template entrypoint and
 UBS-only local addition are checked against their original hashes; the same real
-UBS gate runs first, then **indexed `scripts/ci/smoke.sh`**, including company tests.
-It does not claim a separately pinned native-v1 smoke implementation. Unknown
+UBS gate runs first, then a root-owned **base → candidate-tree `docs/_core`
+protection check** (including gitlinks hidden by indexed ignore settings, with
+external diff/textconv disabled), then **indexed `scripts/ci/smoke.sh`**, including
+company tests. It does not claim a separately pinned native-v1 smoke implementation. Unknown
 changes to either root entry contract require owner qualification.
 
 This pre-commit does not replace full CI, tests, lint, schema checks, or real
@@ -77,6 +82,10 @@ python3 "$SHARED/local/hooks/install_offline.py" \
 
 For the explicitly authorized Softwareco source adoption only, use
 `--mode softwareco` instead of the two native hash arguments.
+
+Before installation, each native entry must be an exact stage-0 executable,
+nonempty, actually readable **blob object**. Mode-derived type labels and tree
+listings are not proof; full object reads must complete successfully.
 
 Installation is limited to Softwareco and the four named dep-* repositories. It
 writes only the target's Git metadata and an absolute common-directory

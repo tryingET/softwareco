@@ -19,10 +19,10 @@ ROOT_CONTRACTS = {
 }
 
 
-def git(root, *args):
+def git(root, *args, input=None):
     # Installer must target the named repository even when called inside a hook.
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
-    return subprocess.check_output(["git", "--no-lazy-fetch", "-C", str(root), *args], env=env)
+    return subprocess.check_output(["git", "--no-lazy-fetch", "-C", str(root), *args], env=env, input=input)
 
 
 def sha(path):
@@ -37,10 +37,19 @@ def index_file(root, rel):
     if len(entries) != 1:
         raise RuntimeError(f"native entry must be one executable stage-0 blob: {rel}")
     header, path = entries[0].split(b"\t", 1)
-    mode, _, stage = header.split()
+    mode, oid, stage = header.split()
     if mode != b"100755" or stage != b"0" or path != os.fsencode(rel):
         raise RuntimeError(f"native entry must be executable and stage-0 in index: {rel}")
-    return git(root, "show", f":{rel}")
+    if git(root, "cat-file", "-t", os.fsdecode(oid)).strip() != b"blob":
+        raise RuntimeError(f"native entry object must actually be a blob: {rel}")
+    # Type/size probes alone can accept a truncated loose object. Read all bytes
+    # and require successful Git completion before hashing or installing it.
+    content = git(root, "cat-file", "blob", os.fsdecode(oid))
+    if not content:
+        raise RuntimeError(f"native entry must be nonempty: {rel}")
+    if git(root, "hash-object", "--no-filters", "--stdin", input=content).strip() != oid:
+        raise RuntimeError(f"native blob content does not match its indexed object identity: {rel}")
+    return content
 
 
 def atomic(path, data, executable=False):

@@ -159,6 +159,14 @@ def main(config):
             subprocess.run(["./.githooks/pre-commit", "--base-ref", base],
                            cwd=snapshot, env=isolated, check=True)
         elif mode == "softwareco":
+            # Root's own protected-path obligation covers the candidate tree,
+            # including gitlinks hidden by indexed .gitmodules ignore settings.
+            protected = subprocess.run(["git", "--no-lazy-fetch", "diff", "--no-ext-diff",
+                                        "--no-textconv", "--no-renames", "--ignore-submodules=none",
+                                        "--quiet", base, tree, "--", ":(top,literal)docs/_core"],
+                                       cwd=snapshot, env=isolated)
+            if protected.returncode != 0:
+                raise RuntimeError("Softwareco protected docs/_core candidate change or diff failure")
             # The original local pre-commit contains only UBS, already run first.
             # Refuse added native obligations instead of silently omitting them.
             for rel, expected in meta["root_contracts"].items():
