@@ -1,3 +1,6 @@
 # ROCS generated outputs: validate/build rewrite ontology/dist (including
 # authority receipts); `./scripts/rocs.sh cleanup --repo .` removes them.
 /ontology/dist/
+
+# Local ontology runtime state (pi ontology server: db, logs, nexus binding, snapshots)
+/.ontology/
