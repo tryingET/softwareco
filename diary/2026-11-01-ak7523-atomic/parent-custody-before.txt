@@ -1,0 +1,3 @@
+scripts/ubs-adoption-canary.py: OK
+tests/test_ubs_adoption_canary.py: OK
+docs/project/2026-10-07-ubs-service-adoption-gate.md: OK

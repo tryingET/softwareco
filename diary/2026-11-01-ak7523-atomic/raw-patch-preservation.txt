@@ -1,0 +1,1 @@
+Child raw .log/.diff references are retained losslessly as .log.gz/.diff.gz in Git; raw byte-identical originals remain under .git/quarantine/AK7523-raw-patches-20261101T052524Z. No ignore-rule or hook bypass.

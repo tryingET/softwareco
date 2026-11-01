@@ -42,7 +42,25 @@ python3 scripts/ubs-adoption-canary.py --candidate /path/to/candidate/ubs --repo
   or is more than `--max-slowdown` (5) times slower, ignoring scans under `--floor` (2 s).
 - **Report, not refuse**: criticals the candidate no longer finds. Findings change across releases,
   but a solver that stops early also loses findings, which 5.4.18 did.
-- Exit 0 pass, 2 usage or setup error. The JSON report lists every scan with both timings.
+- Exit 0 pass, 2 usage or setup error. Empty `--langs`, nonpositive `--max-files`, failed Git
+  listings (including explicit non-repos), and zero executed repo/language pairs are setup
+  errors, never passes. Individual pairs without matching tracked files are skipped; at least
+  one pair must actually run both scanner invocations.
+- `--timeout` and `--max-slowdown` must be finite and positive; `--floor` must be finite
+  and nonnegative (zero remains supported). Invalid numeric text, NaN, infinity and
+  overflow-to-infinity values are setup errors before any scanner launch. In reports,
+  unchecked/rejected threshold inputs remain JSON strings; checked values are numbers,
+  so NaN/infinity inputs cannot produce nonstandard JSON numeric constants.
+- After argument parsing, a requested JSON report is invalidated before setup. Handled setup
+  errors write `verdict: setup_error` and an `error` diagnostic, retaining any actual scan
+  results, including an incumbent result if candidate launch failed. If reporting fails, the
+  canary attempts to remove the unusable report; if that also fails, stderr explicitly warns
+  that any existing report is **not current**. Exit 2 remains authoritative.
+- The report's `executed_pairs` counts pairs for which both invocations returned a result
+  (including timeouts), not successful or exhaustive coverage. On setup errors, `scans` may
+  include a partially executed pair with only the available result. Comparison policy is
+  unchanged: an incumbent timeout does not itself refuse adoption (AK7524/AK7525); a pass
+  is not proof that every scan completed.
 
 Run it before step "move `local`" of the rebuild recipe (contrib-upstream skill,
 `references/repos.md`, ultimate_bug_scanner) and record the report path in the adoption task.
@@ -68,3 +86,14 @@ recommendation; no hook was changed for it.
   no longer reports, listed). The gate would have stopped the 5.4.18 pin.
 - The same kind of run is the admission check for AK6809 (adopting v5.4.19, which finishes the
   large tippio and ts-quality files the live build cannot).
+- AK7523 (2026-11-01): fail-closed setup regression checks use executable scanner stubs and
+  synthetic Git repos under `$TMPDIR`, not real consumer scans. Actual pre-patch run: 20 tests,
+  exit 1 (17 failed assertions/subtests, 1 error); patched run: 20 tests, exit 0. Two additional
+  report-I/O checks brought the first handback run to 22 tests, exit 0, retaining the original eight.
+  Commands and logs: `diary/2026-11-01-ak7523-atomic/{red,green,green-final}.log`.
+  Independent inspection then found invalid-threshold false greens. The corrective run
+  (`threshold-red.log`) exercised 27 tests before changing threshold handling: exit 1,
+  20 failed subtests and 9 strict-JSON errors. After the fix, the same 27 tests passed
+  (`threshold-green.log`, exit 0). Two final-publication write/close recovery checks
+  already passed before this correction and remain regression coverage, not new fixes.
+  These checks do not establish real scanner adoption or company-wide conformance.

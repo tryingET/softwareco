@@ -1,0 +1,7 @@
+old_runs_preserved=22
+WARN: 9 kernel-protected current-uid process(es) were outside reference inspection
+candidate=/data/ai-society-scratch/runs/run-1793510116-44e5b5f3b5ffbb77/work/tmp/softwareco-ci
+TMPDIR=/data/ai-society-scratch/runs/run-1793510116-44e5b5f3b5ffbb77/work/tmp
+UV_OFFLINE=1; no production task-scope/ontology outputs modified
+template_ci=0 canary_tests=0 custody=0
+heavy_job_result=success scratch_cleanup=removed
