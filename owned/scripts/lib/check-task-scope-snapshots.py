@@ -9,12 +9,41 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import functools
 import json
+import os
+import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+
+SNAPSHOT_NAME = re.compile(r"AK-([0-9]+)\.snapshot\.json")
+# Tolerated without validation: a directory placeholder and the documented legacy
+# AK-<TASK-ID>.json compatibility fallback (governance/README.md). Any other name fails
+# closed, so a snapshot cannot dodge the drift check behind a near-miss name.
+AK_TIMEOUT_SECONDS = 120
+GIT_TIMEOUT_SECONDS = 60
+TOLERATED_NAMES = (re.compile(r"\.gitkeep"), re.compile(r"AK-[0-9]+\.json"))
+# Repository-locating variables (`git rev-parse --local-env-vars`) that a git hook may
+# export; inherited, they would make every path resolve to the hook's repository.
+GIT_REPO_ENV = frozenset(
+    {
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_COMMON_DIR",
+        "GIT_DIR",
+        "GIT_GRAFT_FILE",
+        "GIT_IMPLICIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_NO_REPLACE_OBJECTS",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_PREFIX",
+        "GIT_REPLACE_REF_BASE",
+        "GIT_SHALLOW_FILE",
+        "GIT_WORK_TREE",
+    }
+)
 
 
 def die(message: str, code: int = 1) -> None:
@@ -63,13 +92,17 @@ def resolve_ak_command(raw_value: str) -> list[str]:
 
 
 def run_ak(repo_root: Path, ak_cmd: list[str], args: list[str], label: str) -> str:
-    result = subprocess.run(
-        [*ak_cmd, *args],
-        cwd=str(repo_root),
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    try:
+        result = subprocess.run(
+            [*ak_cmd, *args],
+            cwd=str(repo_root),
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=AK_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        die(f"{label}: timed out after {AK_TIMEOUT_SECONDS}s")
     if result.returncode != 0:
         detail = (result.stderr or result.stdout).strip()
         if detail:
@@ -96,23 +129,72 @@ def canonical_dir(path_value: str, label: str) -> str:
         die(f"{label} path does not exist: {path_value}")
 
 
+@functools.lru_cache(maxsize=None)
+def git_repo_identity(path: Path) -> tuple[str, str] | None:
+    """Return (git common dir, path relative to its worktree root), or None.
+
+    Linked worktrees of one repository share the common dir, so a task recorded for
+    the main checkout is recognised from any of its worktrees.
+    """
+    env = {key: value for key, value in os.environ.items() if key not in GIT_REPO_ENV}
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(path),
+                "rev-parse",
+                "--path-format=absolute",
+                "--git-common-dir",
+                "--show-toplevel",
+            ],
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=GIT_TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    lines = result.stdout.splitlines()
+    if result.returncode != 0 or len(lines) != 2:
+        return None
+    toplevel = Path(lines[1]).resolve()
+    if not path.is_relative_to(toplevel):
+        return None
+    return (str(Path(lines[0]).resolve()), path.relative_to(toplevel).as_posix())
+
+
+def same_repository(task_repo: Path, repo_root: Path) -> bool:
+    task_identity = git_repo_identity(task_repo)
+    return task_identity is not None and task_identity == git_repo_identity(repo_root)
+
+
 def iter_snapshots(snapshots_dir: Path) -> list[Path]:
-    return sorted(
-        (path for path in snapshots_dir.rglob("AK-*.snapshot.json") if path.is_file()),
-        key=lambda path: path.as_posix(),
-    )
+    snapshots: list[Path] = []
+    unrecognized: list[Path] = []
+    for path in sorted(snapshots_dir.rglob("*"), key=lambda path: path.as_posix()):
+        if path.is_dir():
+            continue
+        if path.is_file() and SNAPSHOT_NAME.fullmatch(path.name):
+            snapshots.append(path)
+        elif not (path.is_file() and any(p.fullmatch(path.name) for p in TOLERATED_NAMES)):
+            unrecognized.append(path)
+    if unrecognized:
+        for path in unrecognized:
+            print(f"error: unrecognized task-scope file: {str(path)!r}", file=sys.stderr)
+        die(
+            "task-scope snapshot filename must use a numeric task id: "
+            "AK-<TASK-ID>.snapshot.json (rename or remove the files above)"
+        )
+    return snapshots
 
 
 def validate_snapshot(repo_root: Path, ak_cmd: list[str], snapshot_path: Path) -> None:
-    snapshot_name = snapshot_path.name
-    prefix = "AK-"
-    suffix = ".snapshot.json"
-    if not snapshot_name.startswith(prefix) or not snapshot_name.endswith(suffix):
+    match = SNAPSHOT_NAME.fullmatch(snapshot_path.name)
+    if match is None:
         die(f"task-scope snapshot filename must use a numeric task id: {snapshot_path}")
-
-    task_id = snapshot_name[len(prefix) : -len(suffix)]
-    if not task_id.isdigit():
-        die(f"task-scope snapshot filename must use a numeric task id: {snapshot_path}")
+    task_id = match.group(1)
 
     task_payload = run_ak_json(
         repo_root,
@@ -125,7 +207,9 @@ def validate_snapshot(repo_root: Path, ak_cmd: list[str], snapshot_path: Path) -
         die(f"unable to extract repo for AK task {task_id}")
 
     task_repo_canonical = canonical_dir(task_repo, f"AK task {task_id} repo")
-    if task_repo_canonical != str(repo_root):
+    if task_repo_canonical != str(repo_root) and not same_repository(
+        Path(task_repo_canonical), repo_root
+    ):
         die(
             f"snapshot {snapshot_path} belongs to repo {task_repo} "
             f"(canonical: {task_repo_canonical}), expected {repo_root}"

@@ -9,18 +9,20 @@ import os
 import shutil
 import subprocess
 import tempfile
+import sys
 import unittest
 
 OWNER = Path(__file__).resolve().parents[1]
 PROJECT = OWNER / "copier/tpl-project-repo"
 # The template and L1 copies of the task-scope checker; each must carry the same fix.
-# (owned/scripts/lib holds the owned lane root's own rendered copy, tracked separately.)
+# owned/ is the owned lane root's rendered copy (also its own repo; AK7920).
 COPIES = {
     "tpl_project_repo": PROJECT,
     "tpl_agent_repo": OWNER / "copier/tpl-agent-repo",
     "tpl_org_repo": OWNER / "copier/tpl-org-repo",
     "tpl_monorepo": OWNER / "copier/tpl-monorepo",
     "softwareco": OWNER,
+    "owned_lane_root": OWNER / "owned",
 }
 WRAPPER = "scripts/check-task-scope-snapshots.sh"
 HELPER = "scripts/lib/check-task-scope-snapshots.py"
@@ -415,6 +417,64 @@ class DocumentPolicyTmpdirFeature(TaskScopeFixture):
                 self.reset_temp_logs()
                 self.assert_ok(self.policy(env), "ok: document freshness and dated-snapshot policy")
                 self.assert_temp_use(f"{template_dir}/product-posture-evidence.XXXXXX", created_in)
+
+
+
+class HelperSubprocessTimeoutFeature(unittest.TestCase):
+    """Every copy bounds its git and ak subprocesses and fails closed on a timeout."""
+
+    def load(self, root):
+        import importlib.util
+
+        from unittest import mock
+
+        spec = importlib.util.spec_from_file_location(f"helper_{root.name}", root / HELPER)
+        module = importlib.util.module_from_spec(spec)
+        # Never write __pycache__ next to template sources (template CI rejects them).
+        with mock.patch.object(sys, "dont_write_bytecode", True):
+            spec.loader.exec_module(module)
+        return module
+
+    def test_ak_timeout_fails_closed(self):
+        """Given an ak command that never returns, when the helper asks AK for a task,
+        then it stops with a timed-out error instead of hanging the gate."""
+        import subprocess as real_subprocess
+        from unittest import mock
+
+        for name, root in COPIES.items():
+            with self.subTest(copy=name):
+                helper = self.load(root)
+                calls = []
+
+                def hang(*args, **kwargs):
+                    calls.append(kwargs.get("timeout"))
+                    raise real_subprocess.TimeoutExpired(args[0], kwargs.get("timeout"))
+
+                with mock.patch.object(helper.subprocess, "run", side_effect=hang), \
+                        mock.patch("sys.stderr"), self.assertRaises(SystemExit) as raised:
+                    helper.run_ak(Path("."), ["ak"], ["task", "show", "1"], "ak task show 1")
+                self.assertEqual(raised.exception.code, 1)
+                self.assertTrue(calls and isinstance(calls[0], (int, float)) and calls[0] > 0)
+
+    def test_git_identity_timeout_is_unknown_and_refused(self):
+        """Given a git command that never returns, when the helper compares repositories,
+        then the identity is unknown and the repositories are not treated as the same."""
+        import subprocess as real_subprocess
+        from unittest import mock
+
+        for name, root in COPIES.items():
+            with self.subTest(copy=name):
+                helper = self.load(root)
+                calls = []
+
+                def hang(*args, **kwargs):
+                    calls.append(kwargs.get("timeout"))
+                    raise real_subprocess.TimeoutExpired(args[0], kwargs.get("timeout"))
+
+                with mock.patch.object(helper.subprocess, "run", side_effect=hang):
+                    self.assertIsNone(helper.git_repo_identity(Path(".")))
+                    self.assertFalse(helper.same_repository(Path("."), Path(".")))
+                self.assertTrue(calls and all(isinstance(t, (int, float)) and t > 0 for t in calls))
 
 
 if __name__ == "__main__":

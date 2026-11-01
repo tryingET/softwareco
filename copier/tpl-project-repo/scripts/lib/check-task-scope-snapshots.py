@@ -23,6 +23,8 @@ SNAPSHOT_NAME = re.compile(r"AK-([0-9]+)\.snapshot\.json")
 # Tolerated without validation: a directory placeholder and the documented legacy
 # AK-<TASK-ID>.json compatibility fallback (governance/README.md). Any other name fails
 # closed, so a snapshot cannot dodge the drift check behind a near-miss name.
+AK_TIMEOUT_SECONDS = 120
+GIT_TIMEOUT_SECONDS = 60
 TOLERATED_NAMES = (re.compile(r"\.gitkeep"), re.compile(r"AK-[0-9]+\.json"))
 # Repository-locating variables (`git rev-parse --local-env-vars`) that a git hook may
 # export; inherited, they would make every path resolve to the hook's repository.
@@ -90,13 +92,17 @@ def resolve_ak_command(raw_value: str) -> list[str]:
 
 
 def run_ak(repo_root: Path, ak_cmd: list[str], args: list[str], label: str) -> str:
-    result = subprocess.run(
-        [*ak_cmd, *args],
-        cwd=str(repo_root),
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    try:
+        result = subprocess.run(
+            [*ak_cmd, *args],
+            cwd=str(repo_root),
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=AK_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        die(f"{label}: timed out after {AK_TIMEOUT_SECONDS}s")
     if result.returncode != 0:
         detail = (result.stderr or result.stdout).strip()
         if detail:
@@ -146,8 +152,9 @@ def git_repo_identity(path: Path) -> tuple[str, str] | None:
             text=True,
             capture_output=True,
             check=False,
+            timeout=GIT_TIMEOUT_SECONDS,
         )
-    except OSError:
+    except (OSError, subprocess.TimeoutExpired):
         return None
     lines = result.stdout.splitlines()
     if result.returncode != 0 or len(lines) != 2:
