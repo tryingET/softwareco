@@ -193,3 +193,6 @@ owned/.pi/
 /contrib/ontology/dist/
 /infra/ontology/dist/
 /owned/ontology/dist/
+
+# Semantic Code Intelligence runtime state (cache, identity, snapshots, logs); never track it (AK7935).
+.ontology/
