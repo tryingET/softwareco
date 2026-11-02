@@ -51,12 +51,25 @@ through templates and per-repo ignore lines. No AK decision covered the class.
    - If state must live in the tree, write a self-ignoring marker (`<dir>/.gitignore` containing
      `*`) when the directory is created.
    - Document what is written, its retention, and the uninstall and data-retirement path.
+   - Key any stored identity on values that survive a remount and a reboot. Never key it on
+     volatile filesystem values such as `st_dev`: that is what kept SCI down for six weeks
+     (`retirement-from-agent-sessions-decision.md` §3.8). A failed identity check names its reason
+     and says how to recover.
 3. **Consumers do not carry another owner's obligations.** A per-repo ignore line for someone
    else's state is a stopgap: it must name the producer, and it must never go into contrib forks.
-4. **Committing tool state is a defect.** Removing it from the index needs no decision; deleting
-   the data needs the owner's decision and a backup.
+
+   **Transition.** Existing lines stay until their repo's owner removes them. Where a test guards a
+   line, removing the line and rewriting the test are one change by that owner (dep-redteam
+   `5a28113` and `tests/test_repo_ignores.py`). A template copy (`tpl-project-repo`, `5d9935d`) is
+   removed by the template owner once the producer no longer writes into the tree.
+4. **Committing tool state is a defect.** Removing it from the index needs no architecture decision,
+   but it is still that repo's owner's change, under an exact task in that repo. Deleting the data
+   needs the owner's decision and a backup.
 5. **Contract first.** A tool that writes into repositories needs this contract before it gets
    "preferred/first-step" guidance or a fleet-wide install.
+6. **Verification.** The producer proves its contract with a test that runs the tool in a scratch
+   repository and asserts a clean `git status`. `softwareco` reports tracked or unignored tool state
+   in its repo census, and a finding opens a task on the producer, not on the repo that shows it.
 
 ## How SCI discharges it (retirement, not repair)
 
@@ -68,7 +81,10 @@ through templates and per-repo ignore lines. No AK decision covered the class.
 | later | Owner-approved backup and quarantine of the remaining directories; nothing deleted before that decision | — |
 
 The per-repo ignore sweep (AK7890) and the XDG relocation (AK7907) are superseded by this
-retirement plan. Their lifecycle closeout needs the operator.
+retirement plan and were closed on the operator's card of 2026-11-01.
+
+This revision closes the four gaps found by the AK7954 inspection
+(`owned/semantic-code-intelligence/docs/project/retirement-decision-independent-review.md` §8).
 
 ## Not decided here
 
