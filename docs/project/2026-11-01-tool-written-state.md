@@ -78,7 +78,7 @@ through templates and per-repo ignore lines. No AK decision covered the class.
 | 1 | Pi package removed from the operator's Pi settings; new sessions write no `.ontology/` | AK7928 |
 | 2a | Machine-level `~/.config/git/ignore` with `.ontology/`, managed in dotfiles-managed | AK7932 |
 | 2b | This repo stops tracking `.ontology/ontology.db*` (commit `9c9ef5b`); the copies in history and on the private NAS remote stay under AK6985 | AK7935 |
-| later | Owner-approved backup and quarantine of the remaining directories; nothing deleted before that decision | — |
+| 4 | 59 directories archived with a proven restore, then deleted on the operator's exception to the never-delete decision; dep-surgeon's stays until its owner releases it | AK7947 |
 
 The per-repo ignore sweep (AK7890) and the XDG relocation (AK7907) are superseded by this
 retirement plan and were closed on the operator's card of 2026-11-01.
