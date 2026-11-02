@@ -67,9 +67,16 @@ through templates and per-repo ignore lines. No AK decision covered the class.
    needs the owner's decision and a backup.
 5. **Contract first.** A tool that writes into repositories needs this contract before it gets
    "preferred/first-step" guidance or a fleet-wide install.
-6. **Verification.** The producer proves its contract with a test that runs the tool in a scratch
-   repository and asserts a clean `git status`. `softwareco` reports tracked or unignored tool state
-   in its repo census, and a finding opens a task on the producer, not on the repo that shows it.
+6. **Verification.** The producer proves its contract with a test that exercises its real write path
+   in a scratch repository, under isolated Git configuration (no global or system config, and an
+   empty `core.excludesFile`), because a machine-wide ignore hides the very defect the test looks
+   for. The test passes only if the state is out of tree, or carries the marker with the right
+   content, and `git status` and the index both hold no tool state. A clean `git status` alone
+   proves nothing.
+
+   `softwareco` reporting tracked or unignored tool state in its repo census is defence in depth,
+   not a replacement for that test, and is proposed here, not implemented. A finding opens a task
+   on the producer, not on the repo that shows it; any index repair there stays under rule 4.
 
 ## How SCI discharges it (retirement, not repair)
 
