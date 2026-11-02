@@ -17,12 +17,47 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+# Git selects the committing repository, worktree and index through these variables; any
+# other GIT_* from the committer (GIT_CONFIG_COUNT/KEY/VALUE, GIT_CONFIG_PARAMETERS,
+# GIT_EXEC_PATH, ...) could inject configuration such as a core.fsmonitor command.
+GIT_LOCATION_ENV = {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR", "GIT_OBJECT_DIRECTORY",
+                    "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_NAMESPACE", "GIT_CEILING_DIRECTORIES",
+                    "GIT_DISCOVERY_ACROSS_FILESYSTEM"}
+# Every git call disables the filesystem monitor: its command would run inside index reads.
+GIT = ["git", "--no-lazy-fetch", "-c", "core.fsmonitor=false"]
+
+
+def origin_env():
+    env = clean_env()
+    env.update({k: v for k, v in os.environ.items() if k in GIT_LOCATION_ENV})
+    # Global and system config are the committer's, not the repository's: they can define
+    # hooks (hook.<name>.event = post-index-change fires on the private-index write-tree).
+    # The repository's own config remains the declared trusted boundary.
+    env.update(GIT_NO_REPLACE_OBJECTS="1", GIT_NO_LAZY_FETCH="1", GIT_TERMINAL_PROMPT="0",
+               GIT_CONFIG_GLOBAL="/dev/null", GIT_CONFIG_NOSYSTEM="1")
+    return env
+
+
 def git(root, *args, env=None):
-    return subprocess.check_output(["git", "--no-lazy-fetch", "-C", str(root), *args], env=env).decode().strip()
+    return subprocess.check_output([*GIT, "-C", str(root), *args],
+                                   env=origin_env() if env is None else env).decode().strip()
+
+
+# Only these inherited variables reach UBS and the native checks. Everything else from
+# the committer's environment (UBS_*, BASH_ENV/ENV, PYTHON*, NODE_OPTIONS, LD_*, agent
+# sockets, CI knobs, GIT_*) could weaken or redirect a check, so it is dropped. PATH is
+# not inherited at all: main() pins it, because UBS resolves its language modules from
+# PATH first and the runner itself resolves git and unshare (inspection F2).
+SAFE_PATH = "/usr/bin:/bin"
+ALLOWED_ENV = {"PATH", "HOME", "TMPDIR", "USER", "LOGNAME", "LANG", "LANGUAGE", "TERM", "TZ"}
 
 
 def clean_env():
-    return {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env = {k: v for k, v in os.environ.items() if k in ALLOWED_ENV or k.startswith("LC_")}
+    # Tighten-only knob: an operator may demand the whole-file UBS result, never relax it.
+    if os.environ.get("UBS_STAGED_STRICT") == "1":
+        env["UBS_STAGED_STRICT"] = "1"
+    return env
 
 
 def regular(path):
@@ -52,8 +87,8 @@ def capture_index(root, env):
 
 def materialize(root, tree, snapshot, env):
     """Export literal blobs/modes, with no attributes, filters or export-ignore."""
-    raw = subprocess.check_output(["git", "--no-lazy-fetch", "-C", str(root), "ls-tree", "-r", "-z", tree], env=env)
-    with subprocess.Popen(["git", "--no-lazy-fetch", "-C", str(root), "cat-file", "--batch"], env=env,
+    raw = subprocess.check_output([*GIT, "-C", str(root), "ls-tree", "-r", "-z", tree], env=env)
+    with subprocess.Popen([*GIT, "-C", str(root), "cat-file", "--batch"], env=env,
                           stdin=subprocess.PIPE, stdout=subprocess.PIPE) as process:
         for record in raw.split(b"\0"):
             if not record:
@@ -89,6 +124,14 @@ def materialize(root, tree, snapshot, env):
 
 
 def main(config):
+    # Isolated mode ignores PYTHON* variables and keeps this directory off sys.path, so
+    # neither can replace a module before the hash checks below. A stale entry hook
+    # without -I is refused rather than run unisolated.
+    if not sys.flags.isolated:
+        raise RuntimeError("the offline hook must run under python3 -I; reinstall it with install_offline.py")
+    os.environ["PATH"] = SAFE_PATH
+    # Replacement refs would make cat-file report the indexed oid with other bytes (F6).
+    os.environ["GIT_NO_REPLACE_OBJECTS"] = "1"
     config = Path(config).resolve()
     meta = json.loads(regular(config).read_text())
     if meta["protocol"] != "softwareco-offline-index-v1":
@@ -112,13 +155,12 @@ def main(config):
     if previous is None:
         env = dict(os.environ, SOFTWARECO_HOOK_PARENT_NETNS=current)
         os.execvpe("unshare", ["unshare", "--user", "--map-current-user", "--net", "--",
-                              sys.executable, str(Path(__file__).resolve()), str(config)], env)
+                              sys.executable, "-I", str(Path(__file__).resolve()), str(config)], env)
     if (not previous.startswith("net:[") or not previous.endswith("]") or not previous[5:-1].isdigit()
             or current == previous or any(name != "lo" for _, name in socket.if_nameindex())):
         raise RuntimeError("external-network isolation was not established")
-    env = dict(os.environ, UBS_BIN=meta["scanner"], UBS_NO_AUTO_UPDATE="1", GIT_NO_LAZY_FETCH="1",
-               UV_OFFLINE="1", UV_NO_SYNC="1", PIP_NO_INDEX="1", npm_config_offline="true",
-               CARGO_NET_OFFLINE="true", GIT_TERMINAL_PROMPT="0")
+    # Origin repository reads: location variables only (see origin_env).
+    env = origin_env()
     # Capture the real index, including Git's per-commit GIT_INDEX_FILE.
     # Unmerged entries fail write-tree rather than selecting a different tree.
     tree, index_bytes = capture_index(root, env)
@@ -131,10 +173,11 @@ def main(config):
     with tempfile.TemporaryDirectory(prefix="offline-index-", dir=scratch) as work:
         snapshot = Path(work)
         isolated = clean_env()
-        isolated.update(UBS_BIN=meta["scanner"], UBS_NO_AUTO_UPDATE="1", UV_OFFLINE="1",
+        isolated.update(UBS_BIN=meta["scanner"], UBS_NO_AUTO_UPDATE="1", UBS_NO_CACHE="1", UV_OFFLINE="1",
                         UV_NO_SYNC="1", PIP_NO_INDEX="1", npm_config_offline="true",
                         CARGO_NET_OFFLINE="true", PYTHONDONTWRITEBYTECODE="1",
-                        GIT_CONFIG_GLOBAL="/dev/null", GIT_CONFIG_NOSYSTEM="1", GIT_NO_LAZY_FETCH="1")
+                        GIT_CONFIG_GLOBAL="/dev/null", GIT_CONFIG_NOSYSTEM="1", GIT_NO_LAZY_FETCH="1",
+                        GIT_NO_REPLACE_OBJECTS="1")
         subprocess.run(["git", "init", "-q", str(snapshot)], env=isolated, check=True)
         # Object reads only: do not clone/fetch, modify refs in the consumer, or
         # borrow its index. The snapshot is deliberately a standalone Git repo.
@@ -161,7 +204,7 @@ def main(config):
         elif mode == "softwareco":
             # Root's own protected-path obligation covers the candidate tree,
             # including gitlinks hidden by indexed .gitmodules ignore settings.
-            protected = subprocess.run(["git", "--no-lazy-fetch", "diff", "--no-ext-diff",
+            protected = subprocess.run([*GIT, "diff", "--no-ext-diff",
                                         "--no-textconv", "--no-renames", "--ignore-submodules=none",
                                         "--quiet", base, tree, "--", ":(top,literal)docs/_core"],
                                        cwd=snapshot, env=isolated)

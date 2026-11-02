@@ -31,6 +31,13 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
 }
 
 cd "$(git rev-parse --show-toplevel)"
+# The comparison rescans run outside this checkout. Name this checkout's scan policy
+# explicitly: UBS would otherwise take the .ubs.json of whatever repo encloses TMPDIR.
+if [ -f .ubs.json ]; then
+	config_arg="--config=$PWD/.ubs.json"
+else
+	config_arg="--no-config"
+fi
 
 staged_count="$(git diff --cached --name-only --diff-filter=ACMR | grep -c . || true)"
 if [ "$staged_count" -eq 0 ]; then
@@ -68,13 +75,19 @@ if [ "$rc" -eq 1 ] && [ "${UBS_STAGED_STRICT:-0}" != "1" ] && [ -n "${TMPDIR:-}"
 		git show ":$path" >"$work/staged/$path"
 		git show "HEAD:$path" >"$work/head/$path" 2>/dev/null || rm -f "$work/head/$path"
 	done
-	(cd "$work/head" && "$ubs_bin" --ci --no-cargo --format=json . >"$work/head.json" 2>/dev/null) || true
-	(cd "$work/staged" && "$ubs_bin" --ci --no-cargo --format=json . >"$work/staged.json" 2>/dev/null) || true
+	# A failed or partial HEAD rescan can only undercount pre-existing criticals, which
+	# makes more staged criticals count as new: the safe direction.
+	(cd "$work/head" && "$ubs_bin" --ci --no-cargo "$config_arg" --format=json . >"$work/head.json" 2>/dev/null) || true
+	staged_rc=0
+	(cd "$work/staged" && "$ubs_bin" --ci --no-cargo "$config_arg" --format=json . >"$work/staged.json" 2>/dev/null) || staged_rc=$?
 	echo "ubs-staged: comparing critical counts per file and rule with HEAD's versions of the staged files"
 	new_rc=0
-	python3 - "$work" <<'PY' || new_rc=$?
+	python3 - "$work" "$staged_rc" <<'PY' || new_rc=$?
 import collections, json, os, sys
-work = sys.argv[1]
+work, staged_rc = sys.argv[1], int(sys.argv[2])
+def keep(reason):
+    print(f"ubs-staged: {reason}; keeping the whole-file result", file=sys.stderr)
+    sys.exit(1)
 def criticals(side):
     try:
         with open(os.path.join(work, side + ".json"), encoding="utf-8") as handle:
@@ -82,8 +95,12 @@ def criticals(side):
     except (OSError, ValueError):
         if side == "head":
             return collections.Counter()  # no HEAD versions to scan: every staged critical is new
-        print("ubs-staged: the staged scan produced no readable report; keeping the whole-file result", file=sys.stderr)
-        sys.exit(1)
+        keep("the staged scan produced no readable report")
+    # AK7597 D2: an incomplete staged rescan could miss the criticals that failed the
+    # --staged scan; only a complete one (exit 0/1, status ok, no failed module) may compare.
+    if side == "staged" and (staged_rc not in (0, 1) or report.get("status") != "ok"
+                             or report.get("failed_modules")):
+        keep(f"the staged rescan is incomplete (exit {staged_rc}, status {report.get('status')!r})")
     root = os.path.join(work, side)
     counts = collections.Counter()
     for finding in report.get("findings", []):
@@ -91,6 +108,10 @@ def criticals(side):
             counts[(os.path.relpath(finding["file"], root), finding["rule_id"])] += 1
     return counts
 head, staged = criticals("head"), criticals("staged")
+# The --staged scan failed; a comparison that sees no critical cannot explain why
+# (for example a warning-only failure), so it may not turn that failure into a pass.
+if not staged:
+    keep("the staged rescan shows no critical finding to compare")
 added = {key: staged[key] - head[key] for key in staged if staged[key] > head[key]}
 for (path, rule), count in sorted(added.items()):
     print(f"ubs-staged: new critical: {path} {rule} (+{count})", file=sys.stderr)

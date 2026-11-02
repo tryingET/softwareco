@@ -24,7 +24,7 @@ assert sys.argv[3] == "--base-ref"
 base = sys.argv[4]
 changed = subprocess.check_output(["git", "diff", "--no-ext-diff", "--no-textconv", "--ignore-submodules=none", "--no-renames", "--cached", "--name-only", "-z", base]).split(b"\\0")
 if any(p.startswith(b"docs/_core/") for p in changed): sys.exit(1)
-with open(os.environ["HOOK_TEST_LOG"], "a") as f: f.write("native\\n")
+with open(Path(os.environ["HOME"]).parent / "events", "a") as f: f.write("native\\n")
 if Path("control").read_text() != "good\\n": sys.exit(1)
 '''
 ENTRY = '''#!/bin/sh
@@ -35,7 +35,7 @@ exec "$root/scripts/ci/smoke.sh" --offline --index "$@"
 SCANNER = '''#!/usr/bin/env python3
 from pathlib import Path
 import os, subprocess, sys
-with open(os.environ["HOOK_TEST_LOG"], "a") as f: f.write("ubs\\n")
+with open(Path(os.environ["HOME"]).parent / "events", "a") as f: f.write("ubs\\n")
 source = subprocess.run(["git", "show", ":app.py"], capture_output=True).stdout
 ignore = Path(".ubsignore").read_text() if Path(".ubsignore").exists() else ""
 sys.exit(1 if b"BAD" in source and "app.py" not in ignore else 0)
@@ -60,7 +60,7 @@ class OfflineHookFeature(unittest.TestCase):
         self.repo.mkdir(parents=True)
         self.log = self.work / "events"
         self.env = dict(environment(), HOME=str(self.home), TMPDIR=str(self.work),
-                        HOOK_TEST_LOG=str(self.log), UBS_STAGED_STRICT="1",
+                        UBS_STAGED_STRICT="1",
                         GIT_CONFIG_GLOBAL="/dev/null", GIT_CONFIG_NOSYSTEM="1")
         self.git("init", "-q", "-b", "main")
         self.git("config", "user.name", "hook fixture")
@@ -297,22 +297,22 @@ class OfflineHookFeature(unittest.TestCase):
         self.assertEqual((self.common / "index").read_bytes(), before)
 
     def test_native_index_drift_is_detected_before_return(self):
-        script = NATIVE + '''\nroot = os.environ['HOOK_ORIGIN']\nsubprocess.run(['git', '-C', root, 'add', 'control'], check=True)\n'''
+        script = NATIVE + '''\nroot = str(Path(os.environ['HOME']) / 'ai-society/softwareco/owned/dep-viz')\nsubprocess.run(['git', '-C', root, 'add', 'control'], check=True)\n'''
         self.put("scripts/ci/smoke.sh", script, executable=True)
         self.git("add", "scripts/ci/smoke.sh")
         self.put("control", "working-only-change\n")
         self.install()
-        result = self.hook(HOOK_ORIGIN=str(self.repo))
+        result = self.hook()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("HEAD/index changed during native", result.stderr)
 
     def test_ubs_index_drift_refuses_before_native(self):
         self.scanner.write_text(SCANNER.replace('sys.exit(1 if',
-            "subprocess.run(['git', '-C', os.environ['HOOK_ORIGIN'], 'add', 'control'], check=True)\nsys.exit(1 if"))
+            "subprocess.run(['git', '-C', str(Path(os.environ['HOME']) / 'ai-society/softwareco/owned/dep-viz'), 'add', 'control'], check=True)\nsys.exit(1 if"))
         self.stage("app.py", "print('changed')\n")
         self.put("control", "working-only-change\n")
         self.install()
-        result = self.hook(HOOK_ORIGIN=str(self.repo))
+        result = self.hook()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("HEAD/index changed during UBS", result.stderr)
         self.assertNotIn("native", self.events())
@@ -474,7 +474,7 @@ class OfflineHookFeature(unittest.TestCase):
         self.assertEqual(self.installer_control(), (self.repo / "scripts/ci/full.sh").read_bytes())
 
     def configure_root_native_fixture(self):
-        self.put("scripts/ci/smoke.sh", '#!/bin/sh\nprintf "native\\n" >> "$HOOK_TEST_LOG"\n', executable=True)
+        self.put("scripts/ci/smoke.sh", '#!/bin/sh\nprintf "native\\n" >> "$HOME/../events"\n', executable=True)
         self.git("add", "scripts/ci/smoke.sh")
         self.install()
         config = self.common / "softwareco-offline-hooks-v1/config.json"
@@ -600,6 +600,279 @@ class OfflineHookFeature(unittest.TestCase):
         refused = self.hook()
         self.assertNotEqual(refused.returncode, 0, refused.stdout[-3000:] + refused.stderr[-3000:])
         self.assertNotIn("native", self.events())
+
+
+    # AK7597 repair (2026-11-02 inspection D1): the committer's environment must not
+    # weaken the checks. Only an allowlist reaches UBS and native checks.
+    def test_inherited_environment_cannot_disable_real_ubs(self):
+        # A shell call on user input is critical only through categories UBS_SKIP_CATEGORIES can skip
+        # (verified against the real scanner: exit 2 without the skip, 0 with it).
+        self.stage("app.py", "import os\nos.system(input())\n")  # ubs:ignore[py.security.os-system-shell] fixture data: the staged file the scanner under test must flag; never executed here
+        self.use_real_scanner()
+        silencer = self.put("bash-env-silencer.sh", "exit 0\n", root=self.work)
+        for extra in ({"BASH_ENV": str(silencer)},
+                      {"UBS_SKIP_CATEGORIES": ",".join(str(n) for n in range(1, 100))}):
+            self.log.unlink(missing_ok=True)
+            refused = self.hook(**extra)
+            self.assertNotEqual(refused.returncode, 0, f"{extra}: " + refused.stdout[-2000:])
+            self.assertNotIn("native", self.events())
+
+    def test_python_path_cannot_hijack_the_hook(self):
+        evil = self.work / "evil-python"
+        evil.mkdir()
+        (evil / "pathlib.py").write_text("raise SystemExit(0)\n")
+        self.stage("app.py", "BAD\n")
+        self.install()
+        refused = self.hook(PYTHONPATH=str(evil))
+        self.assertNotEqual(refused.returncode, 0, refused.stdout + refused.stderr)
+
+    def test_runner_refuses_an_unisolated_interpreter(self):
+        self.stage("app.py", "print('changed')\n")
+        self.install()
+        config = self.common / "softwareco-offline-hooks-v1/config.json"
+        self.assertIn(" -I ", (config.parent / "pre-commit").read_text())
+        direct = subprocess.run([sys.executable, str(RUNNER), str(config)], cwd=self.repo,
+                                env=self.env, capture_output=True, text=True)
+        self.assertEqual(direct.returncode, 2, direct.stdout + direct.stderr)
+        self.assertIn("python3 -I", direct.stderr)
+        self.assertEqual(self.events(), [])
+
+    def test_checks_receive_only_the_environment_allowlist(self):
+        probe = NATIVE + (
+            "\nhostile = ['BASH_ENV', 'ENV', 'PYTHONPATH', 'UBS_SKIP_CATEGORIES', 'SSH_AUTH_SOCK',"
+            " 'NODE_OPTIONS', 'HOSTILE_PROBE']\n"
+            "if any(k in os.environ for k in hostile) or not all(os.environ.get(k) for k in ('HOME', 'TMPDIR'))"
+            " or os.environ.get('PATH') != '/usr/bin:/bin':\n"
+            "    sys.exit(1)\n")
+        self.put("scripts/ci/smoke.sh", probe, executable=True)
+        self.git("add", "scripts/ci/smoke.sh")
+        self.install()
+        silencer = self.put("bash-env-noop.sh", ":\n", root=self.work)
+        result = self.hook(BASH_ENV=str(silencer), ENV=str(silencer), PYTHONPATH=str(self.work),
+                           UBS_SKIP_CATEGORIES="1", SSH_AUTH_SOCK=str(self.work / "agent"),
+                           NODE_OPTIONS="--require=/nonexistent", HOSTILE_PROBE="1")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.events(), ["ubs", "native"])
+
+    def test_caller_path_cannot_substitute_tools_or_ubs_modules(self):
+        self.stage("app.py", "def risky(x):\n return eval(x)\n")
+        self.use_real_scanner()
+        hostile = self.work / "hostile-bin"
+        hostile.mkdir()
+        marker = self.work / "fake-tool-used"
+        (hostile / "git").symlink_to(shutil.which("git"))
+        for name in ("unshare", "ubs-python"):
+            fake = hostile / name
+            fake.write_text(f"#!/bin/sh\ntouch {marker}\nexit 0\n")
+            fake.chmod(0o755)
+        refused = self.hook(PATH=f"{hostile}:{os.environ['PATH']}")
+        self.assertNotEqual(refused.returncode, 0, refused.stdout[-2000:] + refused.stderr[-2000:])
+        self.assertFalse(marker.exists(), "a tool from the caller's PATH was executed")
+        self.assertNotIn("native", self.events())
+
+    def test_replace_refs_cannot_change_the_bytes_native_checks_see(self):
+        self.install()
+        bad_oid = subprocess.run(["git", "-C", str(self.repo), "hash-object", "-w", "--stdin"], input="bad\n",
+                                 env=self.env, capture_output=True, text=True, check=True).stdout.strip()
+        good_oid = subprocess.run(["git", "-C", str(self.repo), "hash-object", "-w", "--stdin"], input="good\n",
+                                  env=self.env, capture_output=True, text=True, check=True).stdout.strip()
+        self.stage("control", "bad\n")
+        self.git("replace", bad_oid, good_oid)
+        refused = self.hook()
+        self.assertNotEqual(refused.returncode, 0, refused.stdout + refused.stderr)
+
+    def test_moved_worktree_keeps_its_hooks_override_checked(self):
+        self.git("config", "extensions.worktreeConfig", "true")
+        linked = self.work / "linked-before-move"
+        self.git("worktree", "add", "-q", "--detach", str(linked))
+        self.git("config", "--worktree", "core.hooksPath", str(self.work / "elsewhere"), root=linked)
+        linked.rename(self.work / "linked-after-move")
+        result = self.install(check=False)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertRegex(result.stderr, "conflicting worktree hooks override|did not activate qualified chain")
+        self.assertEqual(self.git("config", "--get", "core.hooksPath", check=False).stdout, "")
+
+    def test_committer_git_config_cannot_run_commands_in_origin_git_calls(self):
+        self.stage("control", "bad\n")
+        self.install()
+        marker = self.work / "fsmonitor-ran"
+        fixer = self.put("fixer.sh", f'#!/bin/sh\ntouch {marker}\nfor d in "$TMPDIR"/offline-index-*; do '
+                         '[ -d "$d" ] && printf "good\\n" > "$d/control"; done\nexit 1\n',
+                         executable=True, root=self.work)
+        refused = self.hook(GIT_CONFIG_COUNT="1", GIT_CONFIG_KEY_0="core.fsmonitor", GIT_CONFIG_VALUE_0=str(fixer))
+        self.assertNotEqual(refused.returncode, 0, refused.stdout + refused.stderr)
+        self.assertFalse(marker.exists(), "an injected core.fsmonitor command ran")
+
+    def test_global_config_hooks_cannot_run_inside_origin_git_calls(self):
+        self.stage("control", "bad\n")
+        self.install()
+        marker = self.work / "config-hook-ran"
+        fixer = self.put("fixer.sh", f'#!/bin/sh\ntouch {marker}\nfor d in "$TMPDIR"/offline-index-*; do '
+                         '[ -d "$d" ] && printf "good\\n" > "$d/control"; done\nexit 0\n',
+                         executable=True, root=self.work)
+        self.put(".gitconfig", f'[hook "fixer"]\n\tevent = post-index-change\n\tcommand = {fixer}\n',
+                 root=self.home)
+        refused = self.hook()  # the committer even sets GIT_CONFIG_GLOBAL=/dev/null (self.env)
+        self.assertNotEqual(refused.returncode, 0, refused.stdout + refused.stderr)
+        self.assertFalse(marker.exists(), "a config-defined hook ran inside the offline hook")
+
+    def test_undecodable_override_path_still_rolls_back(self):
+        self.git("config", "extensions.worktreeConfig", "true")
+        linked = self.work / "linked-before-move"
+        self.git("worktree", "add", "-q", "--detach", str(linked))
+        subprocess.run([b"git", b"-C", os.fsencode(linked), b"config", b"--worktree", b"core.hooksPath",
+                        os.fsencode(self.work) + b"/\xff-hooks"], env=self.env, check=True)
+        linked.rename(self.work / "linked-after-move")
+        result = self.install(check=False)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertEqual(self.git("config", "--get", "core.hooksPath", check=False).stdout, "")
+
+    def test_locked_worktree_with_offline_checkout_installs(self):
+        linked = self.work / "removable-media"
+        self.git("worktree", "add", "-q", "--detach", str(linked))
+        self.git("worktree", "lock", str(linked))
+        shutil.rmtree(linked)
+        self.install()
+        self.assertEqual(Path(self.git("config", "--get", "core.hooksPath").stdout.strip()),
+                         self.common / "softwareco-offline-hooks-v1")
+
+    def moved_worktree_with(self, configure):
+        linked = self.work / "linked-before-move"
+        self.git("worktree", "add", "-q", "--detach", str(linked))
+        configure(linked)
+        linked.rename(self.work / "linked-after-move")
+
+    def assert_install_refused_and_rolled_back(self):
+        result = self.install(check=False)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("did not activate qualified chain", result.stderr)
+        self.assertEqual(self.git("config", "--get", "core.hooksPath", check=False).stdout, "")
+
+    def test_moved_worktree_override_through_an_include_is_refused(self):
+        self.git("config", "extensions.worktreeConfig", "true")
+        included = self.put("hooks-include.cfg", f"[core]\n\thooksPath = {self.work / 'elsewhere'}\n",
+                            root=self.work)
+        self.moved_worktree_with(lambda linked: self.git("config", "--worktree", "include.path", str(included),
+                                                        root=linked))
+        self.assert_install_refused_and_rolled_back()
+
+    def test_masked_worktree_config_extension_cannot_hide_an_override(self):
+        self.git("config", "extensions.worktreeConfig", "true")
+        self.moved_worktree_with(lambda linked: self.git("config", "--worktree", "core.hooksPath",
+                                                        str(self.work / "elsewhere"), root=linked))
+        self.git("config", "--worktree", "extensions.worktreeConfig", "false")
+        self.assert_install_refused_and_rolled_back()
+
+    def test_installer_refuses_repository_outside_scope(self):
+        other = self.home / "ai-society/softwareco/owned/other-repo"
+        other.mkdir(parents=True)
+        for rel in ("scripts/ci/smoke.sh", ".githooks/pre-commit"):
+            self.put(rel, (self.repo / rel).read_text(), executable=True, root=other)
+        self.git("init", "-q", "-b", "main", root=other)
+        self.git("add", ".", root=other)
+        self.git("-c", "user.name=f", "-c", "user.email=f@example.invalid", "commit", "-qm", "seed",
+                 root=other)
+        result = self.install(root=other, check=False)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("outside exact AK7597", result.stderr)
+        self.assertEqual(self.git("config", "--get", "core.hooksPath", root=other, check=False).stdout, "")
+
+    def test_installer_skips_prunable_worktrees_and_activates_live_ones(self):
+        live = self.work / "live-linked"
+        gone = self.work / "deleted-linked"
+        self.git("worktree", "add", "-q", "--detach", str(live))
+        self.git("worktree", "add", "-q", "--detach", str(gone))
+        shutil.rmtree(gone)
+        self.assertIn("prunable", self.git("worktree", "list", "--porcelain").stdout)
+        self.install()
+        hook = self.common / "softwareco-offline-hooks-v1/pre-commit"
+        discovered = self.git("rev-parse", "--path-format=absolute", "--git-path", "hooks/pre-commit", root=live)
+        self.assertEqual(Path(discovered.stdout.strip()), hook)
+        self.assertIn("prunable", self.git("worktree", "list", "--porcelain").stdout)
+
+    def test_softwareco_mode_is_root_only(self):
+        result = subprocess.run([sys.executable, str(INSTALLER), "--repo", str(self.repo),
+                                 "--mode", "softwareco"], env=self.env, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("root-only", result.stderr)
+        self.assertFalse((self.common / "softwareco-offline-hooks-v1").exists())
+
+
+# D2: the non-strict wrapper compares per-file critical counts with HEAD. That
+# comparison may only pass a failed --staged scan when it is complete and consistent.
+STUB_SCANNER = '''#!/usr/bin/env python3
+import json, os, sys
+with open(os.path.join(os.environ["HOME"], "calls"), "a") as log:
+    log.write(" ".join(sys.argv[1:]) + "\\n")
+if "--staged" in sys.argv:
+    sys.exit(1)
+spec = json.loads(os.environ["STUB_REPORTS"])[os.path.basename(os.getcwd())]
+finding = {"severity": "critical", "rule_id": "py.eval-exec", "file": os.path.join(os.getcwd(), "app.py")}
+print(json.dumps({"status": spec["status"], "failed_modules": spec["failed"],
+                  "findings": [finding] * spec["criticals"]}))
+sys.exit(spec["exit"])
+'''
+
+
+class StagedWrapperComparison(unittest.TestCase):
+    def setUp(self):
+        self.work = Path(tempfile.mkdtemp(prefix="wrapper-tests-"))
+        self.addCleanup(shutil.rmtree, self.work, True)
+        self.repo = self.work / "repo"
+        self.repo.mkdir()
+        self.stub = self.work / "ubs"
+        self.stub.write_text(STUB_SCANNER)
+        self.stub.chmod(0o755)
+        self.env = dict(environment(), HOME=str(self.work), TMPDIR=str(self.work), UBS_BIN=str(self.stub),
+                        GIT_CONFIG_GLOBAL="/dev/null", GIT_CONFIG_NOSYSTEM="1")
+        self.env.pop("UBS_STAGED_STRICT", None)
+        for args in (("init", "-q", "-b", "main"), ("config", "user.name", "f"),
+                     ("config", "user.email", "f@example.invalid")):
+            subprocess.run(["git", *args], cwd=self.repo, env=self.env, check=True)
+        (self.repo / "app.py").write_text("print('base')\n")
+        subprocess.run(["git", "add", "app.py"], cwd=self.repo, env=self.env, check=True)
+        subprocess.run(["git", "commit", "-qm", "seed"], cwd=self.repo, env=self.env, check=True)
+        (self.repo / "app.py").write_text("print('candidate')\n")
+        subprocess.run(["git", "add", "app.py"], cwd=self.repo, env=self.env, check=True)
+
+    def run_wrapper(self, head, staged):
+        def spec(criticals, exit_code, status="ok", failed=()):
+            return {"criticals": criticals, "exit": exit_code, "status": status, "failed": list(failed)}
+        env = dict(self.env, STUB_REPORTS=json.dumps({"head": spec(*head), "staged": spec(*staged)}))
+        return subprocess.run([str(OWNER / "scripts/ubs-staged.sh")], cwd=self.repo, env=env,
+                              capture_output=True, text=True)
+
+    def test_preexisting_criticals_still_pass(self):
+        result = self.run_wrapper((1, 1), (1, 1))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_new_critical_still_refuses(self):
+        result = self.run_wrapper((0, 0), (1, 1))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+
+    def test_partial_staged_rescan_refuses(self):
+        result = self.run_wrapper((0, 0), (0, 2, "partial", ("python",)))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("keeping the whole-file result", result.stderr)
+
+    def rescans(self):
+        return [line for line in (self.work / "calls").read_text().splitlines() if "--format=json" in line]
+
+    def test_rescans_disable_a_foreign_project_config(self):
+        self.run_wrapper((1, 1), (1, 1))
+        self.assertEqual(len(self.rescans()), 2)
+        self.assertTrue(all("--no-config" in line for line in self.rescans()), self.rescans())
+
+    def test_rescans_use_the_checkout_scan_policy(self):
+        (self.repo / ".ubs.json").write_text('{"version": 1}\n')
+        self.run_wrapper((1, 1), (1, 1))
+        expected = f"--config={self.repo}/.ubs.json"
+        self.assertTrue(all(expected in line for line in self.rescans()), self.rescans())
+
+    def test_rescan_without_the_failing_criticals_refuses(self):
+        result = self.run_wrapper((0, 0), (0, 0))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("keeping the whole-file result", result.stderr)
 
 
 if __name__ == "__main__":

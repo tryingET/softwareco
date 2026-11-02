@@ -112,8 +112,17 @@ def install(args):
     worktree_config = subprocess.run(["git", "-C", str(root), "config", "--bool", "--get", "extensions.worktreeConfig"],
                                      capture_output=True, text=True,
                                      env={k: v for k, v in os.environ.items() if not k.startswith("GIT_")})
-    worktrees = [Path(line[9:]) for line in git(root, "worktree", "list", "--porcelain").decode().splitlines()
-                 if line.startswith("worktree ")]
+    # NUL-separated so no path can forge a "prunable" line. A prunable entry has no checkout
+    # at its recorded path; it may still be a live worktree that was moved, so activation is
+    # verified for its administrative directory after installation (below).
+    worktrees = []
+    for block in git(root, "worktree", "list", "--porcelain", "-z").decode().split("\0\0"):
+        fields = [field for field in block.split("\0") if field]
+        # A checkout that is absent (moved, deleted, or a locked worktree on unmounted media)
+        # cannot be entered; its administrative directory is verified after installation.
+        if (fields and fields[0].startswith("worktree ") and not any(f.startswith("prunable") for f in fields)
+                and Path(fields[0][9:]).is_dir()):
+            worktrees.append(Path(fields[0][9:]))
     if worktree_config.stdout.strip() == "true":
         for worktree in worktrees:
             override = subprocess.run(["git", "-C", str(worktree), "config", "--worktree", "--get", "core.hooksPath"],
@@ -158,7 +167,8 @@ def install(args):
     }
     destination.mkdir(mode=0o700, exist_ok=True)
     config = destination / "config.json"
-    hook = ("#!/bin/sh\nset -eu\nexec " + shlex.quote(sys.executable) + " " +
+    # -I: PYTHON* variables and the runner's directory cannot inject modules (AK7597 D1).
+    hook = ("#!/bin/sh\nset -eu\nexec " + shlex.quote(sys.executable) + " -I " +
             shlex.quote(str(runner)) + " " + shlex.quote(str(config)) + "\n")
     atomic(config, (json.dumps(metadata, indent=2, sort_keys=True) + "\n").encode())
     atomic(destination / "pre-commit", hook.encode(), True)
@@ -170,10 +180,29 @@ def install(args):
     elif (destination / "pre-push").exists():
         raise RuntimeError("prior installed pre-push obligation cannot be removed implicitly")
     git(root, "config", "--local", "core.hooksPath", str(destination))
-    for worktree in worktrees:
-        discovered = git(worktree, "rev-parse", "--path-format=absolute", "--git-path", "hooks/pre-commit").decode().strip()
-        if Path(discovered) != destination / "pre-commit":
-            raise RuntimeError(f"Git hook discovery did not activate qualified chain: {worktree}")
+    # Verify activation through Git's own resolution (includes, worktree config, a masked
+    # extension) for every live worktree and every administrative worktree directory,
+    # including prunable ones whose checkout may have moved. On a mismatch, restore the
+    # prior configuration before refusing.
+    try:
+        expected = destination / "pre-commit"
+        for worktree in worktrees:
+            discovered = git(worktree, "rev-parse", "--path-format=absolute", "--git-path", "hooks/pre-commit")
+            if Path(os.fsdecode(discovered.strip())) != expected:
+                raise RuntimeError(f"Git hook discovery did not activate qualified chain: {worktree}")
+        for admin in sorted(p for p in (common / "worktrees").glob("*") if (p / "commondir").is_file()):
+            discovered = subprocess.check_output(
+                ["git", "--no-lazy-fetch", f"--git-dir={admin}", "rev-parse", "--path-format=absolute",
+                 "--git-path", "hooks/pre-commit"],
+                env={k: v for k, v in os.environ.items() if not k.startswith("GIT_")})
+            if Path(os.fsdecode(discovered.strip())) != expected:
+                raise RuntimeError(f"Git hook discovery did not activate qualified chain: {admin}")
+    except Exception:
+        if prior:
+            git(root, "config", "--local", "core.hooksPath", prior)
+        else:
+            git(root, "config", "--local", "--unset", "core.hooksPath")
+        raise
     print(json.dumps({"protocol": PROTOCOL, "hooks_path": str(destination),
                       "config_sha256": sha(config), "source_hashes": hashes,
                       "scanner_sha256": scanner_sha, "native_sha256": smoke_sha,

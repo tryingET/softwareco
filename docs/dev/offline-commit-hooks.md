@@ -15,8 +15,24 @@ This is not a fleet rollout, hook exemption, or security clearance.
 
 ## What executes
 
-1. The generated Git pre-commit resolves the actual worktree through Git, then
-   verifies installed source hashes and the real UBS service executable hash.
+1. The generated Git pre-commit runs the runner as `python3 -I` (isolated: `PYTHON*`
+   variables and the runner's own directory cannot inject modules). The runner refuses
+   an unisolated interpreter, but an entry hook generated before this rule still
+   imports modules before that check, so after any source change **reinstall every
+   consumer immediately** (a stale entry hook then refuses at the `-I` check, unless an
+   inherited `PYTHONPATH` hijacks an import first). The runner then pins
+   `PATH=/usr/bin:/bin` and `GIT_NO_REPLACE_OBJECTS=1` for itself and everything it
+   starts. Its own Git calls on the committing repository get the environment
+   allowlist below plus only the Git location variables (`GIT_DIR`, `GIT_WORK_TREE`,
+   `GIT_INDEX_FILE`, `GIT_COMMON_DIR`, object directories, `GIT_NAMESPACE`, discovery
+   limits), ignore global and system configuration (`GIT_CONFIG_GLOBAL=/dev/null`,
+   `GIT_CONFIG_NOSYSTEM=1`), and run with `-c core.fsmonitor=false`. So committer
+   configuration (`GIT_CONFIG_*`, `GIT_CONFIG_PARAMETERS`, `GIT_EXEC_PATH`,
+   `~/.gitconfig`, including config-defined hooks such as `post-index-change`) cannot
+   run commands during the index reads. The repository's own `.git/config` remains a
+   trusted boundary, like its hooks configuration. It resolves the actual worktree through Git and
+   verifies installed source hashes and the real UBS service executable hash. The
+   network-namespace re-exec keeps `-I`.
    Relative index selection follows Git's repository context, not a path inferred
    by concatenating the shell cwd. Tests compare the captured tree against Git's
    original-context `write-tree`, including explicit Git directory/worktree bindings.
@@ -29,10 +45,27 @@ This is not a fleet rollout, hook exemption, or security clearance.
    standalone Git repository. No smudge, EOL, export-ignore or checkout filters
    transform it. Its HEAD is the originating HEAD and its index is the candidate
    tree. Source objects are referenced through alternates, not fetched or cloned.
-   Originating `GIT_*` variables are cleared; explicit offline settings are then
-   restored. No origin index, ref, or worktree is used as the native context.
+   UBS and the native checks receive an **environment allowlist** only: the pinned
+   `PATH`, `HOME`, `TMPDIR`, `USER`, `LOGNAME`, `LANG`, `LANGUAGE`, `LC_*`, `TERM`,
+   `TZ`, plus the explicit offline settings (including `UBS_NO_CACHE=1`), and
+   `UBS_STAGED_STRICT=1` when the committer sets it (tighten-only). Everything else
+   is dropped, including `GIT_*`, `UBS_*` (for example `UBS_SKIP_CATEGORIES`),
+   `BASH_ENV`/`ENV`, `PYTHON*`, `NODE_OPTIONS`, agent sockets and CI knobs: before
+   this, an inherited `BASH_ENV` or `UBS_SKIP_CATEGORIES` could make the real scanner
+   pass a critical finding, and a caller `PATH` could supply UBS language modules
+   (AK7597 inspections, 2026-11-01/02). Tools the checks need must therefore live in
+   `/usr/bin` or `/bin`. No origin index, ref, or worktree is used as the native
+   context; replacement refs cannot substitute candidate bytes.
 5. The real `scripts/ubs-staged.sh` runs **first in that snapshot**, using the real
    service scanner. Thus both source bytes and `.ubsignore` come from the index.
+   When the staged scan fails, the wrapper may compare per-file critical counts with
+   HEAD's versions only if the staged rescan is complete (exit 0/1, `status` ok, no
+   failed module) and itself shows a critical finding; otherwise it keeps the
+   whole-file refusal (inspection D2). Both rescans name the checkout's own scan policy
+   (`--config=<checkout>/.ubs.json`, else `--no-config`), so a `.ubs.json` of a
+   repository enclosing `TMPDIR` cannot apply. Known residual: the comparison counts
+   criticals only, so under a project policy that fails on warnings a new warning in
+   a file that already has criticals can still pass.
 6. Native-v1 verifies both indexed native entrypoint and smoke hashes and runs:
 
    ```text
@@ -89,7 +122,11 @@ listings are not proof; full object reads must complete successfully.
 
 Installation is limited to Softwareco and the four named dep-* repositories. It
 writes only the target's Git metadata and an absolute common-directory
-`core.hooksPath`, so `.git` **files** in linked worktrees work. Installing twice
+`core.hooksPath`, so `.git` **files** in linked worktrees work. After activation, Git's own
+hook resolution is checked for every live worktree **and every administrative worktree
+directory**, including ones Git lists as prunable (a moved checkout), so overrides via
+`config.worktree`, `include.path`/`includeIf` or a masked `extensions.worktreeConfig`
+are refused; a refusal restores the prior `core.hooksPath` first. Installing twice
 with identical inputs preserves generated bytes and mtimes. All listed worktrees'
 Git hook discovery is checked. Conflicting worktree-specific overrides, unknown
 hooks, missing native entries, scanner/source drift, or unavailable local bases

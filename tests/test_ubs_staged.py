@@ -220,9 +220,11 @@ class UbsStagedBaselineFeature(_Fixture):
     """
 
     def run_baseline(self, head: list, staged: list, **env: str) -> subprocess.CompletedProcess:
-        # Findings carry absolute paths under each side's scan root, as UBS reports them.
+        # Findings carry absolute paths under each side's scan root, as UBS reports them, and a
+        # complete report says so (status ok, no failed module): the comparison refuses anything else.
         def doc(side: str, items: list) -> str:
-            return json.dumps({"findings": [{"severity": "critical", "suppressed": False,
+            return json.dumps({"status": "ok", "failed_modules": [],
+                               "findings": [{"severity": "critical", "suppressed": False,
                                              "file": f"__ROOT__/{path}", "rule_id": rule} for path, rule in items]})
         return self.run_wrapper(self.stub, STUB_RC="1", STUB_HEAD_JSON=doc("head", head),
                                 STUB_STAGED_JSON=doc("staged", staged), **env)
