@@ -79,7 +79,7 @@ node ./scripts/pi-mono-compatibility-evidence-index.mjs rebuild --offline
 Each entry is classified into one of these states:
 
 - `not_applicable` — no actionable compatibility work implied
-- `safe` — downstream validation is known good for the upstream delta
+- `safe` — validation passed for the recorded downstream target
 - `pending` — downstream validation is in flight or not yet concluded
 - `needs_attention` — retry, investigation, or manual follow-up is needed
 
@@ -90,6 +90,24 @@ Follow-up hints include:
 - `retry_dispatch`
 - `investigate_failure`
 - `manual_review`
+
+### Candidate contract scope
+
+New upgrade receipts identify the tested published npm package in
+`candidate_contract`. The index retains that information as `candidateContract`,
+including `packageName`, `version`, `reviewAnchor`, `source`, and `target`.
+The same projection appears in the summary's unresolved entries.
+
+For `target: published-npm-package`, a successful result applies to that exact
+package version. `upstream.afterHead` records the commit that triggered the
+check; a passing package test does not prove that checkout's unpublished source
+is compatible. The resolution rationale names the package and version to keep
+that distinction visible.
+
+Older receipts and baseline runs without a candidate contract retain their
+existing classifications and have `candidateContract: null`. The index does not
+infer a package version or a tested source commit from those receipts. Rebuilding
+the index does not modify the receipt history.
 
 ## Enrichment behavior
 

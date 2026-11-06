@@ -27,6 +27,7 @@ without relocating the canary away from the extension project that owns it.
 ## Source files
 
 - Relay script: `scripts/pi-mono-compatibility-relay.sh`
+- Exact candidate resolver: `scripts/pi-mono-compatibility-contract.mjs`
 - Evidence index: `scripts/pi-mono-compatibility-evidence-index.mjs`
 - Pull orchestrator: `scripts/pull-all-local-contrib-repos.sh`
 - systemd timer/service:
@@ -53,6 +54,45 @@ Current default watched upstream paths:
 - `packages/tui`
 
 These are the upstream surfaces most likely to affect our Pi extension runtime behavior.
+
+### Exact upgrade contract
+
+An `upgrade` dispatch supplies all three workflow inputs: `profile`, `host_version`,
+and `changelog_ref`. Local mode passes the same version and anchor through
+`PI_HOST_COMPAT_HOST_VERSION` and `PI_HOST_COMPAT_CHANGELOG_REF`.
+
+By default, the relay reads `packages/coding-agent/package.json` from the exact
+upstream trigger commit, checks its package name and exact semantic version, and
+uses that commit's `packages/coding-agent/CHANGELOG.md` URL as the review anchor.
+The checkout must have a GitHub `origin`; uncommitted files do not change the
+candidate. This anchor records immutable trigger context; it does not assert
+that a person reviewed the change or approved adopting it.
+
+To select a separately reviewed candidate, set **both** overrides together:
+
+```bash
+PI_HOST_COMPAT_HOST_VERSION=1.5.0 \
+PI_HOST_COMPAT_CHANGELOG_REF='https://github.com/earendil-works/pi/compare/v1.4.0...v1.5.0' \
+./scripts/pi-mono-compatibility-relay.sh
+```
+
+A partial override is rejected rather than paired with unrelated upstream
+metadata. Versions must be exact; GitHub anchors must name a tag, commit, or
+comparison rather than a moving branch. Before dispatch, a read-only `npm view`
+against the public npm registry must confirm the exact package name and version.
+An unpublished release or unavailable registry leaves the upstream delta pending
+for retry and creates a failure receipt without dispatching a broken CI run.
+No dependencies are installed by this check. The relay requires Node and npm for
+effectful upgrade runs; a dry-run resolves the contract but skips registry access.
+
+Receipts add `candidate_contract` with the selected package, version, review
+anchor, contract source, and `published-npm-package` target. The canary tests
+that published package version, **not** an upstream Git checkout. An upstream
+commit can be newer than the published package it declares; its `after_head`
+remains trigger provenance and does not become source-head compatibility proof.
+Workflow dispatch acceptance also remains distinct from a passing canary result.
+The `current` profile uses the downstream pinned baseline and needs no upgrade
+contract or registry preflight; `off` retains the pending delta.
 
 ## Ownership boundary
 
@@ -153,3 +193,12 @@ The relay belongs in `contrib` because this repo is where upstream Pi checkouts 
 The canary stays in `pi-extensions` because that repo owns the downstream compatibility knowledge.
 
 The relay is the connective tissue between those two existing realities.
+
+## Validation
+
+Run `bash contrib/scripts/test-pi-mono-compatibility-relay.sh` from the company
+repository root (or `bash scripts/test-pi-mono-compatibility-relay.sh` from the
+contrib lane). The suite uses temporary Git repositories and mocked npm/GitHub
+clients; it verifies workflow and local input forwarding, committed-source
+resolution, rejected contracts, publication failures, and retry state without
+network dispatch. The company smoke gate also runs this suite.
