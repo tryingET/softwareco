@@ -51,6 +51,13 @@ cat > "$RECEIPTS_DIR/receipt-20260314T080000Z-1.json" <<'EOF'
   "reason": "head-changed",
   "mode": "local",
   "profile": "upgrade",
+  "candidate_contract": {
+    "package": "@earendil-works/pi-coding-agent",
+    "version": "1.5.0",
+    "review_anchor": "https://github.com/earendil-works/pi/releases/tag/v1.5.0",
+    "source": "explicit",
+    "target": "published-npm-package"
+  },
   "dry_run": false,
   "sync_status": "OK",
   "contrib_root": "/tmp/contrib",
@@ -109,6 +116,13 @@ cat > "$RECEIPTS_DIR/receipt-20260314T080200Z-3.json" <<'EOF'
   "reason": "head-changed",
   "mode": "workflow",
   "profile": "upgrade",
+  "candidate_contract": {
+    "package": "@earendil-works/pi-coding-agent",
+    "version": "1.5.0",
+    "review_anchor": "https://github.com/earendil-works/pi/blob/1111111111111111111111111111111111111111/packages/coding-agent/CHANGELOG.md",
+    "source": "upstream-manifest",
+    "target": "published-npm-package"
+  },
   "dry_run": false,
   "sync_status": "OK",
   "contrib_root": "/tmp/contrib",
@@ -138,6 +152,13 @@ cat > "$RECEIPTS_DIR/receipt-20260314T080300Z-4.json" <<'EOF'
   "reason": "head-changed",
   "mode": "workflow",
   "profile": "upgrade",
+  "candidate_contract": {
+    "package": "@earendil-works/pi-coding-agent",
+    "version": "1.5.0",
+    "review_anchor": "https://github.com/earendil-works/pi/releases/tag/v1.5.0",
+    "source": "explicit",
+    "target": "published-npm-package"
+  },
   "dry_run": false,
   "sync_status": "WARN",
   "contrib_root": "/tmp/contrib",
@@ -160,6 +181,23 @@ cat > "$RECEIPTS_DIR/receipt-20260314T080300Z-4.json" <<'EOF'
 }
 EOF
 
+cat > "$RECEIPTS_DIR/receipt-20260314T080400Z-5.json" <<'EOF'
+{
+  "timestamp": "2026-03-14T08:04:00Z",
+  "status": "local-passed",
+  "upstream_repo": {"after_head": "legacy-local"}
+}
+EOF
+
+cat > "$RECEIPTS_DIR/receipt-20260314T080500Z-6.json" <<'EOF'
+{
+  "timestamp": "2026-03-14T08:05:00Z",
+  "status": "workflow-dispatched",
+  "upstream_repo": {"after_head": "legacy-workflow"},
+  "downstream_repo": {"repo_slug": "tryingET/pi-extensions", "run_id": "101"}
+}
+EOF
+
 PATH="$FAKE_BIN:$PATH" node "$INDEX_SCRIPT" rebuild \
   --contrib-root "$CONTRIB_ROOT" \
   --receipts-dir "$RECEIPTS_DIR" \
@@ -169,17 +207,41 @@ PATH="$FAKE_BIN:$PATH" node "$INDEX_SCRIPT" rebuild \
 
 [[ -f "$OUTPUT_PATH" ]] || fail "evidence index output was not written"
 
-node --input-type=module <<'EOF' "$OUTPUT_PATH"
+node --input-type=module - "$OUTPUT_PATH" <<'EOF'
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
-const indexPath = process.argv[1];
+const indexPath = process.argv[2];
 const data = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
-if (data.summary.totalEntries !== 4) throw new Error(`expected 4 entries, got ${data.summary.totalEntries}`);
+if (data.summary.totalEntries !== 6) throw new Error(`expected 6 entries, got ${data.summary.totalEntries}`);
 if (data.summary.unresolvedCount !== 2) throw new Error(`expected 2 unresolved entries, got ${data.summary.unresolvedCount}`);
 const byHead = new Map(data.entries.map((entry) => [entry.upstream.afterHead, entry]));
 if (byHead.get('bbb').resolution.state !== 'safe') throw new Error('local-passed should classify as safe');
 if (byHead.get('ccc').resolution.followUp !== 'retry_dispatch') throw new Error('dispatch-failed should require retry_dispatch');
 if (byHead.get('ddd').resolution.state !== 'safe') throw new Error('completed success workflow should classify as safe');
 if (byHead.get('eee').resolution.state !== 'pending') throw new Error('in-progress workflow should classify as pending');
+const explicitContract = {
+  packageName: '@earendil-works/pi-coding-agent',
+  version: '1.5.0',
+  reviewAnchor: 'https://github.com/earendil-works/pi/releases/tag/v1.5.0',
+  source: 'explicit',
+  target: 'published-npm-package',
+};
+assert.deepEqual(byHead.get('bbb').candidateContract, explicitContract);
+assert.deepEqual(byHead.get('ddd').candidateContract, {
+  ...explicitContract,
+  reviewAnchor: 'https://github.com/earendil-works/pi/blob/1111111111111111111111111111111111111111/packages/coding-agent/CHANGELOG.md',
+  source: 'upstream-manifest',
+});
+for (const head of ['bbb', 'ddd']) {
+  assert.match(byHead.get(head).resolution.rationale, /published npm package @earendil-works\/pi-coding-agent@1\.5\.0/);
+  assert.match(byHead.get(head).resolution.rationale, /trigger context, not a tested checkout/);
+}
+for (const head of ['legacy-local', 'legacy-workflow']) {
+  assert.equal(byHead.get(head).resolution.state, 'safe');
+  assert.equal(byHead.get(head).candidateContract, null);
+  assert.match(byHead.get(head).resolution.rationale, /does not record an exact package contract/);
+}
+assert.deepEqual(data.summary.unresolvedEntries.find((entry) => entry.afterHead === 'eee').candidateContract, explicitContract);
 EOF
 
 UNRESOLVED_JSON="$TMP_DIR/unresolved.json"
@@ -190,15 +252,17 @@ PATH="$FAKE_BIN:$PATH" node "$INDEX_SCRIPT" unresolved \
   --max-online-lookups 5 \
   --json > "$UNRESOLVED_JSON"
 
-node --input-type=module <<'EOF' "$UNRESOLVED_JSON"
+node --input-type=module - "$UNRESOLVED_JSON" <<'EOF'
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
-const unresolvedPath = process.argv[1];
+const unresolvedPath = process.argv[2];
 const unresolved = JSON.parse(fs.readFileSync(unresolvedPath, 'utf8'));
 if (unresolved.length !== 2) throw new Error(`expected 2 unresolved entries, got ${unresolved.length}`);
 const states = unresolved.map((entry) => entry.resolution.state).sort();
 if (states.join(',') !== 'needs_attention,pending') {
   throw new Error(`unexpected unresolved states: ${states.join(',')}`);
 }
+assert.equal(unresolved.find((entry) => entry.upstream.afterHead === 'eee').candidateContract.version, '1.5.0');
 EOF
 
 printf 'ok: pi-mono compatibility evidence index\n'

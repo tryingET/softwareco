@@ -5,3 +5,5 @@
 set -eu
 # The CI pin test must also run without a materialized private ontology checkout.
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.test_ci_dependency_pins tests.test_ubs_staged tests.test_decision157_consumer_census tests.test_offline_hooks tests.test_tpl_task_scope_snapshots -q
+bash ./contrib/scripts/test-pi-mono-compatibility-relay.sh
+bash ./contrib/scripts/test-pi-mono-compatibility-evidence-index.sh

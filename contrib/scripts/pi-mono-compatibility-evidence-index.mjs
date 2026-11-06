@@ -197,6 +197,14 @@ function fetchWorkflowRuns(entries, options) {
   return cache;
 }
 
+function passedRationale(entry, result) {
+  const contract = entry.candidateContract;
+  if (contract?.target === "published-npm-package" && contract.packageName && contract.version) {
+    return `${result} for published npm package ${contract.packageName}@${contract.version}. The upstream commit records trigger context, not a tested checkout.`;
+  }
+  return `${result}. This receipt does not record an exact package contract or prove that the upstream checkout was tested.`;
+}
+
 function classifyResolution(entry, workflowRun) {
   switch (entry.status) {
     case "initialized":
@@ -235,13 +243,13 @@ function classifyResolution(entry, workflowRun) {
       return {
         state: "safe",
         followUp: "none",
-        rationale: "Local downstream canary passed for the recorded upstream delta.",
+        rationale: passedRationale(entry, "Local downstream canary passed"),
       };
     case "local-failed":
       return {
         state: "needs_attention",
         followUp: "investigate_failure",
-        rationale: "Local downstream canary failed for the recorded upstream delta.",
+        rationale: "Local downstream canary failed.",
       };
     case "dispatch-failed":
       return {
@@ -262,7 +270,7 @@ function classifyResolution(entry, workflowRun) {
         return {
           state: "safe",
           followUp: "none",
-          rationale: "Downstream compatibility workflow completed successfully.",
+          rationale: passedRationale(entry, "Downstream compatibility workflow completed successfully"),
         };
       }
       if (status === "completed") {
@@ -312,6 +320,8 @@ function normalizeEntry(receiptPath, rawReceipt, workflowRuns) {
   const upstream = rawReceipt.upstream_repo && typeof rawReceipt.upstream_repo === "object"
     ? rawReceipt.upstream_repo
     : {};
+  const candidate = rawReceipt.candidate_contract && typeof rawReceipt.candidate_contract === "object"
+    && !Array.isArray(rawReceipt.candidate_contract) ? rawReceipt.candidate_contract : null;
 
   const repoSlug = nonEmpty(downstream.repo_slug);
   const runId = nonEmpty(downstream.run_id);
@@ -323,6 +333,13 @@ function normalizeEntry(receiptPath, rawReceipt, workflowRuns) {
     reason: nonEmpty(rawReceipt.reason) ?? "unknown",
     mode: nonEmpty(rawReceipt.mode) ?? "unknown",
     profile: nonEmpty(rawReceipt.profile) ?? "unknown",
+    candidateContract: candidate ? {
+      packageName: nonEmpty(candidate.package) ?? null,
+      version: nonEmpty(candidate.version) ?? null,
+      reviewAnchor: nonEmpty(candidate.review_anchor) ?? null,
+      source: nonEmpty(candidate.source) ?? null,
+      target: nonEmpty(candidate.target) ?? null,
+    } : null,
     syncStatus: nonEmpty(rawReceipt.sync_status) ?? "unknown",
     dryRun: Boolean(rawReceipt.dry_run),
     upstream: {
@@ -384,6 +401,7 @@ function buildSummary(entries, invalidReceipts, options) {
       state: entry.resolution.state,
       followUp: entry.resolution.followUp,
       afterHead: entry.upstream.afterHead,
+      candidateContract: entry.candidateContract,
       changedPaths: entry.upstream.changedPaths,
       repoSlug: entry.downstream.repoSlug,
       runUrl: entry.downstream.runUrl ?? entry.downstream.workflowRun?.url ?? null,

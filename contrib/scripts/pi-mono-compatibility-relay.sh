@@ -14,6 +14,9 @@ WORKFLOW_FILE="${PI_COMPAT_RELAY_WORKFLOW_FILE:-compatibility-canary.yml}"
 WORKFLOW_REF="${PI_COMPAT_RELAY_WORKFLOW_REF:-}"
 SYNC_STATUS="${PI_COMPAT_RELAY_SYNC_STATUS:-unknown}"
 DRY_RUN=0
+CANDIDATE_HOST_VERSION=""
+CANDIDATE_CHANGELOG_REF=""
+CANDIDATE_CONTRACT_SOURCE=""
 
 usage() {
   cat <<'EOF'
@@ -55,6 +58,12 @@ Environment overrides:
   PI_COMPAT_RELAY_WORKFLOW_REF
   PI_COMPAT_RELAY_SYNC_STATUS
   PI_COMPAT_RELAY_WATCH_PATHS   colon-separated path prefixes
+  PI_HOST_COMPAT_HOST_VERSION  exact published candidate version (set with changelog ref)
+  PI_HOST_COMPAT_CHANGELOG_REF  pinned changelog URL (set with host version)
+
+Without explicit host overrides, upgrade runs use the committed upstream
+coding-agent manifest version and a commit-pinned changelog URL. The published
+package is tested; the upstream commit is trigger context, not a tested checkout.
 EOF
 }
 
@@ -181,6 +190,13 @@ write_receipt() {
     printf '  "reason": "%s",\n' "$(json_escape "$reason")"
     printf '  "mode": "%s",\n' "$(json_escape "$MODE")"
     printf '  "profile": "%s",\n' "$(json_escape "$PROFILE")"
+    printf '  "candidate_contract": '
+    if [[ -n "$CANDIDATE_HOST_VERSION" ]]; then
+      printf '{"package": "@earendil-works/pi-coding-agent", "version": "%s", "review_anchor": "%s", "source": "%s", "target": "published-npm-package"},\n' \
+        "$(json_escape "$CANDIDATE_HOST_VERSION")" "$(json_escape "$CANDIDATE_CHANGELOG_REF")" "$(json_escape "$CANDIDATE_CONTRACT_SOURCE")"
+    else
+      printf 'null,\n'
+    fi
     printf '  "dry_run": %s,\n' "$([[ "$DRY_RUN" == "1" ]] && echo true || echo false)"
     printf '  "sync_status": "%s",\n' "$(json_escape "$SYNC_STATUS")"
     printf '  "contrib_root": "%s",\n' "$(json_escape "$CONTRIB_ROOT")"
@@ -351,6 +367,14 @@ case "$MODE" in
     ;;
 esac
 
+case "$PROFILE" in
+  current|upgrade) ;;
+  *)
+    echo "error: invalid canary profile: $PROFILE" >&2
+    exit 1
+    ;;
+esac
+
 if [[ -z "$PI_MONO_DIR" ]]; then
   PI_MONO_DIR="$CONTRIB_ROOT/pi-mono"
 fi
@@ -422,6 +446,31 @@ if [[ "$MODE" == "off" ]]; then
   exit 0
 fi
 
+if [[ "$PROFILE" == "upgrade" ]]; then
+  require_cmd node
+  contract_mode="--check-published"
+  if [[ "$DRY_RUN" == "1" ]]; then
+    contract_mode="--preview"
+  fi
+  contract_stderr="$(mktemp)"
+  trap 'rm -f "$contract_stderr"' EXIT
+  contract_status=0
+  contract_output="$(node "$SCRIPT_DIR/pi-mono-compatibility-contract.mjs" "$PI_MONO_DIR" "$current_head" "$contract_mode" 2>"$contract_stderr")" || contract_status=$?
+  contract_diagnostic="$(<"$contract_stderr")"
+  rm -f "$contract_stderr"
+  trap - EXIT
+  if [[ -n "$contract_diagnostic" ]]; then
+    printf '%s\n' "$contract_diagnostic" >&2
+  fi
+  if [[ "$contract_status" == "0" ]]; then
+    IFS=$'\t' read -r CANDIDATE_HOST_VERSION CANDIDATE_CHANGELOG_REF CANDIDATE_CONTRACT_SOURCE <<< "$contract_output"
+  else
+    receipt="$(record_receipt "failed" "invalid-or-unavailable-host-contract" "$previous_head" "$current_head" "$current_branch" "" "$contract_diagnostic" "" "" "${changed_paths[@]}")"
+    echo "pi-compat-relay: receipt $receipt" >&2
+    exit 1
+  fi
+fi
+
 if [[ "$DRY_RUN" == "1" ]]; then
   receipt="$(record_receipt "dry-run" "$comparison_reason" "$previous_head" "$current_head" "$current_branch" "" "" "" "" "${changed_paths[@]}")"
   echo "pi-compat-relay: dry-run would trigger downstream compatibility canary"
@@ -439,7 +488,11 @@ if [[ "$MODE" == "local" ]]; then
   fi
 
   set +e
-  dispatch_output="$(cd "$PI_EXTENSIONS_DIR" && PI_HOST_VERSION="$current_head" node ./scripts/pi-host-compatibility-canary.mjs run --profile "$PROFILE" 2>&1)"
+  if [[ "$PROFILE" == "upgrade" ]]; then
+    dispatch_output="$(cd "$PI_EXTENSIONS_DIR" && PI_HOST_COMPAT_HOST_VERSION="$CANDIDATE_HOST_VERSION" PI_HOST_COMPAT_CHANGELOG_REF="$CANDIDATE_CHANGELOG_REF" node ./scripts/pi-host-compatibility-canary.mjs run --profile "$PROFILE" 2>&1)"
+  else
+    dispatch_output="$(cd "$PI_EXTENSIONS_DIR" && node ./scripts/pi-host-compatibility-canary.mjs run --profile "$PROFILE" 2>&1)"
+  fi
   dispatch_status=$?
   set -e
 
@@ -474,8 +527,12 @@ if [[ -z "$repo_slug" ]]; then
 fi
 
 workflow_ref="$(resolve_workflow_ref "$PI_EXTENSIONS_DIR")"
+workflow_inputs=(-f "profile=$PROFILE")
+if [[ "$PROFILE" == "upgrade" ]]; then
+  workflow_inputs+=(-f "host_version=$CANDIDATE_HOST_VERSION" -f "changelog_ref=$CANDIDATE_CHANGELOG_REF")
+fi
 set +e
-dispatch_output="$(gh workflow run "$WORKFLOW_FILE" --repo "$repo_slug" --ref "$workflow_ref" -f profile="$PROFILE" 2>&1)"
+dispatch_output="$(gh workflow run "$WORKFLOW_FILE" --repo "$repo_slug" --ref "$workflow_ref" "${workflow_inputs[@]}" 2>&1)"
 dispatch_status=$?
 set -e
 
