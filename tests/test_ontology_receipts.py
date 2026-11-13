@@ -71,6 +71,112 @@ def assert_no_unbound_scratch_paths(case: unittest.TestCase, resolved: dict, bou
     case.assertNotIn(".local/state/pi-quests/tmp", serialized)
 
 
+def runtime_resolution(case: unittest.TestCase, resolved: dict, summary: dict,
+                       aggregate: dict, canonical_repo: str) -> dict:
+    """ROCS 0.4.7 projections omit identity; authority receipts retain it.
+
+    Contract: core/rocs-cli/docs/artifacts.md (AK5903). Keep the v2/v1 path
+    for supported older launchers rather than making missing identity optional.
+    """
+    if resolved["schema_version"] == 2:
+        case.assertEqual(summary["schema_version"], 1)
+        case.assertEqual(resolved["repo"], canonical_repo)
+        case.assertEqual(summary["repo"], canonical_repo)
+        return resolved
+
+    case.assertEqual(resolved["schema_version"], 3)
+    case.assertEqual(summary["schema_version"], 2)
+    case.assertTrue({"schema_version", "profile", "layers"} <= resolved.keys())
+    case.assertTrue({
+        "schema_version", "profile", "layers", "counts", "concept_ids", "relation_ids",
+    } <= summary.keys())
+    for projection in (resolved, summary):
+        case.assertTrue({"repo", "version"}.isdisjoint(projection))
+    case.assertEqual(aggregate["repo"], canonical_repo)
+    build = aggregate["commands"]["build"]
+    layers = build["layer_sources"]
+    case.assertEqual(layers, aggregate["commands"]["validate"]["layer_sources"])
+    case.assertEqual(resolved["profile"], build["profile"])
+    case.assertEqual(summary["profile"], resolved["profile"])
+    projections = [{
+        "name": layer["name"], "kind": layer["kind"], "origin": layer["origin"],
+        "source_contract": None if layer["source_contract"] == "legacy" else layer["source_contract"],
+    } for layer in sorted(layers, key=lambda layer: layer["name"])]
+    for layer in resolved["layers"]:
+        case.assertTrue({"source", "src_root"}.isdisjoint(layer))
+    case.assertEqual([
+        {key: layer[key] for key in ("name", "kind", "origin", "source_contract")}
+        for layer in resolved["layers"]
+    ], projections)
+    case.assertEqual(sorted([
+        {key: layer[key] for key in ("name", "origin")} for layer in summary["layers"]
+    ], key=lambda layer: layer["name"]), [
+        {"name": layer["name"], "origin": layer["origin"]} for layer in projections
+    ])
+    return {"repo": canonical_repo, "layers": layers}
+
+
+class TestProjectionRuntime(unittest.TestCase):
+    def fixture(self):
+        layer = {"name": "company", "kind": "path", "origin": "ontology/src",
+                 "source_contract": "legacy", "src_root": "/repo/ontology/src", "source": "path"}
+        core = {**layer, "name": "core", "origin": "<repo:core/ontology-kernel@v0.3.0>"}
+        aggregate = {"repo": "/repo", "commands": {
+            command: {"profile": None, "layer_sources": [dict(layer), dict(core)]}
+            for command in ("build", "validate")
+        }}
+        resolved = {"schema_version": 3, "profile": None, "layers": [{
+            "name": "company", "kind": "path", "origin": "ontology/src", "source_contract": None,
+        }]}
+        resolved["layers"].append({**resolved["layers"][0], "name": "core", "origin": core["origin"]})
+        summary = {"schema_version": 2, "profile": None,
+                   "layers": [{"name": "core", "origin": core["origin"]},
+                              {"name": "company", "origin": "ontology/src"}],
+                   "counts": {}, "concept_ids": [], "relation_ids": []}
+        return resolved, summary, aggregate
+
+    def test_new_projections_use_command_receipts_without_dropping_runtime_paths(self):
+        resolved, summary, aggregate = self.fixture()
+        runtime = runtime_resolution(self, resolved, summary, aggregate, "/repo")
+        self.assertEqual(runtime["layers"][0]["src_root"], "/repo/ontology/src")
+
+    def test_legacy_projections_still_require_parent_identity(self):
+        resolved = {"schema_version": 2, "repo": "/repo", "layers": []}
+        summary = {"schema_version": 1, "repo": "/repo"}
+        self.assertEqual(runtime_resolution(self, resolved, summary, {}, "/repo"), resolved)
+        summary["repo"] = "/wrong"
+        with self.assertRaises(AssertionError):
+            runtime_resolution(self, resolved, summary, {}, "/repo")
+
+    def test_additive_fields_are_allowed_but_removed_runtime_identity_is_not(self):
+        resolved, summary, aggregate = self.fixture()
+        for projection in (resolved, summary):
+            projection["extension"] = "input-derived"
+            projection["layers"][0]["extension"] = "input-derived"
+        runtime_resolution(self, resolved, summary, aggregate, "/repo")
+        for projection, key in ((resolved, "repo"), (summary, "version"),
+                                (resolved["layers"][0], "src_root"),
+                                (resolved["layers"][0], "source")):
+            projection[key] = "/runtime"
+            with self.assertRaises(AssertionError):
+                runtime_resolution(self, resolved, summary, aggregate, "/repo")
+            del projection[key]
+
+    def test_new_projection_or_runtime_mismatches_are_rejected(self):
+        for change in (
+            lambda r, s, a: r.update(schema_version=99),
+            lambda r, s, a: s.update(repo="/repo"),
+            lambda r, s, a: r["layers"][0].update(origin="other/src"),
+            lambda r, s, a: a.update(repo="/wrong"),
+            lambda r, s, a: a["commands"]["validate"]["layer_sources"][0].update(src_root="/wrong"),
+        ):
+            with self.subTest(change=change):
+                resolved, summary, aggregate = self.fixture()
+                change(resolved, summary, aggregate)
+                with self.assertRaises(AssertionError):
+                    runtime_resolution(self, resolved, summary, aggregate, "/repo")
+
+
 class TestReceiptScratchPaths(unittest.TestCase):
     def test_exact_bound_parent_and_layer_paths_are_allowed(self) -> None:
         root = "/home/test/.local/state/pi-quests/tmp/isolated-parent"
@@ -158,9 +264,10 @@ class TestOntologyReceipts(unittest.TestCase):
             self.assertEqual(command_receipt["workspace_ref_mode"], "strict")
             self.assertTrue(command_receipt["resolve_refs_requested"])
 
-        self.assertEqual(load_json(OUTPUT / "resolve.json")["repo"], canonical_repo)
-        self.assertEqual(load_json(OUTPUT / "summary.json")["repo"], canonical_repo)
-        resolved = load_json(OUTPUT / "resolve.json")
+        resolved = runtime_resolution(
+            self, load_json(OUTPUT / "resolve.json"), load_json(OUTPUT / "summary.json"),
+            aggregate, canonical_repo,
+        )
         layers = {layer["name"]: layer for layer in resolved["layers"]}
         self.assertEqual(
             layers["company"]["src_root"],
