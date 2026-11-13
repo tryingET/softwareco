@@ -17,6 +17,7 @@ DRY_RUN=0
 CANDIDATE_HOST_VERSION=""
 CANDIDATE_CHANGELOG_REF=""
 CANDIDATE_CONTRACT_SOURCE=""
+RUN_IDENTITY_SOURCE=""
 
 usage() {
   cat <<'EOF'
@@ -222,7 +223,8 @@ write_receipt() {
     printf '    "workflow_ref": %s,\n' "$([[ "$MODE" == "workflow" ]] && printf '"%s"' "$(json_escape "$(resolve_workflow_ref "$PI_EXTENSIONS_DIR" 2>/dev/null || echo main)")" || printf 'null')"
     printf '    "dispatch_output": %s,\n' "$([[ -n "$dispatch_output" ]] && printf '"%s"' "$(json_escape "$dispatch_output")" || printf 'null')"
     printf '    "run_url": %s,\n' "$([[ -n "$run_url" ]] && printf '"%s"' "$(json_escape "$run_url")" || printf 'null')"
-    printf '    "run_id": %s\n' "$([[ -n "$run_id" ]] && printf '"%s"' "$(json_escape "$run_id")" || printf 'null')"
+    printf '    "run_id": %s,\n' "$([[ -n "$run_id" ]] && printf '"%s"' "$(json_escape "$run_id")" || printf 'null')"
+    printf '    "run_identity_source": %s\n' "$([[ -n "$RUN_IDENTITY_SOURCE" ]] && printf '"%s"' "$RUN_IDENTITY_SOURCE" || printf 'null')"
     printf '  }\n'
     printf '}\n'
   } > "$receipt_path"
@@ -279,13 +281,23 @@ record_receipt() {
   printf '%s\n' "$receipt_path"
 }
 
-lookup_recent_workflow_run() {
-  local repo_slug="$1"
-  local workflow_ref="$2"
-  local line
-  line="$(gh run list --repo "$repo_slug" --workflow "$WORKFLOW_FILE" --branch "$workflow_ref" --limit 1 --json databaseId,url --jq '.[0] | [.databaseId, .url] | @tsv' 2>/dev/null || true)"
-  if [[ -n "$line" ]]; then
-    printf '%s\n' "$line"
+resolve_dispatched_workflow_run() {
+  local repo_slug="$1" output="$2" line found_id="" found_url=""
+  local pattern='^https://github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/actions/runs/([1-9][0-9]*)$'
+  # Only the URL returned by this dispatch identifies its run. The latest run
+  # on the branch can be older or belong to a concurrent dispatch.
+  while IFS= read -r line; do
+    line="$(trim "$line")"
+    if [[ "$line" =~ $pattern && "${BASH_REMATCH[1],,}" == "${repo_slug,,}" ]]; then
+      if [[ -n "$found_id" && "$found_id" != "${BASH_REMATCH[2]}" ]]; then
+        return 1
+      fi
+      found_id="${BASH_REMATCH[2]}"
+      found_url="$line"
+    fi
+  done <<< "$output"
+  if [[ -n "$found_id" ]]; then
+    printf '%s\t%s\n' "$found_id" "$found_url"
   fi
 }
 
@@ -548,10 +560,11 @@ fi
 
 run_id=""
 run_url=""
-recent_run="$(lookup_recent_workflow_run "$repo_slug" "$workflow_ref" || true)"
-if [[ -n "$recent_run" ]]; then
-  run_id="${recent_run%%$'\t'*}"
-  run_url="${recent_run#*$'\t'}"
+dispatched_run="$(resolve_dispatched_workflow_run "$repo_slug" "$dispatch_output" || true)"
+if [[ -n "$dispatched_run" ]]; then
+  run_id="${dispatched_run%%$'\t'*}"
+  run_url="${dispatched_run#*$'\t'}"
+  RUN_IDENTITY_SOURCE="dispatch-output"
 fi
 
 receipt="$(record_receipt "workflow-dispatched" "$comparison_reason" "$previous_head" "$current_head" "$current_branch" "$repo_slug" "$dispatch_output" "$run_url" "$run_id" "${changed_paths[@]}")"

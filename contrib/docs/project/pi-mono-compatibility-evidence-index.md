@@ -111,7 +111,16 @@ the index does not modify the receipt history.
 
 ## Enrichment behavior
 
-When possible, the index script enriches recent `workflow-dispatched` receipts with live GitHub Actions run state via `gh run view`.
+When possible, the index script enriches recent `workflow-dispatched` receipts
+with live GitHub Actions run state via `gh run view`.
+
+For candidate-contract receipts, enrichment requires
+`downstream_repo.run_identity_source: dispatch-output`: the run URL must have been
+returned by the dispatch itself, not guessed from the latest run on a branch.
+The normalized entry retains this as `downstream.runIdentitySource`. Historical
+candidate receipts without this provenance remain `pending` with `manual_review`,
+even if their stored run ID points to a successful workflow. Receipt history is
+not rewritten, and no-contract legacy classifications remain unchanged.
 
 That lets the index distinguish between:
 

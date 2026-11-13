@@ -177,4 +177,5 @@ assert_eq "3" "$(wc -l < "$TEST_LOG" | tr -d ' ')" "failed relay should retry sa
 assert_contains "$failed_head" "$TEST_LOG" "retry invocation should include latest upstream head"
 
 printf 'ok: pi-mono compatibility relay\n'
-node --test "$SCRIPT_DIR/pi-mono-compatibility-relay.test.mjs"
+# The Node suite includes real npm configuration resolution, forced offline.
+PATH="${PATH#"$FAKE_BIN:"}" node --test "$SCRIPT_DIR/pi-mono-compatibility-relay.test.mjs"

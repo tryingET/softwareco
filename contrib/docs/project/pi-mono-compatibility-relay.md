@@ -78,8 +78,11 @@ PI_HOST_COMPAT_CHANGELOG_REF='https://github.com/earendil-works/pi/compare/v1.4.
 
 A partial override is rejected rather than paired with unrelated upstream
 metadata. Versions must be exact; GitHub anchors must name a tag, commit, or
-comparison rather than a moving branch. Before dispatch, a read-only `npm view`
-against the public npm registry must confirm the exact package name and version.
+comparison rather than a moving branch, including DNS-absolute `github.com.` URLs.
+Anchors containing whitespace or ASCII control characters are rejected before any
+dispatch. A read-only `npm view` must confirm the exact package name and version
+against public npm; both the default and `@earendil-works` scoped registry are
+explicitly set so local scoped configuration cannot redirect this check.
 An unpublished release or unavailable registry leaves the upstream delta pending
 for retry and creates a failure receipt without dispatching a broken CI run.
 No dependencies are installed by this check. The relay requires Node and npm for
@@ -91,6 +94,11 @@ that published package version, **not** an upstream Git checkout. An upstream
 commit can be newer than the published package it declares; its `after_head`
 remains trigger provenance and does not become source-head compatibility proof.
 Workflow dispatch acceptance also remains distinct from a passing canary result.
+A same-repository run URL returned on its own line by `gh workflow run` is recorded
+with `downstream_repo.run_identity_source: dispatch-output`. Missing, malformed,
+or ambiguous run URLs leave the dispatch uncorrelated and pending in the index;
+the relay never substitutes the latest run on the branch. Accepted dispatches
+still advance the processed-head state, even when run identity is unavailable.
 The `current` profile uses the downstream pinned baseline and needs no upgrade
 contract or registry preflight; `off` retains the pending delta.
 
@@ -201,4 +209,6 @@ repository root (or `bash scripts/test-pi-mono-compatibility-relay.sh` from the
 contrib lane). The suite uses temporary Git repositories and mocked npm/GitHub
 clients; it verifies workflow and local input forwarding, committed-source
 resolution, rejected contracts, publication failures, and retry state without
-network dispatch. The company smoke gate also runs this suite.
+network dispatch. It also exercises real npm configuration resolution with an
+empty fixture-local cache and `--offline`; npm is required, but no network is
+used by that check. The company smoke gate also runs this suite.

@@ -142,6 +142,7 @@ function excerpt(value, max = 240) {
 function buildWorkflowLookupPlan(entries, maxOnlineLookups) {
   return entries
     .filter((entry) => entry.status === "workflow-dispatched")
+    .filter((entry) => !entry.candidateContract || entry.downstream.runIdentitySource === "dispatch-output")
     .filter((entry) => nonEmpty(entry?.downstream?.runId) && nonEmpty(entry?.downstream?.repoSlug))
     .sort((left, right) => String(right.timestamp).localeCompare(String(left.timestamp)))
     .slice(0, maxOnlineLookups);
@@ -264,6 +265,13 @@ function classifyResolution(entry, workflowRun) {
         rationale: `Relay failed before downstream validation completed (${entry.reason || "unspecified reason"}).`,
       };
     case "workflow-dispatched": {
+      if (entry.candidateContract && entry.downstream.runIdentitySource !== "dispatch-output") {
+        return {
+          state: "pending",
+          followUp: "manual_review",
+          rationale: "Dispatch was accepted, but the workflow run was not correlated to this candidate. A latest-run lookup is not exact-package validation evidence.",
+        };
+      }
       const status = nonEmpty(workflowRun?.status);
       const conclusion = nonEmpty(workflowRun?.conclusion);
       if (status === "completed" && conclusion === "success") {
@@ -355,6 +363,7 @@ function normalizeEntry(receiptPath, rawReceipt, workflowRuns) {
       workflowFile: nonEmpty(downstream.workflow_file) ?? null,
       workflowRef: nonEmpty(downstream.workflow_ref) ?? null,
       runId,
+      runIdentitySource: nonEmpty(downstream.run_identity_source) ?? null,
       runUrl: nonEmpty(downstream.run_url) ?? null,
       dispatchOutputSnippet: excerpt(downstream.dispatch_output),
       workflowRun,

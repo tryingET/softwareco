@@ -18,7 +18,7 @@ function fixture(t) {
   const bin = path.join(root, "bin");
   const state = path.join(root, "state");
   const receipts = path.join(root, "receipts");
-  const logs = Object.fromEntries(["npm", "gh", "local"].map((name) => [name, path.join(root, `${name}.jsonl`)]));
+  const logs = Object.fromEntries(["npm", "gh", "local", "lookups"].map((name) => [name, path.join(root, `${name}.jsonl`)]));
   const git = (repo, ...args) => execFileSync("git", ["-C", repo, ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
   const put = (repo, name, content) => {
     const file = path.join(repo, name);
@@ -59,8 +59,14 @@ console.log(JSON.stringify({name:${JSON.stringify(PACKAGE)},version:args[1].spli
     gh: `
 import { appendFileSync } from 'node:fs';
 const args=process.argv.slice(2);
-if(args[0]==='run' && args[1]==='list') process.exit(0);
+if(args[0]==='run' && ['list', 'view'].includes(args[1])) {
+  appendFileSync(process.env.RELAY_LOOKUP_LOG,JSON.stringify(args)+'\\n');
+  const output = args[1]==='list' ? process.env.RELAY_RUN_LIST : process.env.RELAY_RUN_VIEW;
+  if(output) console.log(output);
+  process.exit(0);
+}
 appendFileSync(process.env.RELAY_GH_LOG,JSON.stringify(args)+'\\n');
+if(process.env.RELAY_DISPATCH_OUTPUT) console.log(process.env.RELAY_DISPATCH_OUTPUT);
 process.exit(Number(process.env.RELAY_GH_EXIT || 0));
 `,
   })) writeFileSync(path.join(bin, command), `#!${process.execPath}\n${source}`, { mode: 0o755 });
@@ -71,11 +77,11 @@ process.exit(Number(process.env.RELAY_GH_EXIT || 0));
     PI_COMPAT_RELAY_PI_MONO_DIR: upstream, PI_COMPAT_RELAY_PI_EXTENSIONS_DIR: downstream,
     PI_COMPAT_RELAY_STATE_FILE: state, PI_COMPAT_RELAY_RECEIPTS_DIR: receipts,
     PI_COMPAT_EVIDENCE_SCRIPT: path.join(root, "no-evidence-script"), PI_COMPAT_RELAY_MODE: "workflow",
-    PI_COMPAT_PROFILE: "upgrade", RELAY_NPM_LOG: logs.npm, RELAY_GH_LOG: logs.gh, RELAY_LOCAL_LOG: logs.local,
+    PI_COMPAT_PROFILE: "upgrade", RELAY_NPM_LOG: logs.npm, RELAY_GH_LOG: logs.gh, RELAY_LOCAL_LOG: logs.local, RELAY_LOOKUP_LOG: logs.lookups,
     ...env,
   } });
   return {
-    upstream, bin, before, run, git, put,
+    root, upstream, bin, before, run, git, put,
     get head() { return head; },
     get anchor() { return `https://github.com/earendil-works/pi/blob/${head}/packages/coding-agent/CHANGELOG.md`; },
     commit() { head = commit(upstream); },
@@ -103,12 +109,60 @@ test("workflow uses the committed package version and pinned changelog, even wit
   passed(result);
   assert.match(result.stderr, /node startup warning/);
   assert.deepEqual(f.log("gh"), [["workflow", "run", "compatibility-canary.yml", "--repo", "tryingET/pi-extensions", "--ref", "main", "-f", "profile=upgrade", "-f", "host_version=1.5.0", "-f", `changelog_ref=${f.anchor}`]]);
-  assert.deepEqual(f.log("npm"), [["view", `${PACKAGE}@1.5.0`, "name", "version", "--json", "--registry=https://registry.npmjs.org/", "--fetch-retries=0", "--fetch-timeout=10000"]]);
+  assert.deepEqual(f.log("npm"), [["view", `${PACKAGE}@1.5.0`, "name", "version", "--json", "--registry=https://registry.npmjs.org/", "--@earendil-works:registry=https://registry.npmjs.org/", "--fetch-retries=0", "--fetch-timeout=10000"]]);
   assert.deepEqual(f.receipts()[0].candidate_contract, { package: PACKAGE, version: "1.5.0", review_anchor: f.anchor, source: "upstream-manifest", target: "published-npm-package" });
   assert.equal(f.receipts()[0].upstream_repo.after_head, f.head);
   assert.match(f.state(), new RegExp(`head=${f.head}`));
   passed(f.run());
   assert.equal(f.log("gh").length, 1, "unchanged upstream head is not redispatched");
+});
+
+test("accepted dispatch without a returned run URL never borrows an older workflow run", (t) => {
+  const f = fixture(t);
+  passed(f.run({ RELAY_RUN_LIST: "101\thttps://github.com/tryingET/pi-extensions/actions/runs/101" }));
+  assert.equal(f.log("lookups").length, 0);
+  assert.equal(f.receipts()[0].downstream_repo.run_id, null);
+  assert.match(f.state(), new RegExp(`head=${f.head}`), "accepted handoff still advances state");
+});
+
+test("only an unambiguous same-repository URL returned by dispatch binds the workflow", async (t) => {
+  const url = "https://github.com/tryingET/pi-extensions/actions/runs/202";
+  for (const [label, output, expectedId] of [
+    ["returned URL", url, "202"],
+    ["other repository", "https://github.com/other/repo/actions/runs/202", null],
+    ["ambiguous URLs", `${url}\nhttps://github.com/tryingET/pi-extensions/actions/runs/203`, null],
+    ["malformed ID", `${url}junk`, null],
+    ["no identity", "dispatch accepted", null],
+  ]) await t.test(label, (t) => {
+    const f = fixture(t);
+    passed(f.run({ RELAY_DISPATCH_OUTPUT: output, RELAY_RUN_LIST: "101\thttps://github.com/tryingET/pi-extensions/actions/runs/101" }));
+    const downstream = f.receipts()[0].downstream_repo;
+    assert.equal(downstream.run_id, expectedId);
+    assert.equal(downstream.run_url, expectedId ? url : null);
+    assert.equal(downstream.run_identity_source, expectedId ? "dispatch-output" : null);
+    assert.equal(f.log("lookups").length, 0);
+    assert.match(f.state(), new RegExp(`head=${f.head}`));
+  });
+});
+
+test("integrated evidence uses only the returned dispatch identity for candidate safety", async (t) => {
+  for (const correlated of [false, true]) await t.test(correlated ? "correlated success" : "uncorrelated handoff", (t) => {
+    const f = fixture(t);
+    const url = "https://github.com/tryingET/pi-extensions/actions/runs/202";
+    const output = path.join(f.root, "index.json");
+    passed(f.run({
+      PI_COMPAT_EVIDENCE_SCRIPT: fileURLToPath(new URL("./pi-mono-compatibility-evidence-index.mjs", import.meta.url)),
+      PI_COMPAT_EVIDENCE_OUTPUT_PATH: output, PI_COMPAT_EVIDENCE_OFFLINE: "0",
+      RELAY_DISPATCH_OUTPUT: correlated ? url : "dispatch accepted",
+      RELAY_RUN_LIST: "101\thttps://github.com/tryingET/pi-extensions/actions/runs/101",
+      RELAY_RUN_VIEW: JSON.stringify({ databaseId: 202, status: "completed", conclusion: "success", url }),
+    }));
+    const index = JSON.parse(readFileSync(output, "utf8"));
+    assert.equal(index.entries[0].resolution.state, correlated ? "safe" : "pending");
+    assert.equal(index.summary.unresolvedCount, correlated ? 0 : 1);
+    assert.deepEqual(f.log("lookups").map((args) => args.slice(0, 3)), correlated ? [["run", "view", "202"]] : []);
+    assert.match(f.state(), new RegExp(`head=${f.head}`));
+  });
 });
 
 test("local upgrades receive the same explicit host contract, never a Git SHA as the version", (t) => {
@@ -134,7 +188,12 @@ test("partial, blank, floating and malformed explicit contracts stop before meta
     ...["latest", "^1.6.0", "01.6.0", "1.6.0-beta..1", "1.6.0\n", "a".repeat(40)].map((version) => [version, { ...valid, PI_HOST_COMPAT_HOST_VERSION: version }]),
     ["multiline anchor", { ...valid, PI_HOST_COMPAT_CHANGELOG_REF: `${EXPLICIT_ANCHOR}\ninjected` }],
     ["moving branch", { ...valid, PI_HOST_COMPAT_CHANGELOG_REF: "https://github.com/earendil-works/pi/blob/main/packages/coding-agent/CHANGELOG.md" }],
-  ]) await t.test(label, (t) => { const f = fixture(t); blocked(f, f.run(env)); });
+    ["DNS-absolute GitHub moving branch", { ...valid, PI_HOST_COMPAT_CHANGELOG_REF: "https://github.com./earendil-works/pi/blob/main/packages/coding-agent/CHANGELOG.md" }],
+    ...[1, 8, 12, 27, 31, 127].map((code) => [`control ${code}`, { ...valid, PI_HOST_COMPAT_CHANGELOG_REF: `${EXPLICIT_ANCHOR}#note${String.fromCharCode(code)}` }]),
+  ]) await t.test(label, (t) => {
+    const f = fixture(t); blocked(f, f.run(env));
+    assert.equal(f.receipts()[0].reason, "invalid-or-unavailable-host-contract");
+  });
 });
 
 test("missing or malformed committed host metadata never becomes a dispatch", async (t) => {
@@ -162,6 +221,33 @@ test("unpublished, unavailable or mismatched registry replies preserve the delta
     const f = fixture(t); blocked(f, f.run(env), { registry: true });
     passed(f.run()); assert.equal(f.log("gh").length, 1); assert.match(f.state(), new RegExp(`head=${f.head}`));
   });
+});
+
+test("public npm registry overrides a conflicting scoped configuration (real npm, offline)", (t) => {
+  const f = fixture(t);
+  const npm = execFileSync("sh", ["-c", "command -v npm"], { encoding: "utf8" }).trim();
+  const config = path.join(f.root, "npmrc");
+  const stderr = path.join(f.root, "npm.stderr");
+  writeFileSync(config, "@earendil-works:registry=https://registry.audit.invalid/\n");
+  writeFileSync(path.join(f.root, "global-npmrc"), "");
+  writeFileSync(path.join(f.root, "package.json"), JSON.stringify({ name: "offline-registry-test", version: "1.0.0" }));
+  writeFileSync(path.join(f.bin, "npm"), `#!${process.execPath}
+import { spawnSync } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
+const result = spawnSync(${JSON.stringify(npm)}, [...process.argv.slice(2), '--offline',
+  ${JSON.stringify(`--cache=${path.join(f.root, "cache")}`)},
+  ${JSON.stringify(`--userconfig=${config}`)},
+  ${JSON.stringify(`--globalconfig=${path.join(f.root, "global-npmrc")}`)}],
+  { cwd: ${JSON.stringify(f.root)}, env: process.env, encoding: 'utf8' });
+writeFileSync(${JSON.stringify(stderr)}, result.stderr ?? '');
+process.stdout.write(result.stdout ?? '');
+process.exit(result.status ?? 1);
+`, { mode: 0o755 });
+  const result = f.run();
+  blocked(f, result);
+  assert.match(readFileSync(stderr, "utf8"), /request to https:\/\/registry\.npmjs\.org\//);
+  assert.doesNotMatch(readFileSync(stderr, "utf8"), /registry\.audit\.invalid/);
+  assert.equal(f.receipts()[0].reason, "invalid-or-unavailable-host-contract");
 });
 
 test("failed workflow dispatch is retried without losing the upstream delta", (t) => {

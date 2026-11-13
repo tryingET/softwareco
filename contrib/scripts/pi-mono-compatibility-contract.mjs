@@ -16,14 +16,14 @@ function exactVersion(value) {
 }
 
 function reviewAnchor(value) {
-  if (typeof value !== "string" || !value || /\s/u.test(value)) {
-    throw new Error(`${ANCHOR_ENV} must be a non-empty, single-line HTTPS changelog URL`);
+  if (typeof value !== "string" || !value || /[\s\u0000-\u001f\u007f]/u.test(value)) {
+    throw new Error(`${ANCHOR_ENV} must be a non-empty HTTPS changelog URL without whitespace or control characters`);
   }
   const url = new URL(value);
   if (url.protocol !== "https:" || url.username || url.password) {
     throw new Error(`${ANCHOR_ENV} must be an HTTPS changelog URL without credentials`);
   }
-  if (url.hostname === "github.com") {
+  if (url.hostname.replace(/\.$/, "") === "github.com") {
     const parts = url.pathname.split("/").filter(Boolean);
     const pinnedRef = (ref) => /^[a-f0-9]{40}$/i.test(ref) || EXACT_VERSION.test(ref.replace(/^v/, ""));
     const [owner, repo, kind, ref, tag] = parts;
@@ -66,7 +66,8 @@ function checkPublished(version) {
   try {
     const output = execFileSync("npm", [
       "view", `${HOST_PACKAGE}@${version}`, "name", "version", "--json",
-      "--registry=https://registry.npmjs.org/", "--fetch-retries=0", "--fetch-timeout=10000",
+      "--registry=https://registry.npmjs.org/", "--@earendil-works:registry=https://registry.npmjs.org/",
+      "--fetch-retries=0", "--fetch-timeout=10000",
     ], { encoding: "utf8", timeout: 20000, maxBuffer: 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
     metadata = JSON.parse(output);
   } catch {

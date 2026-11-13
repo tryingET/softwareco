@@ -139,8 +139,9 @@ cat > "$RECEIPTS_DIR/receipt-20260314T080200Z-3.json" <<'EOF'
     "workflow_file": "compatibility-canary.yml",
     "workflow_ref": "main",
     "dispatch_output": "dispatched",
-    "run_url": "https://example.test/runs/101",
-    "run_id": "101"
+    "run_url": "https://github.com/tryingET/pi-extensions/actions/runs/101",
+    "run_id": "101",
+    "run_identity_source": "dispatch-output"
   }
 }
 EOF
@@ -175,8 +176,9 @@ cat > "$RECEIPTS_DIR/receipt-20260314T080300Z-4.json" <<'EOF'
     "workflow_file": "compatibility-canary.yml",
     "workflow_ref": "main",
     "dispatch_output": "dispatched",
-    "run_url": "https://example.test/runs/102",
-    "run_id": "102"
+    "run_url": "https://github.com/tryingET/pi-extensions/actions/runs/102",
+    "run_id": "102",
+    "run_identity_source": "dispatch-output"
   }
 }
 EOF
@@ -198,6 +200,19 @@ cat > "$RECEIPTS_DIR/receipt-20260314T080500Z-6.json" <<'EOF'
 }
 EOF
 
+# A historical contract receipt may carry a run guessed from the latest-run list.
+# Its successful lookup must not certify this candidate without correlation.
+node --input-type=module - "$RECEIPTS_DIR" <<'EOF'
+import fs from 'node:fs';
+const dir = process.argv[2];
+const old = JSON.parse(fs.readFileSync(`${dir}/receipt-20260314T080200Z-3.json`, 'utf8'));
+old.timestamp = '2026-03-14T08:06:00Z';
+old.upstream_repo.after_head = 'uncorrelated';
+old.candidate_contract.version = '1.6.0';
+delete old.downstream_repo.run_identity_source;
+fs.writeFileSync(`${dir}/receipt-20260314T080600Z-7.json`, JSON.stringify(old));
+EOF
+
 PATH="$FAKE_BIN:$PATH" node "$INDEX_SCRIPT" rebuild \
   --contrib-root "$CONTRIB_ROOT" \
   --receipts-dir "$RECEIPTS_DIR" \
@@ -212,8 +227,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const indexPath = process.argv[2];
 const data = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
-if (data.summary.totalEntries !== 6) throw new Error(`expected 6 entries, got ${data.summary.totalEntries}`);
-if (data.summary.unresolvedCount !== 2) throw new Error(`expected 2 unresolved entries, got ${data.summary.unresolvedCount}`);
+if (data.summary.totalEntries !== 7) throw new Error(`expected 7 entries, got ${data.summary.totalEntries}`);
+if (data.summary.unresolvedCount !== 3) throw new Error(`expected 3 unresolved entries, got ${data.summary.unresolvedCount}`);
 const byHead = new Map(data.entries.map((entry) => [entry.upstream.afterHead, entry]));
 if (byHead.get('bbb').resolution.state !== 'safe') throw new Error('local-passed should classify as safe');
 if (byHead.get('ccc').resolution.followUp !== 'retry_dispatch') throw new Error('dispatch-failed should require retry_dispatch');
@@ -242,6 +257,8 @@ for (const head of ['legacy-local', 'legacy-workflow']) {
   assert.match(byHead.get(head).resolution.rationale, /does not record an exact package contract/);
 }
 assert.deepEqual(data.summary.unresolvedEntries.find((entry) => entry.afterHead === 'eee').candidateContract, explicitContract);
+assert.equal(byHead.get('uncorrelated').resolution.state, 'pending');
+assert.match(byHead.get('uncorrelated').resolution.rationale, /correlat/);
 EOF
 
 UNRESOLVED_JSON="$TMP_DIR/unresolved.json"
@@ -257,9 +274,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const unresolvedPath = process.argv[2];
 const unresolved = JSON.parse(fs.readFileSync(unresolvedPath, 'utf8'));
-if (unresolved.length !== 2) throw new Error(`expected 2 unresolved entries, got ${unresolved.length}`);
+if (unresolved.length !== 3) throw new Error(`expected 3 unresolved entries, got ${unresolved.length}`);
 const states = unresolved.map((entry) => entry.resolution.state).sort();
-if (states.join(',') !== 'needs_attention,pending') {
+if (states.join(',') !== 'needs_attention,pending,pending') {
   throw new Error(`unexpected unresolved states: ${states.join(',')}`);
 }
 assert.equal(unresolved.find((entry) => entry.upstream.afterHead === 'eee').candidateContract.version, '1.5.0');
