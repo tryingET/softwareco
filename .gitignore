@@ -196,3 +196,7 @@ owned/.pi/
 
 # Semantic Code Intelligence runtime state (cache, identity, snapshots, logs); never track it (AK7935).
 .ontology/
+
+# paper records (ablage): never in git, they must stay deletable
+/delete-*/
+/keep/
