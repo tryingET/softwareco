@@ -18,8 +18,8 @@ without junk, with added context per company.
 
 ## 1. Result in short
 
-1. A session in `nodecode-cells` loads 18,780 characters today. With the proposed texts it loads 9,847.
-   Of the rest, most is the vocabulary card (2,826), which the owner placed in the root file on purpose.
+1. A session in `nodecode-cells` loads 18,780 characters today. With the proposed texts it loads 9,847,
+   of which 2,826 are the vocabulary card, which the owner placed in the root file on purpose.
 2. The duplication is produced by the templates and held in place by a check.
    `softwareco/scripts/check-template-ci.sh:439-441, 1002-1008, 1382-1385` requires every generated
    repo file to contain "Deterministic tooling policy", `scripts/rocs.sh`, `diary/` and "Recursion
@@ -102,7 +102,7 @@ or a description of the file itself. **HIST** history. **DUP** repeats another p
 | 144-148 | everything else is in the recipes skill | DUP: the skill is named five times (76, 78, 102, 117, 145) |
 
 The file breaks its own card: "validation" at 2, 119-122 means checks, which the card (50-51) reserves
-for "fitness for purpose"; "gate" stands bare nowhere in the root file but does at
+for "fitness for purpose". Lower files use "gate" for a PR or a check, not for a decision gate:
 `softwareco/AGENTS.md:21` ("review gate"), `infra:31`, `fork:30`, `contrib:42`.
 
 ### 3.2 `softwareco/AGENTS.md` (3,563)
@@ -280,7 +280,7 @@ for "fitness for purpose"; "gate" stands bare nowhere in the root file but does 
 | C4 | `softwareco/infra/AGENTS.md:29`, `fork:28`: update `strategic_goals.md`, `tactical_goals.md`, `operating_plan.md` | `agent-kernel/AGENTS.md:121`, `teachingco/informatik/AGENTS.md:39`, `agent-adoption-steward:26`: do not revive them | No clash in the letter (the lane rule is conditional), but a session in a repo without AK-native direction reads only the first. Keep the conditional rule in the lane, one sentence. |
 | C5 | `teachingco/AGENTS.md:21, 27`: use `ak work-items import/export/check`, repos "that ship `governance/work-items.json`" | `agent-kernel/AGENTS.md:66`: the surface is deprecated since 2026-08-22; `fork/AGENTS.md:26`: the mirror is retired (Decision 127); `teachingco/mathe/AGENTS.md:22`: no such projection exists | Remove both teachingco lines. |
 | C6 | `softwareco/AGENTS.md:16, 46, 71`: agent repos at `softwareco/agents/agent-<slug>` (folder does not exist) | `softwareco/softwareco-agents/docs/agent-registry.md` (Boundary): at `ai-society/agents/agent-<name>`; AK 8630 is registered on `softwareco/softwareco-agents` | Owner choice 1. |
-| C7 | root `AGENTS.md:50-51` (card): "validation" means fitness for purpose; `:48` never bare "gate" | root `AGENTS.md:2, 119-122` "validation" for checks; `softwareco/AGENTS.md:21` "review gate"; `infra:31`, `fork:30`, `contrib:42` "authority-reconciliation gate" | The proposed texts say "checks" and avoid both words. |
+| C7 | root `AGENTS.md:50-51` (card): "validation" means fitness for purpose; `:48` a gate is a decision gate | root `AGENTS.md:2, 119-122` "validation" for checks; `softwareco/AGENTS.md:21` "review gate"; `infra:31`, `fork:30`, `contrib:42` "authority-reconciliation gate" | The proposed texts say "checks" and avoid both words. |
 | C8 | `agent-kernel/AGENTS.md:253`: `society.db` | root `AGENTS.md:127`: `society.v2.db` | Removed with the duplicate. |
 
 ### Duplicates (one fact, many places)
@@ -540,7 +540,7 @@ This repo holds the contract, the registry and the role cards for softwareco's a
 `agents/agent-adoption-steward/AGENTS.md:4`. The file names no role and no holder; the appointment is
 the mycel role record (roles synthesis, point 2).
 
-Pattern for an agent repo (the source is `copier/tpl-agent-repo/AGENTS.md.j2`, 4,858 today): 424 plus
+Pattern for an agent repo (the source is `copier/tpl-agent-repo/AGENTS.md.j2`, 4,858 bytes today): 424 plus
 the agent's own rules
 
 ````markdown
@@ -708,8 +708,8 @@ Characters loaded at session start, start folder inclusive.
 | Start folder | Today | Proposed | Change |
 |---|---|---|---|
 | `softwareco/softwareco-agents/` | 9,779 + 3,563 + 694 = 14,036 | 6,962 + 1,226 + 408 = 8,596 | -39 % |
-| an agent repo below it (repo file as generated today, 4,858; proposed pattern 424) | 18,894 | 9,020 | -52 % |
-| an agent repo at `~/ai-society/agents/` (same repo file) | 9,779 + 4,858 = 14,637 | 6,962 + 424 = 7,386 | -50 % |
+| an agent repo below it (repo file as last generated, `agent-adoption-steward`, 4,308; proposed pattern 424 plus own rules) | 18,344 | 9,020 | -51 % |
+| an agent repo at `~/ai-society/agents/` (same repo file) | 9,779 + 4,308 = 14,087 | 6,962 + 424 = 7,386 | -48 % |
 | `softwareco/owned/nodecode-cells/` | 9,779 + 3,563 + 3,311 + 2,127 = 18,780 | 6,962 + 1,226 + 470 + 1,189 = 9,847 | -48 % |
 | `softwareco/owned/agent-kernel/` | 37,259 | 12,932 | -65 % |
 | `teachingco/` | 9,779 + 4,364 = 14,143 | 6,962 + 715 = 7,677 | -46 % |
