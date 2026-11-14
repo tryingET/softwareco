@@ -1,5 +1,5 @@
 ---
-summary: "Independent check of the AGENTS.md chain audit (AK 8631): figures and citations confirmed; the proposal loses rules, repeats facts and misstates where the templates bind. Verdict: CONFIRMED-WITH-DIFFERENCES."
+summary: "Independent check of the AGENTS.md chain audit (AK 8631). Revision 1: CONFIRMED-WITH-DIFFERENCES (lost rules, repeated facts, wrong order). Revision 2 (section 8): CONFIRMED, six small remarks."
 read_when:
   - "You decide on or apply the proposals of AK 8631."
   - "You read 2026-11-14-agents-chain-audit-ak8631.md."
@@ -194,3 +194,85 @@ and each repo below it is its own git repo" is new and is not named as new.
   was not checked for lost rules against `copier/tpl-agent-repo/AGENTS.md.j2`.
 - The proposed texts were not loaded into a session.
 - What a copier update would actually do to a lane or repo file was read from `copier.yml`, not run.
+
+## 8. Re-check of revision 2 (delta only)
+
+Object: commit bb5ae1b, the audit and the new `2026-11-14-agents-chain-audit-ak8631-texts.md`. Requested by
+s-338VQQGH; same boundaries. Only the delta against sections 2-6 was checked.
+
+**Verdict on revision 2: CONFIRMED.** All fifteen lost rules are restored, L16-L21 are real, the order is
+corrected, the choices are stated fairly, the figures measure as stated. Six small remarks (R1-R6) remain; none
+blocks the owner choices.
+
+### 8.1 L1-L15: all restored
+Read against the blocks of the texts file (line numbers of that file):
+L1 72-75; L2 39; L3 24-25 and agent-kernel 316-317; L4 98-100; L5 328-330; L6 317; L7 195 and 432; L8 49-50;
+L9 324-325, 356-357; L10 334, 351-352, 339-340; L11 301; L12 252; L13 215-217; L14 26-27, 44-46, 69, 97,
+119 and 147; L15 292. Each sits at the level where the rule holds. No removal was substituted for a
+restoration. The "let go" table (audit section 7) names a reason and an approver for every row.
+The duplicates of section 4 are gone except the one kept on purpose ("release the claim" in the card) and
+R3 below; the bare "gate" is gone (the only hits left are the file name `ak-runtime-gate.sh`).
+
+### 8.2 L16-L21: real
+Each source line was read and each rule was absent from the revision 1 texts:
+L16 informatik:35, adoption-steward:24, `copier/tpl-agent-repo/AGENTS.md.j2:28`; L17 informatik:38,
+template:31; L18 informatik:29; L19 template:14, 17, 18; L20 informatik:30; L21 agent-kernel:25-26, 36-38,
+59-65, nodecode-cells:12, contrib:25-28. All six now stand in the texts (root 51-55, 62-65, 92-93;
+softwareco-agents 251-253; agent pattern 274-275; mathe 427; agent-kernel 316-317, 337-344; nodecode-cells
+287-288).
+
+### 8.3 Lost-rule search repeated over the new texts
+Method: every line of the revision 1 blocks that is not verbatim in revision 2 was listed by script and traced;
+the root, softwareco, owned, nodecode-cells, teachingco, informatik and agent-template rule lines were read
+against the new blocks once more. Nothing a session needs is absent at every level. Remarks:
+
+- R1. `docs-list.mjs --from-prompt <prompt-file> --paths-only --wikilink` (softwareco:29) is in no proposed text
+  and not in the recipes skill (`grep -c from-prompt`: 0). It stands in `core/agent-scripts/README.md:52`, so it
+  is not lost, but the "let go" table does not list it. Add a row.
+- R2. `softwareco/ontology/AGENTS.md` has no proposed text and no sentence saying it stays as it is. The
+  softwareco lane table names the folder. Say "unchanged" (or cut its last clause, audit 3.5).
+- R3. The census line stands in the softwareco text and in the monorepo pattern, so four more times in
+  teachingco. The script is a template copy in each (`teachingco/mathe/scripts/preflight-repo-census.sh`
+  exists). One fact, five places; it could stand in the root section "In every repo" or stay out of the
+  subject repos.
+- R4. Narrowed in wording, no rule lost: `ak task scope show|export` became `export` only (owned:24);
+  `ak direction export` (contrib:40-42) is not named; "read the route/open-frame status before inventing
+  work" (informatik:33, template:26) stands only in the agent-kernel text.
+- R5. Pointers the new texts introduce exist: `teachingco/CONTRIBUTING.md` (lines 39-41 carry the push rule),
+  `owned/docs/project/standardized-justfile-contract.md`, `owned/scripts/engineering-core-adoption-scan.sh`,
+  agent-kernel `layer-12-protocol.md`, `check-direction-legacy-markdown-readiness.py`,
+  `render-direction-explorer-mvp.py`, the four router skills. The three softwareco routers do read
+  `repo-capability-map.md` (`grep -l` in each SKILL.md), which supports letting owned:34 go.
+  `scripts/propagate-template.sh`, named in the agent pattern, was not looked for in an agent repo.
+
+### 8.4 Order of changes: corrected
+Audit section 1 item 2 and section 9 now say what D1-D3 found: company files are company-owned and survive an
+update; `scripts/**` and `copier/**` belong to the owner of `core/tpl-template-repo` and change by
+propagation; no assertion reads a live file; the engineering assertions (1007-1008, 1272-1278) and the
+`smoke.sh` check are named. The paths exist: `core/tpl-template-repo/copier-template/AGENTS.md.jinja` and
+`copier-template/copier/tpl-*/AGENTS.md.j2` (five). The order (choices; skill; root, company and
+softwareco-agents files; templates in parallel; lanes and repos) is the one of section 2 above, with the skill
+step of D6 added. D4 is corrected ("eight").
+
+### 8.5 Choices: stated fairly
+- Choice 1 is an A/B/C table. Its facts hold: README:44 is quoted correctly; `softwareco/.gitignore:125-135`
+  already ignores `agents/*`; `softwareco-agents/` has no `.gitignore`; registry and template say "do not
+  nest". The wrong reason for B is withdrawn in so many words. The recommendation moved from B to C; that is
+  the owner's to weigh, and the table gives him both costs (C: a lane to build first, AK 8630 registered
+  elsewhere; B: nesting). Not verified: that s-U3SNXAYW holds AK 8630.
+- Choice 5 (precedence between files) states today's two sentences correctly (root:24, agent-kernel:27) and
+  says what B would add and settle. Fair.
+- Choice 6 (company-common rules) is fair; "about 400 characters" measures 390 for the four rules.
+- R6. Under choice 6 B the texts note covers "the first four"; the diary and TIP sentence would then stay in
+  the root alone. Consistent, but say so in the choice.
+
+### 8.6 Figures: confirmed by measuring
+Blocks extracted between their fences, in characters: 8,709 / 1,251 / 396 / 92 / 128 / 685 / 501 / 1,324 /
+5,539 / 458 / 628, as stated; the contrib file is the infra block with the lane name (94). All seven sums and
+percentages of audit section 6 are arithmetically right (10,645; 11,146; 9,690; 11,680; 15,895; 9,167; 9,795).
+The card section in the proposed root is 2,904 characters (stated 2,905); today's card with its comment 3,178.
+Both documents are within the markdown budget (501 lines / 38,197 bytes; 443 / 25,785).
+
+### 8.7 Not checked in this round
+Sections 2-4 of the audit beyond the changed lines; the pattern texts for `nt`, `wib`, `informatik`, which are
+not written out; loading the texts into a session.
