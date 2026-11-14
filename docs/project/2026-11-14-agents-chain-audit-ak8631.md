@@ -4,32 +4,38 @@ read_when:
   - "You are about to change an AGENTS.md file or an AGENTS.md template below ~/ai-society."
   - "You decide on the proposals of AK 8631."
 type: "proposal"
-status: "proposal; not applied; each file needs its owner's approval (section 6)"
+status: "proposal, revision 2 after the independent check; not applied; each file needs its owner's approval (section 9)"
 ---
 
 # Audit of the AGENTS.md chain (AK 8631)
 
 Producer: nodecode session s-IZD1MTQW, 2026-11-14, commissioned by s-338VQQGH. No instruction file was
 changed. Sizes are characters (`wc -m`) of the files as read on 2026-11-14. Line numbers refer to those
-files. This is one session's reading; no second session has checked it.
+files. Revision 2 (2026-11-14) follows the independent check `2026-11-14-agents-chain-audit-ak8631-check.md`
+(verdict CONFIRMED-WITH-DIFFERENCES): lost rules restored, order of changes corrected, choice 1 rewritten,
+figures measured again. The proposed texts are in `2026-11-14-agents-chain-audit-ak8631-texts.md`; they were
+moved out to keep both files within the markdown budget. Revision 2 has not been checked by a second session.
 
 Owner's word (2026-11-14): the AGENTS.md files are to be clear instructions, ordered by hierarchy,
 without junk, with added context per company.
 
 ## 1. Result in short
 
-1. A session in `nodecode-cells` loads 18,780 characters today. With the proposed texts it loads 9,847,
-   of which 2,826 are the vocabulary card, which the owner placed in the root file on purpose.
-2. The duplication is produced by the templates and held in place by a check.
-   `softwareco/scripts/check-template-ci.sh:439-441, 1002-1008, 1382-1385` requires every generated
-   repo file to contain "Deterministic tooling policy", `scripts/rocs.sh`, `diary/` and "Recursion
-   policy". The company files come from `core/tpl-template-repo/copier-template/AGENTS.md.jinja`, the
-   lane and repo files from `copier/tpl-*/AGENTS.md.j2`. A cleaned file is overwritten at the next
-   template update unless the template and that check change first.
-3. Five instructions contradict each other across files (section 4), among them push to `main`
-   without asking (four files) against "ask before push" (root).
-4. Three places name where an agent repo lives, and they disagree; one of the three does not exist
-   (C6). This decides which company text a role holder receives. Owner choice 1.
+1. A session in `nodecode-cells` loads 18,780 characters today. With the proposed texts it loads
+   11,680, of which 2,905 are the vocabulary card. Revision 1 claimed 9,847; it
+   had dropped rules, which revision 2 restores (section 7).
+2. The duplication in lane and repo files is produced by the templates and held in place by a check on
+   the templates: `scripts/check-template-ci.sh:439-441` (template source), `1002-1008`, `1272-1278`,
+   `1382-1385` (a freshly rendered repo) require "Deterministic tooling policy", `scripts/rocs.sh`,
+   `diary/`, "Recursion policy", `policy/engineering-lane.json` and `docs/engineering.local.md`. No
+   assertion reads a live repo's AGENTS.md. The company files are company-owned
+   (`contracts/template-ownership.yml`, enforced at `check-template-ci.sh:519-521`) and are not
+   overwritten by a template update; the root file and `softwareco-agents/AGENTS.md` have no
+   `.copier-answers.yml`. So root, company and softwareco-agents files can change first (section 9).
+3. Eight instructions contradict each other across files (section 4, C1-C8), among them push to
+   `main` without asking (four files) against "ask before push" (root).
+4. Four places name where an agent repo lives; they give three answers, and one of the places does
+   not exist (C6, section 8 choice 1). This decides which company text a role holder receives.
 5. No file on the chain defines a role. `softwareco-agents/AGENTS.md:4` and the four old agent repos
    come closest ("no hierarchy, work via proposals"); the proposed texts say only that a repo
    appoints nobody.
@@ -277,7 +283,7 @@ for "fitness for purpose". Lower files use "gate" for a PR or a check, not for a
 | C1 | `softwareco/contrib/AGENTS.md:8`, `teachingco/mathe/AGENTS.md:18`, `teachingco/nt/AGENTS.md:18`, `teachingco/informatik/AGENTS.md:25`: "commit to `main` and push to `main`" | root `AGENTS.md:111-112`: push is asked for; `teachingco/AGENTS.md:12`; `teachingco/wib/AGENTS.md:18-19` | Root holds. Remove the four lines. |
 | C2 | `softwareco/softwareco-agents/AGENTS.md:8` "work is proposals + MRs"; `agents/agent-health/AGENTS.md:8` (and triage, consent-steward, pilot) "never push to `main`; open branches + MRs" | `softwareco/AGENTS.md:20-21` main-first; `agents/agent-adoption-steward/AGENTS.md:10` main-first | Owner choice 2. |
 | C3 | `softwareco/infra/AGENTS.md:37-44`, `fork:47-54`, `contrib:44-51`, `teachingco/mathe:68-76`, `agent-kernel:255-264`: read these folders in this order | `softwareco/owned/AGENTS.md:37-44`: task scope first, then only what the task needs; folders are categories, "not a mandatory ingestion sequence" | The owned wording is the newer one and agrees with root 137-138. It moves to the root file; the fixed orders go. |
-| C4 | `softwareco/infra/AGENTS.md:29`, `fork:28`: update `strategic_goals.md`, `tactical_goals.md`, `operating_plan.md` | `agent-kernel/AGENTS.md:121`, `teachingco/informatik/AGENTS.md:39`, `agent-adoption-steward:26`: do not revive them | No clash in the letter (the lane rule is conditional), but a session in a repo without AK-native direction reads only the first. Keep the conditional rule in the lane, one sentence. |
+| C4 | `softwareco/infra/AGENTS.md:29`, `fork:28`: update `strategic_goals.md`, `tactical_goals.md`, `operating_plan.md` | `agent-kernel/AGENTS.md:121`, `teachingco/informatik/AGENTS.md:39`, `agent-adoption-steward:26`: do not revive them | No clash in the letter (the lane rule is conditional). The "do not revive" half goes to the root, the conditional "keep them current" half once to the softwareco file. |
 | C5 | `teachingco/AGENTS.md:21, 27`: use `ak work-items import/export/check`, repos "that ship `governance/work-items.json`" | `agent-kernel/AGENTS.md:66`: the surface is deprecated since 2026-08-22; `fork/AGENTS.md:26`: the mirror is retired (Decision 127); `teachingco/mathe/AGENTS.md:22`: no such projection exists | Remove both teachingco lines. |
 | C6 | `softwareco/AGENTS.md:16, 46, 71`: agent repos at `softwareco/agents/agent-<slug>` (folder does not exist) | `softwareco/softwareco-agents/docs/agent-registry.md` (Boundary): at `ai-society/agents/agent-<name>`; AK 8630 is registered on `softwareco/softwareco-agents` | Owner choice 1. |
 | C7 | root `AGENTS.md:50-51` (card): "validation" means fitness for purpose; `:48` a gate is a decision gate | root `AGENTS.md:2, 119-122` "validation" for checks; `softwareco/AGENTS.md:21` "review gate"; `infra:31`, `fork:30`, `contrib:42` "authority-reconciliation gate" | The proposed texts say "checks" and avoid both words. |
@@ -295,477 +301,194 @@ for "fitness for purpose". Lower files use "gate" for a PR or a check, not for a
 | Reason broadly, mutate narrowly | root 84-86; agent-kernel 32-55, 266-275 | root |
 | Task-scope snapshots are AK exports | root 98-100; owned 24; informatik 30; adoption-steward 12 | root |
 | docs-list, no wrappers | root 137-138; softwareco 28-30; teachingco 19-20; owned 41 | root |
-| ROCS launcher, ROCS first | root 134-135; softwareco 32, 37-38; infra 34; contrib 13-14; fork 33; teachingco 22, 28-29; mathe 25, 27 | root (the command); company (prefer repo commands) |
-| Inline Python only without a command | softwareco 39; owned 31; infra 35; contrib 15; fork 34; teachingco 30; mathe 28; adoption-steward 39 | company |
+| ROCS launcher, ROCS first | root 134-135; softwareco 32, 37-38; infra 34; contrib 13-14; fork 33; teachingco 22, 28-29; mathe 25, 27 | root |
+| Inline Python only without a command | softwareco 39; owned 31; infra 35; contrib 15; fork 34; teachingco 30; mathe 28; adoption-steward 39 | root (owner choice 6) |
 | Main-first | softwareco 20-21; infra 26-27; fork 23-24; nodecode-cells 34 | company |
-| `docs/_core/**` immutable | contrib 9; fork 25; nodecode-cells 33; mathe 19; all `agents/*` | company (64 of 80 owned repos have the folder) |
+| `docs/_core/**` immutable | contrib 9; fork 25; nodecode-cells 33; mathe 19; all `agents/*` | root (owner choice 6; 64 of 80 owned repos have the folder) |
 | Engineering docs before engineering work | root 114-117; owned 40; nodecode-cells 27 | root |
 | DB preflight | root 76, 127-128; agent-kernel 253 | root |
 | Scratch and heavy jobs | root 77-78, 130-132 | root, once as rule, once as command |
 | Recursion policy | softwareco 74-82; contrib 30-37; teachingco 105-113; mathe 59-66; adoption-steward 59-66 | template documentation (README), not the chain |
-| Crystallization flow | contrib 17-28; teachingco 94-103; mathe 46-57; adoption-steward 48-57 | company: one line "write session notes to `diary/`" |
+| Crystallization flow | contrib 17-28; teachingco 94-103; mathe 46-57; adoption-steward 48-57 | root, two sentences (owner choice 6) |
 | Templates and lane bootstrap | softwareco 33-34, 41-65; teachingco 23-24, 32-81; `softwareco/README.md:48-75` | README |
 
 ## 5. Proposed target text per file
 
-Rules followed: one fact in one place; a file states only what holds for everything below it; the
-company file adds company context; no history; imperative sentences. Each block below is the complete
-proposed file. Sentences that are new (not taken from an existing file) are named after the block.
-
-### 5.1 `AGENTS.md` (root): 9,779 to 6,962
-
-````markdown
-# AGENTS.md — ai-society
-
-Holds for every session below `~/ai-society`. Paths resolve from there unless absolute.
-Each lower AGENTS.md (company, lane, repo) adds only what is specific to it. Before you change
-anything outside the folder chain you started in, read the AGENTS.md chain of the target.
-
-## Owners
-| Concern | Owner surface |
-|---|---|
-| Tasks, direction, decisions, evidence | Agent Kernel (`ak`) + society.v2.db |
-| Reusable prompts/procedures | Prompt Vault |
-| Ontology / controlled semantics | ROCS owner repos |
-| Operator workbench / extension UX | Pi runtime / pi-extensions |
-| Empirical behavior analysis | Oracle / DSPx |
-| Learnings and activation | KES / docs/learnings / AK knowledge |
-| Steward explanation and publication | steward/publication owners |
-
-Never absorb one owner surface into another. Hand off explicitly.
-
-## Work and authority
-- Before acting, orient: `git log` and `git status` in every repo you will touch, `ak task show` for
-  each task (including `broken_commitments`), and the peer sessions busy in that repo. Tell them
-  before a build or e2e run.
-- Work one exact AK task: claim it, keep evidence in the result JSON, release the claim before you
-  stop. The task id is your execution authority; do not broaden it.
-- Record deferred work as an AK task, not as a TODO comment or a local queue.
-- `proceed` or `go ahead` continues the active task. It does not authorize lifecycle closeout,
-  source-owner mutation, publication or knowledge promotion.
-- Ask before push, deploy, publication, device actions and changes to another owner's surface.
-  A local commit grants none of them.
-- Where the AK decision workflow has landed, `ak decision list` and `ak decision passport` are the
-  runtime authority. RFCs, ADRs, docs, task-scope snapshots and direction exports are projections.
-- Where AK has not landed, use the repo's declared process. If there is none, stop and route the gap
-  to the repo owner.
-- Fix must-fixes and adopt recommendations without asking. Settle open questions with
-  many-of-the-greats (`~/.pi/agent/prompts/many-of-the-greats.md`). Bring only value or ownership
-  choices to the operator, as multiple choice with a recommended option.
-- Reason broadly; change only the surface that owns the fact. If the operator calls your scope
-  stale, pause and correct the plan first.
-- Work in the repo of your start folder. Inspect another repo only when the operator names it or the
-  task belongs there.
-
-## Safety
-- No secrets in git.
-- Work inside a component repo, not in the workspace root, unless the work is workspace-level.
-- Honor `TMPDIR`. Never use `/tmp` for clones, worktrees, builds, caches or large output. Run
-  multi-GiB jobs through `heavy-job`.
-- Run the preflight before any direct mutation of a workspace database.
-- Delete only scratch you own and can prove inactive.
-- State with no live owner (a lock no process holds; uncommitted work, stashes, branches or processes
-  untouched for 30 days with no active AK task): move it to a quarantine and record that in AK.
-  Never delete it.
-
-## Reading and engineering
-- Read the AK task scope first, then only the documents the task needs. Find them with `docs-list`.
-  Do not read whole documentation folders.
-- Before engineering work, read the repo's `docs/engineering.local.md` and
-  `policy/engineering-lane.json`.
-- Run the repo's declared checks before merge.
-- Keep files within: code 500 lines / 50 KB, tests 1000 / 80 KB, markdown 800 / 60 KB.
-
-## Commands (use exactly)
-```bash
-# before any direct sqlite on society.v2.db; run from ~/ai-society
-./scripts/db-change-preflight.sh --db-path <db-path> --stage db-dev
-
-# heavy jobs; /home is nearly full, so select the /data root
-AI_SOCIETY_SCRATCH_ROOT=/data/ai-society-scratch heavy-job run --label <label> --task <task-id> -- <command...>
-
-# ROCS, from the target repo; contracts first for an unfamiliar operation
-./scripts/rocs.sh contracts
-
-# docs-list, from the target repo; add no wrapper
-node ~/ai-society/core/agent-scripts/scripts/docs-list.mjs --task "<task>" --top 8
-```
-All other recipes are in the `ai-society-runtime-recipes` skill.
-
-## Vocabulary card
-One meaning per word in our own text and records; [brackets] say what kind of thing a word names. Keep
-identifiers as they are (`fcos gates`, `consent_mode`); quote a source's word with its mapping: "S3 *requirement* (goal)".
-- **requirement** [a binding statement]: one verifiable "shall" with an owner. S3 "requirement" → **goal**;
-  Binner *Anforderung* → **stakeholder expectation**.
-- **decision gate** [an act: a named authority decides against criteria set in advance]; never bare "gate".
-  Binner "Gates" → **measuring point**; `fcos gates` → **health checks**; FCOS close → **close gate**.
-- **verification** [a check against a requirement or DoD row]; **validation** [fitness for purpose, judged by the
-  receiver]. Schema validation → **schema check**; FCOS validation tiers → **test tiers**; replay → **replay check**.
-- **authorization** [an act: a sign-off that grants a permission]; **consent** [a state: a consent round ended with
-  no objection standing]; **dissent** [a record of a disagreement, kept with the decision]. Never swap them.
-- **directive** [a binding rule]; **direction** [AK strategy]; **guidance** [Prompt Vault advice].
-- Never bare: **measure** → **action** or **metric**; **model** → **organisation model**, **system model**, **LLM**;
-  **baseline** → **commitment baseline**, **plan figures**, **freshness baseline**;
-  **review** → readiness / agreement / Leitung / role **review**, conformance / process **audit**, **work-product inspection**.
-- **level** [a MITO level with an owner]; NASA product structure → **product layer**; architecture → **Layer-N**.
-- **maturity** [how far round the MITO loop a process is institutionalised]; NASA document states →
-  **artefact status**; TRL → **technology readiness**.
-- **FCOS** is the **coordination board (Leitstand)** [it records, screens and verifies; it never decides], not a
-  "control board". FCOS "transition" in prose → **authority migration**; NASA product transition → **handover**.
-- **variance** [plan figures vs actuals], not "deviation"; **relief** [release from a rule, by the rule's owner];
-  **waiver** [released, commitment unchanged]; **carried obligation**, not "lien", on proceed decisions only.
-- **readiness** [preflight or readiness review only]; FCOS "readiness contract" → **item contract**.
-- **driver** [a situation that calls for a response]; NASA "design driver" → **dominant constraint**.
-- **task claim** (AK) [your commitment to the requester for the lease]: release it when you stop; a lease that
-  runs out is a broken commitment. `core.Claim` is different [an assertion].
-- **configuration** [control of controlled items]; Binner's organisation sense → **organisation design**.
-  **operations** [doing the work]; NASA Phase E → **operations mode**. **plan** = the MITO Input segment.
-````
-
-Changes: front matter, the notes to editors, the loading mechanics and the dates are removed. The
-loading mechanics (lines 19-22) and the rule for future edits (141-142) are for whoever edits these
-files; they move to the skill `agents-layering-and-codification`. Moved up from lower files: deferred
-work as AK task (owned 23), bounded reading (owned 37-44). "A local commit grants none of them" is
-taken from `teachingco/AGENTS.md:12`. The router skills move to the softwareco file. The card is
-unchanged, without its comment. No new rule.
-
-### 5.2 `softwareco/AGENTS.md`: 3,563 to 1,226
-
-````markdown
-# AGENTS.md — softwareco
-
-softwareco is the product-engineering company of ai-society. Company documents: `docs/org/`.
-
-## Lanes
-| Folder | Holds |
-|---|---|
-| `owned/` | repos softwareco builds and operates |
-| `infra/` | platform, runbooks, internal infrastructure |
-| `contrib/` | repos coupled to an upstream we contribute to |
-| `fork/` | forks that diverge from their upstream on purpose |
-| `softwareco-agents/` | contract, registry and role cards for softwareco's agents |
-| `ontology/` | softwareco's ROCS ontology |
-
-Each lane and each repo below it is its own git repo. Pick the lane first. To find the repo for a
-task, use the skill `softwareco-owned-repo-router`, `softwareco-infra-repo-router` or
-`softwareco-contrib-repo-router`.
-
-## Rules for every softwareco repo
-- Commit to `main`. Open a GitHub PR only for a release or when the operator asks for one.
-- Prefer a repo command (`just <recipe>`, `./scripts/rocs.sh`, a repo script) to an ad-hoc script.
-  Write inline Python only when no such command exists.
-- Do not edit `docs/_core/**`.
-- Keep `.copier-answers.yml` committed.
-- Write session notes to the repo's own `diary/`.
-
-To create a repo or a lane from a template, read `README.md` of this folder.
-````
-
-The first sentence is taken from `docs/org/purpose.md` ("AI Society's product-engineering company").
-The `softwareco-agents/` row depends on owner choice 1. `docs/_core` is moved up from four lower files.
-Templates, lane bootstrap and recursion policy stay in `README.md:48-75`, where they already are.
-
-### 5.3 Lanes
-
-`softwareco/owned/AGENTS.md`: 3,311 to 470
-
-````markdown
-# AGENTS.md — softwareco/owned
-
-- Do a repo's work in that repo. Change here only what belongs to the whole lane: this file,
-  `docs/project/`, `scripts/`.
-- To choose a repo, read `docs/project/repo-capability-map.md` of this lane. It is a hint; confirm
-  in the chosen repo's own docs before you implement.
-- Use the repo's `Justfile`; `just help` lists its recipes. If a repo has none, set it up after
-  `docs/project/standardized-justfile-contract.md` of this lane.
-````
-
-The adoption-scan line (30) is needed only at the lane root; it belongs in the lane's `README.md`.
-
-`softwareco/infra/AGENTS.md`: 1,887 to 516
-
-````markdown
-# AGENTS.md — softwareco/infra
-
-- Do a repo's work in that repo. Change here only what belongs to the whole lane.
-- To choose a repo, read `docs/project/repo-capability-map.md` of this lane. It is a hint; confirm
-  in the chosen repo's own docs before you implement.
-- If a repo keeps direction docs (`strategic_goals.md`, `tactical_goals.md`, `operating_plan.md`),
-  update them in the same pass as the task that changes direction, link tasks and decisions as
-  `task:` / `decision:`, and run `ak direction check`.
-````
-
-`softwareco/fork/AGENTS.md`: 2,595 to 459
-
-````markdown
-# AGENTS.md — softwareco/fork
-
-- Do a repo's work in that repo. Change here only what belongs to the whole lane.
-- Record in the fork's `docs/decisions/` why the fork exists and which upstream boundary failed.
-- If a repo keeps direction docs (`strategic_goals.md`, `tactical_goals.md`, `operating_plan.md`),
-  update them in the same pass as the task that changes direction, link tasks and decisions as
-  `task:` / `decision:`, and run `ak direction check`.
-````
-
-`softwareco/contrib/AGENTS.md`: 1,660 to 439
-
-````markdown
-# AGENTS.md — softwareco/contrib
-
-- Do a repo's work in that repo. Change here only what belongs to the whole lane.
-- A repo's own AGENTS.md may come from its upstream. Where it conflicts with the files above it,
-  the files above it hold for our work; the upstream file holds for what we send upstream.
-- If a repo's direction docs under `docs/project/` change, run `ak direction import`, then
-  `ak direction check`, from the repo root.
-````
-
-New in contrib: the second line. Some contrib repos carry their upstream's AGENTS.md
-(`beads_rust` 54,145 bytes, `beads_viewer` 45,869 bytes), which nobody here edits. The lane owner
-confirms or strikes the line.
-
-### 5.4 `softwareco/softwareco-agents/AGENTS.md`: 694 to 408
-
-````markdown
-# AGENTS.md — softwareco-agents
-
-This repo holds the contract, the registry and the role cards for softwareco's agents.
-
-- Before you create or change an agent, read `docs/agent-registry.md` and
-  `docs/agent-operating-contract.md`.
-- One repo prepares one agent. A repo or a registry row grants no authority and appoints nobody.
-- State an agent's behaviour explicitly: triggers, invariants, failure modes.
-````
-
-"Grants no authority" is from `docs/agent-registry.md` (Boundary); "appoints nobody" from
-`agents/agent-adoption-steward/AGENTS.md:4`. The file names no role and no holder; the appointment is
-the mycel role record (roles synthesis, point 2).
-
-Pattern for an agent repo (the source is `copier/tpl-agent-repo/AGENTS.md.j2`, 4,858 bytes today): 424 plus
-the agent's own rules
-
-````markdown
-# AGENTS.md — agent-<name>
-
-This repo prepares the agent <name> for softwareco. `agent.json` and
-`docs/person/system-prompt.md` are its executable identity; keep the rest of the repo consistent
-with them.
-
-- This repo grants no authority and appoints nobody. Find your delegation in AK and in the role
-  record. If it is missing, expired or unclear, stop and escalate.
-- <rules that hold for this agent only, one line each>
-````
-
-### 5.5 `softwareco/owned/nodecode-cells/AGENTS.md`: 2,127 to 1,189
-
-````markdown
-# AGENTS.md — nodecode-cells
-
-A family of native Nodecode cells. Autoresearch is the first cell.
-
-- Products live in `cells/<primary-asdf-system>/`. No nested git repositories.
-- ASDF is the only dependency and build contract. Allowlist each maintained system; do not register
-  references, templates or other ASDF definitions recursively. Exception: `cells/xeno-lab/` may hold
-  a Bend kernel (pinned compiler) and a Rust member (cargo) whose checks join `just ci`.
-- Use the host's own lifecycle, settings, tools and UI. Do not build a parallel platform.
-- Loading code must be inert. Record cleanup at acquisition and observe actual quiescence.
-- Replace changed source with a fresh process; do not presume hot-unload is safe.
-- Selected-folder installation, coexistence and lifecycle each need their own evidence.
-- Do not extract a shared runtime kit until two real consumers justify it.
-- Never describe tests of fake adapters or synthetic observations as real campaigns.
-- Keep policy at the repo root; add guidance to a member only where it deviates.
-- Before implementation, read `docs/project/product_posture.md`.
-- Ask before installing into a real profile or promoting a cell.
-````
-
-### 5.6 `softwareco/owned/agent-kernel/AGENTS.md`: 20,606 to 4,274
-
-````markdown
-# AGENTS.md — agent-kernel
-
-AK is the local runtime that holds ai-society's coordination state. The active database (`AK_DB`,
-default `~/ai-society/society.v2.db`) is the source of truth; YAML, JSON and markdown files are
-projections unless a surface says otherwise.
-
-## Never
-- Never invoke the `ak` binary directly. Every call goes through `scripts/ak-runtime-gate.sh`, which
-  checks the binary digest against `policy/ak-runtime-access.json`.
-- Never open the live database with `./scripts/fsqlite.sh`, `sqlite3`, Python `sqlite3` or a dev
-  build. Inspect copies.
-- Never add an FCOS surface. AK does not import, parse, evaluate, select, project, mutate or repair
-  FCOS state (Decision 129); a tripwire test pins every site.
-- Never recreate `docs/project/strategic_goals.md`, `tactical_goals.md` or `operating_plan.md`.
-  Direction lives in AK direction rows.
-- Never run `ak repo delete --force`, and never delete or replace `society.v2.db`, without a separate
-  authorization. Recovery is from backup only.
-- Never clear a fence marker you did not set.
-
-## Direction and tasks
-- Read direction with `ak strategy list --repo .` and `ak wave list --repo .`. Change it with
-  `ak direction ...`. Reconcile with `ak direction check --repo . --machine`.
-- When a wave needs its next route, read `docs/project/product-posture.md` and the open-frame status,
-  then create or select the concrete execution task and link it as `execution_task`. Do not create an
-  "await route" task. Wait for the operator only on real ambiguity or risk; then name the recommended
-  route and the exact decision needed.
-- For a non-trivial task, set the done contract early (`ak task contract set-done`,
-  `set-guardrails`), use `ak task reconcile open|close` when planned and actual scope diverge, and run
-  `ak task close-check <id> -F json` before completion. close-check is advisory.
-- After a task lifecycle or direction-link change, run `python3 scripts/render-direction-explorer-mvp.py`
-  and then the same with `--check`, or record that the refresh is deferred.
-- `governance/work-items.json` is a projection; the DB wins. `ak work-items` is deprecated.
-
-## Publication
-- Merging to local `main` deploys everything the main checkout serves: the gate, the policy,
-  `validate.sh`, hooks and this file. Only `docs/`, `diary/`, `tests/` and `README.md` are inert.
-- For any other change, run the fast and full checks, then prove the exact commit on ak-dev before
-  merge or push: `ak-dev prove --task <id> --candidate <clean worktree at the commit> --scenario
-  '<its tests>'` (`docs/project/ak-dev.md`). The pre-push hook refuses a live commit without its
-  proof note.
-- Stage only what you changed, by exact path.
-
-## Code
-- Run cargo only through `./scripts/cargo-operator.sh <cargo args>`. After code changes run
-  `./scripts/validate.sh --quiet-success fast`; before a commit run it with `full`. During an
-  admission hold it exits 75; run it again after the hold.
-- Rust edition 2024, nightly toolchain, `#![forbid(unsafe_code)]`.
-- Async: asupersync, never tokio. Every async function takes `&Cx` first. Cancellation is a
-  protocol, not a flag.
-- Schema: `crates/ak-core/src/db.rs`. Migrations are additive first. Backend compatibility stays in
-  `crates/ak-db`.
-- Multi-statement writes use `with_transaction` or `with_transaction_immediate`. Every write returns
-  or records evidence.
-- JSON: `parse_json_or_warn` on read paths, `parse_json` / `parse_json_opt` on write paths.
-- An enum that fails to parse is an error: no `.unwrap_or_default()` for archetype, layer or status.
-- Lease duration is 1–86400 seconds. Always set `lease_expires_at` on claim.
-- After a failed atomic operation do not re-fetch; return what you know.
-- Version fields auto-increment. Canonicalize repo-scoped inputs before authority use. Compare audit
-  timestamps with the shared parsed-time comparison.
-
-## Incidents
-- Emergency brake: `scripts/ak-runtime-fence.sh --live set --reason '<why>'`. It does not stop
-  task-session routes. Within 60 minutes publish a bounded fence or clear it.
-- Stuck claim, model-search regression, failed migration, disaster recovery, backup: follow
-  `docs/project/database-incident-response.md` and `docs/project/database-backend-runtime.md`. Do not
-  improvise.
-````
-
-Moved, not deleted, and to be moved before the cut: recovery procedures and backup (291-332) into
-`docs/project/database-incident-response.md`, which does not carry them today; known backend debt
-(277-289) and adapter layer (334-351) into `docs/project/database-backend-runtime.md`; FCOS schema
-detail (72-80) stays in the Decision 129 documents it cites. This file is live on merge by its own
-rule (line 171), so the change needs the ak-dev proof of that rule.
-
-### 5.7 `teachingco/AGENTS.md`: 4,364 to 715
-
-````markdown
-# AGENTS.md — teachingco
-
-teachingco holds the teaching work: one monorepo per subject (`mathe/`, `nt/`, `wib/`,
-`informatik/`) and class material.
-
-- No pupil data anywhere: not in git, tests, examples, artifacts or messages to other sessions. Use
-  abstract groups and invented words, never a class.
-- Commit to local `main`. Git workflow: `CONTRIBUTING.md`.
-- Prefer a repo command (`just <recipe>`, `./scripts/rocs.sh`, a repo script) to an ad-hoc script.
-  Write inline Python only when no such command exists.
-- Do not edit `docs/_core/**`.
-- Keep `.copier-answers.yml` committed.
-- Write session notes to the repo's own `diary/`.
-
-To create a repo or a lane from a template, read `README.md` of this folder.
-````
-
-The first sentence describes the folders as they are. The owner has yet to state teachingco's purpose
-(roles synthesis, owner choice 3); that sentence replaces it.
-
-Pattern for the subject repos, shown for `teachingco/mathe/AGENTS.md`: 2,767 to 458
-
-````markdown
-# AGENTS.md — mathe
-
-Monorepo for the subject Mathematik.
-
-- `packages/` holds libraries, `apps/` holds deployables. Neither has its own `.git`.
-- Package manager: uv. The workspace is configured at the root; a member's pinned lane command is
-  in its `policy/stack-lane.json`, its local deltas in its `docs/tech-stack.local.md`.
-- Commit with `.pi/prompts/commit.md`. Scope: the package name, the app name, or `root`,
-  `monorepo`, `ci`, `docs`, `release`.
-````
-
-`nt`, `wib` and `informatik` take the same text with their subject and with
-`policy/engineering-lane.json` and `docs/engineering.local.md` as the file names.
-
-### 5.8 `~/ai-society/agents/*`
-
-The four old repos (health, triage, consent-steward, pilot) carry the unfilled template text and the
-retired GitLab. `softwareco-agents/docs/legacy-agent-backfill.md` owns their backfill; they take the
-agent-repo pattern of 5.4 then. `agent-adoption-steward` keeps lines 4-6 and 15-19 and loses the rest
-(4,308 to about 1,300).
+The complete proposed wording per file, with sources and preconditions, is in
+`2026-11-14-agents-chain-audit-ak8631-texts.md` (sections 5.1 to 5.8).
 
 ## 6. Effect in numbers
 
-Characters loaded at session start, start folder inclusive.
+Characters loaded at session start, start folder inclusive. "Proposed" is revision 2, measured on
+the blocks of the texts file.
+
+| File | Today | Proposed |
+|---|---|---|
+| root | 9,779 | 8,709 |
+| softwareco | 3,563 | 1,251 |
+| owned / infra / contrib / fork | 3,311 / 1,887 / 1,660 / 2,595 | 396 / 92 / 94 / 128 |
+| softwareco-agents | 694 | 685 |
+| nodecode-cells / agent-kernel | 2,127 / 20,606 | 1,324 / 5,539 |
+| teachingco / mathe | 4,364 / 2,767 | 458 / 628 |
 
 | Start folder | Today | Proposed | Change |
 |---|---|---|---|
-| `softwareco/softwareco-agents/` | 9,779 + 3,563 + 694 = 14,036 | 6,962 + 1,226 + 408 = 8,596 | -39 % |
-| an agent repo below it (repo file as last generated, `agent-adoption-steward`, 4,308; proposed pattern 424 plus own rules) | 18,344 | 9,020 | -51 % |
-| an agent repo at `~/ai-society/agents/` (same repo file) | 9,779 + 4,308 = 14,087 | 6,962 + 424 = 7,386 | -48 % |
-| `softwareco/owned/nodecode-cells/` | 9,779 + 3,563 + 3,311 + 2,127 = 18,780 | 6,962 + 1,226 + 470 + 1,189 = 9,847 | -48 % |
-| `softwareco/owned/agent-kernel/` | 37,259 | 12,932 | -65 % |
-| `teachingco/` | 9,779 + 4,364 = 14,143 | 6,962 + 715 = 7,677 | -46 % |
-| `teachingco/mathe/` | 16,910 | 8,135 | -52 % |
+| `softwareco/softwareco-agents/` | 14,036 | 10,645 | -24 % |
+| agent repo below softwareco (choice 1 B or C; repo file today as `agent-adoption-steward`, 4,308; proposed pattern plus own rules) | 18,344 | 11,146 | -39 % |
+| agent repo at `~/ai-society/agents/` (choice 1 A; pattern plus the five fleet lines, about 480) | 14,087 | 9,690 | -31 % |
+| `softwareco/owned/nodecode-cells/` | 18,780 | 11,680 | -38 % |
+| `softwareco/owned/agent-kernel/` | 37,259 | 15,895 | -57 % |
+| `teachingco/` | 14,143 | 9,167 | -35 % |
+| `teachingco/mathe/` | 16,910 | 9,795 | -42 % |
 
-With owner choice 3 answered B (card on demand) every proposed figure falls by a further 2,700.
+Revision 1 gave 8,596 / 9,020 / 9,847 / 12,932 / 7,677 / 8,135 for rows 1, 2, 4, 5, 6, 7. The
+difference is the restored rules: the root text grew from 6,962 to 8,709.
+With choice 3 answered B (card on demand) every proposed figure falls by about 2,785.
+Choice 6 does not change a session's total inside a company: about 400 characters stand either in
+the root or in the company file.
 
-## 7. Owner choices
+## 7. No needed rule lost
 
-**Choice 1. Where does a company's agent repo live?** Three places are written down (C6).
-- A. `~/ai-society/agents/agent-<name>`, as the registry says. The chain gives the holder the root
-  file only; the softwareco text must reach it through its own prompt.
-- B. Below the company, in `softwareco/softwareco-agents/`. The chain gives the holder root, company
-  and the agents file (9,020 characters). Agents that serve all companies stay at `~/ai-society/agents/`.
-  The registry sentence and `softwareco/AGENTS.md:16, 46, 71` change to say so.
-- C. A new lane `softwareco/agents/`, as `softwareco/AGENTS.md` says today.
-- **Recommended: B.** It is the only one that delivers "added context for each company" through the
-  chain, it needs no new folder, and AK 8630 already works there. The session holding AK 8630
-  (s-U3SNXAYW) should hear the answer before it places the repo.
+L1-L15 are the checker's findings. L16-L21 were found in this cycle by reading the template
+`copier/tpl-agent-repo/AGENTS.md.j2` and the files again.
 
-**Choice 2. How does work reach `main` in an agent repo?** (C2)
+### Restored
+
+| # | Rule | Now in |
+|---|---|---|
+| L1 | core router skill and holdingco capability map | root, last work rule (as today, one place for all routers) |
+| L2 | templates are an owner surface | root, new row in the owner table |
+| L3 | load order creates no precedence; the owner table is the boundary | root, opening paragraph, today's wording. "L2 repos cannot weaken L1 constraints" stays an agent-kernel axiom. The contrib precedence sentence of revision 1 is withdrawn. Choice 5 asks whether the root should say more. |
+| L4 | budgets are ratchets enforced by repo checks; repo-owned checks win | root, "In every repo" |
+| L5 | readiness script before legacy direction cleanup | agent-kernel, "Never" |
+| L6 | every pass/fail decision emits evidence | agent-kernel, axioms |
+| L7 | `preflight-repo-census.sh` | softwareco; mathe pattern (the script exists in both) |
+| L8 | task scope authored in AK, `ak task scope export`, snapshot path | root, work rules |
+| L9 | recovery never-rules; `unclaim`, `release-expired` | agent-kernel, "Never" and "Direction and tasks"; the long procedures are a precondition move (texts 5.6) |
+| L10 | no mirrored live DB state; reason for an accepted close-check gap; `layer-12-protocol.md` | agent-kernel |
+| L11 | do not claim AK adoption from a document | nodecode-cells |
+| L12 | the human executes real-world actions | softwareco-agents |
+| L13 | engineering-core adoption scan | owned (kept in the lane file; no precondition) |
+| L14 | "or start a session at the target's root"; ListAgents; "since the last session"; "with its preflight"; "consumer policy is local adoption truth"; card markers with "at most 25 lines" | root |
+| L15 | decision reference of the xeno-lab exception | nodecode-cells |
+| L16 | closeout and readiness rows are inputs, not authorization (informatik:35, adoption-steward:24, template:28) | root |
+| L17 | vision is durable direction, product posture a bridge, neither a queue (informatik:38, template:31) | root |
+| L18 | do not reintroduce a checked-in work-items file (informatik:29) | root |
+| L19 | advisory by default, persona may narrow; writes to another repo need that repo's AK task; template refresh plan-first (template:14, 17, 18) | softwareco-agents; agent-repo pattern |
+| L20 | task-scope snapshots at the monorepo root only (informatik:30) | monorepo pattern |
+| L21 | bounded mutation is not bounded thinking; a broad wave is valid when cohesive and bounded (agent-kernel:36-38); authority per `ak` surface (59-65); axioms 1-2 (25-26); Pi as reference, not workflow (nodecode-cells:12); learnings and TIP (contrib:25-28) | agent-kernel; nodecode-cells; root |
+
+### Let go, with the reason and who must agree
+
+| Text | Reason it may go | Must agree |
+|---|---|---|
+| front matter of chain files | the file is always loaded; no script requires it (check D5) | owner of each file |
+| root 12-14, 17-22, 141-142: notes to editors, loading mechanics | for editors only; goes after it is written into the skill `agents-layering-and-codification` (not there today, check D6) | owner; owner of the skill |
+| root dates and the card's origin comment (40-43, 82, 104) | history; git and the AK decisions D16, D22, D26 keep it | owner |
+| softwareco 33-34, 41-82: templates, bootstrap, placement, recursion | stand in `softwareco/README.md:46-80, 266-272`; 46 and 71 are dead | softwareco's owner |
+| owned 28-29 recipe list and `pi -p` command; 34 capability map | `just help` prints the list; the command is in the Justfile contract (line 110); the router skills read the map | softwareco's owner |
+| fixed read orders (infra, fork, contrib, mathe, agent-kernel 255-264, agents/*) | C3: replaced by bounded reading in the root | owner of each file |
+| fork 36-45: when to use `fork/` | needed before a lane is chosen, so not below it; one line stands in the softwareco lane table. The long form may move to `softwareco/README.md` | softwareco's owner |
+| "end of session", "weekly" in the crystallization flow | no session runs on a weekly cadence; the flow itself is kept in the root | owner of `core/tpl-template-repo` |
+| GitLab NAS, `holdingco-templates` (softwareco-agents 11-18, agents/*) | dead | softwareco's owner |
+| "work is proposals + MRs", "never push to `main`" in agent files | open: owner choice 2 | owner |
+| agent-kernel 183-185, 226-251 | compatibility wrappers and command lists repeat 179-182 and `ak --help` | owner of agent-kernel |
+| agent-kernel 266-275 cognitive tools; template `Cognitive Tools` section | names of thinking tools; the rule they serve is kept (L21) | owner of agent-kernel; template owner |
+| agent-kernel 222 (timer), 353-380 (template context, "no GitLab") | history; 360 is dead | owner of agent-kernel |
+| agent-kernel 72-80, 277-351 | moved first, not let go (texts 5.6) | owner of agent-kernel |
+| nodecode-cells 38 | history of the repo's creation | owner of nodecode-cells |
+| teachingco 3-8, 13, 21, 27, 32-92 | dead lanes and documents; C5; templates stand in `teachingco/README.md:14-20, 39-68` | teachingco's owner |
+
+The proposed agent-kernel text no longer uses bare "gate" (check, section 4); it names
+`scripts/ak-runtime-gate.sh`.
+
+## 8. Owner choices (all open)
+
+**Choice 1. Where does a company's agent repo live?** Four places speak (C6):
+`softwareco-agents/docs/agent-registry.md:9-15` and `copier/tpl-agent-repo/AGENTS.md.j2:11, 15` say
+`ai-society/agents/agent-<name>`, "do not nest agents". `softwareco/AGENTS.md:16, 46, 71` say
+`softwareco/agents/agent-<slug>`; `softwareco/README.md:44` calls `agents/` "a declared target lane"
+that is not materialized and adds that `softwareco-agents/` "must not be silently treated as the
+target lane". AK 8630 is registered on `softwareco/softwareco-agents`.
+
+| | A. `~/ai-society/agents/agent-<name>` | B. inside `softwareco/softwareco-agents/` | C. new lane `softwareco/agents/` |
+|---|---|---|---|
+| Written today in | registry, agent template; five repos are there | nowhere; README:44 warns against assuming it | softwareco AGENTS.md and README (declared, not built) |
+| Chain of the holder | root, repo | root, softwareco, softwareco-agents file, repo | root, softwareco, lane file, repo |
+| Company text through the chain | no; it must come through the agent's own prompt | yes | yes |
+| Characters (proposed) | 9,690 | 11,146 | 11,146, if the lane file carries the fleet rules of texts 5.4 |
+| What must change | `softwareco/AGENTS.md:16, 46, 71`, README:44 | registry and template sentences; README:44; a `.gitignore` in `softwareco-agents` (none today) so the nested repo is not seen as untracked; the "do not nest" sentence | registry and template sentences; the lane bootstrap for `agents` (`softwareco/AGENTS.md:51-65`); `softwareco/.gitignore:125-158` is already prepared |
+| Nesting | none | agent repos inside a repo that holds documents | lane repo with ignored child repos, as `owned/` |
+| AK 8630 | repo is created elsewhere than registered | as registered | lane is created first |
+
+Revision 1 recommended B with the reason that only B delivers the company text; that reason was wrong,
+C delivers it as well. **Recommended now: C**, because it is the declared intent, its tooling is
+prepared, and it nests nothing inside a document repo; agents that serve all companies stay under A's
+folder. B is the cheaper step today. The session holding AK 8630 (s-U3SNXAYW) needs the answer before
+it places the repo.
+
+**Choice 2. How does work reach `main` in an agent repo?** (C2; the agent template line 22 also says
+"never push to `main`; open branches + MRs")
 - A. Main-first, as in every other softwareco repo. **Recommended:** the merge-request route ran over
   the NAS GitLab, which is retired, and its commands are gone.
 - B. Branch and merge request only, on GitHub.
+"The human executes real-world actions" is kept under both answers.
 
-**Choice 3. The vocabulary card (2,826 characters in every session).**
-- A. Stays in the root file, without its comment. **Recommended:** it binds every text a session
-  writes, and decisions D16, D22, D26 put it there.
+**Choice 3. The vocabulary card (2,905 characters in every session).**
+- A. Stays in the root file, with its two marker lines, without its origin comment. **Recommended:**
+  it binds every text a session writes, and decisions D16, D22, D26 put it there.
 - B. One line in the root file points to the card; the card is read when governance text is written.
 
-**Choice 4. teachingco's first sentence.** The owner states the purpose; until then the descriptive
-sentence of 5.7 stands.
+**Request 4 (not a choice). teachingco's first sentence.** The owner states the purpose; until then
+the descriptive sentence of texts 5.7 stands.
+
+**Choice 5. Which file holds when two files of the chain conflict?** Today root:24 says the load
+order creates no precedence and the owner table is the boundary; agent-kernel:27 says a repo cannot
+weaken a constraint above it.
+- A. Keep today's sentence only (as in the proposed root text). **Recommended** as the smaller step.
+- B. Add to the root: "A lower file may narrow a rule of a higher file; it may not weaken it." This
+  would also settle upstream AGENTS.md files in `contrib/`.
+
+**Choice 6. Where do the rules stand that are the same in every company?** (repo command and inline
+Python, `docs/_core/**`, `.copier-answers.yml`, `diary/`)
+- A. In the root, once (as in the proposed texts). **Recommended:** otherwise the same lines are kept
+  in softwareco, teachingco, holdingco, tradingco, familyco and healthco.
+- B. In each company file; the root stays shorter by about 400 characters, each company file longer
+  by the same.
 
 Settled without asking, as recommendations to adopt: C1 (root holds), C3 (bounded reading), C5
 (remove), C7, C8. Many-of-the-greats was not run on them; each follows from a newer or higher text.
 
-## 8. Who approves what
+## 9. Who approves what, and the order
 
-No CODEOWNERS file exists at the root, in softwareco or in teachingco. Approval therefore follows the
-repo that holds the file.
+No CODEOWNERS file exists at the root, in softwareco or in teachingco. Approval follows the repo that
+holds the file and `contracts/template-ownership.yml`.
 
 | Change | Approver |
 |---|---|
-| root `AGENTS.md` (5.1) | the owner, as a sign-off of its own (AK 8631 title); the card under D16, D22, D26 |
-| `core/tpl-template-repo/copier-template/AGENTS.md.jinja`, `copier/tpl-*/AGENTS.md.j2` and the assertions in `scripts/check-template-ci.sh` | owner of `core/tpl-template-repo`; must come first, or the next template update restores today's text |
-| `softwareco/AGENTS.md` (5.2) and the embedded `softwareco/copier/tpl-*` | softwareco's owner; the chief of staff routes, it does not approve |
-| `softwareco/{owned,infra,fork,contrib}/AGENTS.md` (5.3) | softwareco's owner, in each lane repo |
-| `softwareco/softwareco-agents/AGENTS.md`, agent-repo pattern (5.4) | softwareco's owner with the holder of AK 8630; after choices 1 and 2 |
+| root `AGENTS.md` (texts 5.1) | the owner, as a sign-off of its own (AK 8631 title); the card under D16, D22, D26 |
+| `softwareco/AGENTS.md` (5.2), `teachingco/AGENTS.md` (5.7) | the company's owner; the files are company-owned and survive a template update. The chief of staff routes, it does not approve |
+| `softwareco/softwareco-agents/AGENTS.md` (5.4) | softwareco's owner with the holder of AK 8630; after choices 1 and 2 |
+| `core/tpl-template-repo`: `copier-template/AGENTS.md.jinja`, `copier/tpl-*/AGENTS.md.j2`, the assertions of `scripts/check-template-ci.sh` (439-441, 1002-1008, 1272-1278, 1382-1385) | owner of `core/tpl-template-repo`. `scripts/**` and `copier/**` inside softwareco and teachingco are template-owned copies and change by propagation, not by the company |
+| lane files (5.3), subject repos (5.7), generated repo files | owner of each repo, after propagation: a copier update skips only `next_session_prompt.md` (`copier/tpl-project-repo/copier.yml:9-10`, read, not run) |
 | `nodecode-cells/AGENTS.md` (5.5) | owner of nodecode-cells |
-| `agent-kernel/AGENTS.md` (5.6) | owner of agent-kernel; ak-dev proof, since the file is live on merge |
-| `teachingco/AGENTS.md` and subject repos (5.7) | teachingco's owner; after choice 4; `teachingco/copier/tpl-*` with it |
+| `agent-kernel/AGENTS.md` (5.6) | owner of agent-kernel; preconditions of 5.6; ak-dev proof, since the file is live on merge |
 | `~/ai-society/agents/*` (5.8) | owner of each agent repo, through the backfill in `softwareco-agents` |
 
-Order: choices 1-4, then templates and their check, then root, then company files, then lanes, then repos.
+Order:
+1. Owner choices 1, 2, 3, 5, 6 and request 4.
+2. Write the loading mechanics and the notes to editors into the skill `agents-layering-and-codification`.
+3. Root, softwareco, teachingco and softwareco-agents files: owner sign-off only. This is the whole
+   chain of a role holder.
+4. In parallel to 3: the templates and their check in `core/tpl-template-repo`, then propagation to
+   the companies.
+5. Lane files and repo files. agent-kernel after its preconditions.
 
-## 9. Not covered
+One live check to keep in view: `scripts/ci/smoke.sh` in generated repos requires AGENTS.md to name
+`docs/dev/now.md` when that file exists (nodecode-cells:52-53, agent-kernel:61, mathe:48-49). None of
+the three has the file today.
+
+## 10. Not covered
 
 - holdingco, tradingco, familyco, healthco and `~/ai-society/core/*` were not audited. Their company
   files come from the same template (holdingco 6,025, tradingco 6,033, familyco 6,026 bytes).
@@ -773,4 +496,6 @@ Order: choices 1-4, then templates and their check, then root, then company file
   `pi-server/AGENTS.md` has 50,449 bytes.
 - Six worktree folders `softwareco/owned/.wt-security-watch-ak*` and `.wt-pi-extensions-ak-8605` each
   carry a copy of their repo's AGENTS.md; not examined.
-- The proposed texts were not loaded into a session and tried.
+- `teachingco/nt`, `wib` and `informatik` were compared with `mathe` by diff and by reading
+  informatik; the pattern for them was not written out per file.
+- The proposed texts were not loaded into a session and tried. Revision 2 is not independently checked.
