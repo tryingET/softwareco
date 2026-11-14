@@ -90,7 +90,7 @@ audit is right. Differences:
   `scripts/check-template-ci.sh:519-521` ("L1 ownership map must preserve company-owned $company_path"). The audit's
   sentence "A cleaned file is overwritten at the next template update unless the template and that check change
   first" (its section 1 item 2, section 8 row 2) is false for `softwareco/AGENTS.md` and `teachingco/AGENTS.md`. The
-  root file and `softwareco-softwareco-agents/AGENTS.md` have no `.copier-answers.yml` at all. Root, company and
+  root file and `softwareco/softwareco-agents/AGENTS.md` have no `.copier-answers.yml` at all. Root, company and
   softwareco-agents files, which are the whole chain of a role holder, can therefore change first, without waiting
   for the templates.
 - **D2. The script and the embedded templates are not softwareco's to change.** The same ownership file lists
@@ -121,7 +121,7 @@ A rule counts as lost when it stands in a file today and in no proposed text at 
 | L1 | Router for core and holdingco: `ai-society-core-repo-router`, `holdingco` capability map | root, "Repo routing" (88-92) | Lost. The audit moves "the router skills" to softwareco; the softwareco text names the three softwareco routers only. |
 | L2 | Templates are an owner surface ("company templates retain their owner boundaries"; "Template rollout: template/propagation owner repos") | nodecode-cells:37; agent-kernel:30, :92; informatik:37; adoption-steward:25 | Lost. The root owner table has no template row and every lower mention is deleted. This is the very boundary D2 turns on. |
 | L3 | Conflict between levels: "Render order creates no precedence; owner-surface tables are the authority boundary"; "L2 repos cannot weaken L1 constraints" | root:24; agent-kernel:27 | Both deleted. A new rule of the opposite kind appears in one lane only (contrib: "the files above it hold"). The proposal has no general statement left on which level holds. |
-| L4 | File budgets are "brownfield ratchets, enforced by repo validation"; "repo-owned validation wins" | root:119-122 | Changed in meaning: "Keep files within: code 500 lines / 50 KB ..." is a hard limit. Files above it exist (`pi-server/AGENTS.md` 50,449 bytes is near it; agent-kernel sources are not measured here). "Repo-owned checks win" is lost. |
+| L4 | File budgets are "brownfield ratchets, enforced by repo validation"; "repo-owned validation wins" | root:119-122 | Changed in meaning: "Keep files within: code 500 lines / 50 KB ..." is a hard limit, where today a file above the figure is tolerated and only may not grow (which files exceed the figures was not measured here). "Repo-owned checks win" is lost. |
 | L5 | Before further legacy direction archive cleanup run `python3 scripts/ci/check-direction-legacy-markdown-readiness.py --require-ready` | agent-kernel:124 | Lost; the audit files 122-124 under history, but 124 is a precondition. |
 | L6 | "Every pass/fail decision emits evidence" | agent-kernel:21, :29 | Narrowed to "every write returns or records evidence". |
 | L7 | `./scripts/preflight-repo-census.sh [scope]` | softwareco:31; mathe:26 | Lost. Not in `softwareco/README.md` (`grep -i census` empty), not in the recipes skill. |
