@@ -1,0 +1,23 @@
+# Location: agents
+# Language: python# Core + org context snapshots
+docs/_core/** @core-owner
+docs/org_context/** @org-owners
+
+# Project delivery + governance
+docs/project/** @tryinget
+docs/system4d/** @tryinget
+docs/decisions/** @tryinget
+docs/dev/** @tryinget
+policy/** @tryinget
+governance/** @tryinget
+ontology/** @tryinget
+
+# Code
+scripts/** @tryinget
+src/** @tryinget
+tests/** @tryinget
+
+# Root control-plane files
+AGENTS.md @tryinget
+README.md @tryinget
+next_session_prompt.md @tryinget
