@@ -4,21 +4,15 @@
       "kind": "path",
       "name": "company",
       "origin": "ontology/src",
-      "source": "path",
-      "source_contract": null,
-      "src_root": "/home/tryinget/ai-society/softwareco/ontology/src"
+      "source_contract": null
     },
     {
       "kind": "ref",
       "name": "core",
       "origin": "<repo:core/ontology-kernel@v0.3.0>",
-      "source": "workspace",
-      "source_contract": "ontology-markdown-v1",
-      "src_root": "/home/tryinget/ai-society/core/ontology-kernel/ontology/src"
+      "source_contract": "ontology-markdown-v1"
     }
   ],
   "profile": null,
-  "repo": "/home/tryinget/ai-society/softwareco",
-  "schema_version": 2,
-  "version": "0.4.5"
+  "schema_version": 3
 }

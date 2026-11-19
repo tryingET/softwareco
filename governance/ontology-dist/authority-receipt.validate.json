@@ -10,7 +10,8 @@
       "name": "company",
       "origin": "ontology/src",
       "source": "path",
-      "source_contract": "legacy"
+      "source_contract": "legacy",
+      "src_root": "/home/tryinget/ai-society/softwareco/ontology/src"
     },
     {
       "binding": {
@@ -22,8 +23,9 @@
       "locator_kind": "repo",
       "name": "core",
       "origin": "<repo:core/ontology-kernel@v0.3.0>",
-      "source": "workspace",
-      "source_contract": "ontology-markdown-v1"
+      "source": "workspace_ref_snapshot",
+      "source_contract": "ontology-markdown-v1",
+      "src_root": "/home/tryinget/.cache/rocs/workspace-ref-snapshots/05ce7edb7a7b220d075206ca217df85e517e6a78/ontology/src"
     }
   ],
   "locator_kinds_present": [
@@ -46,13 +48,13 @@
   "schema_version": 3,
   "source_contract_conformance": {
     "complete": true,
-    "corpus_digest": "sha256:b34d132308954e82a12a9b71c2f9b107470c7cb4eea9f7e3b1ae3f874ea458f8",
+    "corpus_digest": "sha256:b264dafb61dfb789e77430e304eed4454fa168cc6845fb2fc4d1813510d65e45",
     "document_count": 128,
     "operation": "validate",
     "schema": "rocs-source-contract-conformance.v1",
     "scope": "source-contract/schema/reference",
     "source_contract": "ontology-markdown-v1"
   },
-  "version": "0.4.5",
+  "version": "0.4.7",
   "workspace_ref_mode": "strict"
 }

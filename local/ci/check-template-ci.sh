@@ -35,7 +35,7 @@ if [ ! -f ontology/manifest.yaml ]; then
 		echo "error: unmaterialized ontology lacks regular .gitmodules" >&2
 		exit 1
 	}
-	expected_oid=b2e42daf61a889c08745b922056b627753f45a2c
+	expected_oid=6f6ae61bc70d8cf4dbd0f0c2b9b44609b736b74e
 	expected_source=https://github.com/tryingET/softwareco-ontology.git
 	[ "$(git rev-parse HEAD:.gitmodules)" = "$(git rev-parse :.gitmodules)" ] || {
 		echo "error: indexed .gitmodules differs from HEAD" >&2

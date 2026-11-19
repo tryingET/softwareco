@@ -66,7 +66,7 @@ jobs:
           fi
           if [ ! -f ontology/manifest.yaml ]; then
             ./scripts/materialize-ontology.sh \
-              --expected-oid b2e42daf61a889c08745b922056b627753f45a2c \
+              --expected-oid 6f6ae61bc70d8cf4dbd0f0c2b9b44609b736b74e \
               --source https://github.com/tryingET/softwareco-ontology.git \
               --token-env SOFTWARECO_ONTOLOGY_TOKEN
           fi
@@ -118,7 +118,7 @@ jobs:
           fi
           if [ ! -f ontology/manifest.yaml ]; then
             ./scripts/materialize-ontology.sh \
-              --expected-oid b2e42daf61a889c08745b922056b627753f45a2c \
+              --expected-oid 6f6ae61bc70d8cf4dbd0f0c2b9b44609b736b74e \
               --source https://github.com/tryingET/softwareco-ontology.git \
               --token-env SOFTWARECO_ONTOLOGY_TOKEN
           fi

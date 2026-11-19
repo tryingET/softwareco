@@ -146,7 +146,5 @@
     "core.rel.triggers",
     "core.rel.uses"
   ],
-  "repo": "/home/tryinget/ai-society/softwareco",
-  "schema_version": 1,
-  "version": "0.4.5"
+  "schema_version": 2
 }
