@@ -232,7 +232,43 @@ for state in clean detached dirty diverged release-head; do
   esac
   pass "branch policy $state with release available"
 done
-for policy in branch release invalid duplicate empty valid-empty trailing-newline embedded-newline; do
+# Fetch mode: fetch only; an own integration branch (and a detached or dirty tree) stays exactly as it is.
+for state in own-branch detached dirty; do
+  CASE="$SANDBOX/fetch policy $state"; ROOT="$CASE/scan root"; REPO="$ROOT/ordinary tree"
+  mkdir -p "$ROOT"; clone_repo "$REPO"
+  g -C "$REPO" config --local contrib.syncMode fetch
+  g -C "$REPO" reset -q --hard "$RELEASE"
+  case "$state" in
+    own-branch) g -C "$REPO" checkout -q -b integration; echo ours >> "$REPO/tracked file"; g -C "$REPO" commit -qam ours ;;
+    detached) g -C "$REPO" checkout -q --detach ;;
+    dirty) echo retained >> "$REPO/tracked file" ;;
+  esac
+  before_head="$(g -C "$REPO" rev-parse HEAD)"; before_ref="$(g -C "$REPO" symbolic-ref -q HEAD || echo detached)"
+  before_bytes="$(g -C "$REPO" hash-object 'tracked file')"
+  run_updater "$SANDBOX/updater under test.sh" "$ROOT" 0
+  assert_result OK 'fetched=origin; policy=fetch; checkout left alone'
+  grep -qx 'fetch origin' "$TRACE" || fail 'fetch mode did not fetch'
+  ! grep -qx release "$TRACE" || fail 'fetch mode queried releases'
+  ! grep -q '^mutation ' "$TRACE" || fail 'fetch mode attempted checkout/merge'
+  [[ $(g -C "$REPO" rev-parse HEAD) == "$before_head" ]] || fail 'fetch mode moved HEAD'
+  [[ $(g -C "$REPO" symbolic-ref -q HEAD || echo detached) == "$before_ref" ]] || fail 'fetch mode switched branch'
+  [[ $(g -C "$REPO" hash-object 'tracked file') == "$before_bytes" ]] || fail 'fetch mode changed files'
+  pass "fetch policy $state: fetched, checkout untouched"
+done
+# Integrate mode: without a patch list it warns and leaves the checkout exactly as it is.
+cp "$SCRIPT_DIR/contrib-integrate.sh" "$SANDBOX/contrib-integrate.sh"
+export CONTRIB_INTEGRATE="$SANDBOX/contrib-integrate.sh"
+CASE="$SANDBOX/integrate unconfigured"; ROOT="$CASE/scan root"; REPO="$ROOT/ordinary tree"
+mkdir -p "$ROOT"; clone_repo "$REPO"
+g -C "$REPO" config --local contrib.syncMode integrate
+g -C "$REPO" reset -q --hard "$RELEASE"; g -C "$REPO" checkout -q -b integration
+before_head="$(g -C "$REPO" rev-parse HEAD)"
+run_updater "$SANDBOX/updater under test.sh" "$ROOT" 0
+assert_result WARN 'fetched=origin; policy=integrate | warnings=integrate:rc=3:'
+[[ $(g -C "$REPO" rev-parse HEAD) == "$before_head" && $(g -C "$REPO" symbolic-ref --short HEAD) == integration ]] || fail 'integrate moved an unconfigured checkout'
+! grep -qx release "$TRACE" || fail 'integrate mode queried releases'
+pass 'integrate policy unconfigured: WARN rc=3, checkout untouched (the rebuild itself: test-contrib-integrate.sh)'
+for policy in branch release fetch integrate invalid duplicate empty valid-empty trailing-newline embedded-newline; do
   CASE="$SANDBOX/policy dry $policy"; ROOT="$CASE/scan root"; REPO="$ROOT/ordinary tree"
   mkdir -p "$ROOT"; clone_repo "$REPO"
   value="$policy"
@@ -248,13 +284,13 @@ for policy in branch release invalid duplicate empty valid-empty trailing-newlin
   snapshot before
   for mode in live dry; do
     # Valid policy live behavior was tested above; this block checks dry-run.
-    [[ "$mode" != live || ( "$policy" != branch && "$policy" != release ) ]] || continue
+    [[ "$mode" != live || ( "$policy" != branch && "$policy" != release && "$policy" != fetch && "$policy" != integrate ) ]] || continue
     args=(); [[ "$mode" != dry ]] || args+=(--dry-run)
-    expected=2; [[ "$policy" != branch && "$policy" != release ]] || expected=0
+    expected=2; [[ "$policy" != branch && "$policy" != release && "$policy" != fetch && "$policy" != integrate ]] || expected=0
     if [[ -d "$ROOT/.logs" ]]; then mv "$ROOT/.logs" "$CASE/$mode-previous-logs"; fi
     run_updater "$SANDBOX/updater under test.sh" "$ROOT" "$expected" "${args[@]}"
     if [[ "$expected" == 2 ]]; then
-      assert_result FAIL 'invalid local contrib.syncMode (expected one branch or release value)'
+      assert_result FAIL 'invalid local contrib.syncMode (expected one branch, release, fetch or integrate value)'
     else
       assert_result DRYRUN "policy=$policy;"
     fi

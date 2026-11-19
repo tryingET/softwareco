@@ -22,6 +22,10 @@ Behavior:
   - default to latest stable GitHub Release tag from origin when one exists
   - repo-local `git config --local contrib.syncMode branch` follows origin's default branch instead
   - `contrib.syncMode release` restores release preference; invalid/multiple values fail closed
+  - `contrib.syncMode fetch` only fetches: the checkout is ours and is never switched or merged
+  - `contrib.syncMode integrate` fetches, then contrib-integrate.sh rebuilds our integration branch
+    (upstream + contrib.integration.patch branches) and moves it only when every merge and the
+    check pass, the tree is clean and no commit would be lost; otherwise WARN and leave it
   - checkout the latest release in detached HEAD only when the worktree is clean
   - if no release exists, checkout and fast-forward origin's default branch (origin/HEAD, fallback main) when safe
 
@@ -337,9 +341,9 @@ if sync_mode="$(
   exit "$config_status"
 )"; then
   case "$sync_mode" in
-    $'branch\n.'|$'release\n.') sync_mode="${sync_mode%$'\n.'}" ;;
+    $'branch\n.'|$'release\n.'|$'fetch\n.'|$'integrate\n.') sync_mode="${sync_mode%$'\n.'}" ;;
     *)
-      emit "FAIL" "invalid local contrib.syncMode (expected one branch or release value)"
+      emit "FAIL" "invalid local contrib.syncMode (expected one branch, release, fetch or integrate value)"
       exit 0 ;;
   esac
 else
@@ -396,6 +400,22 @@ for remote in "${fetch_remotes[@]}"; do
 done
 
 details+=("fetched=$(join_with , "${fetch_remotes[@]}")")
+if [[ "$sync_mode" == fetch ]]; then   # the checkout is ours: never switch, merge or detach it
+  emit "OK" "$(join_with '; ' "${details[@]}"); policy=fetch; checkout left alone"
+  exit 0
+fi
+if [[ "$sync_mode" == integrate ]]; then   # our branch = upstream + our patch branches, rebuilt when safe
+  set +e
+  integrate_out="$("$CONTRIB_INTEGRATE" "$repo_dir" 2>&1 | tr '\n' ' ')"
+  integrate_rc=$?
+  set -e
+  if [[ $integrate_rc == 0 ]]; then
+    emit "OK" "$(join_with '; ' "${details[@]}"); policy=integrate; ${integrate_out% }"
+  else
+    emit "WARN" "$(join_with '; ' "${details[@]}"); policy=integrate | warnings=integrate:rc=${integrate_rc}: ${integrate_out% }"
+  fi
+  exit 0
+fi
 
 worktree_status="$(git -C "$repo_dir" status --porcelain 2>/dev/null || true)"
 latest_release_tag=""
@@ -533,6 +553,9 @@ else
 fi
 EOF
 chmod +x "$WORKER_SCRIPT"
+# integrate mode's rebuild tool, next to this script unless the caller names another
+CONTRIB_INTEGRATE="${CONTRIB_INTEGRATE:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/contrib-integrate.sh}"
+export CONTRIB_INTEGRATE
 
 printf '%s\0' "${REPO_PATHS[@]}" \
   | xargs -0 -P "$MAX_PARALLEL" -I{} "$WORKER_SCRIPT" "{}" "$ROOT_DIR" "$DRY_RUN" "$JITTER_MAX_MS" \

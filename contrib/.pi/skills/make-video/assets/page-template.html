@@ -1,0 +1,39 @@
+<!doctype html>
+<!-- make-video Chromium template. Every frame is a pure function of time t (seconds).
+     timing.js holds the timeline: echo "window.TIMING = $(cat build/timing.json);" > timing.js
+     Render: node capture.mjs page.html --duration <TIMING.duration_s> --fps <TIMING.fps> --size 1920x1080 -->
+<html lang="en"><meta charset="utf-8">
+<style>
+  @font-face { font-family: Body; src: url(fonts/Inter-Regular.ttf); } /* copy fonts beside the page */
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #0f1720; color: #f4f1ea; font-family: Body, sans-serif; }
+  .title { position: absolute; left: 160px; top: 420px; font-size: 96px; }
+  #hint { position: fixed; right: 12px; bottom: 8px; font: 14px monospace; opacity: .6; }
+</style>
+<script src="timing.js" onerror="window.TIMING = {fps: 30, duration_s: 6, segments: [{id: 'intro', start_s: 0, end_s: 6}]}"></script>
+<div class="title" id="title">Title</div>
+<div id="hint"></div>
+<script>
+const T = window.TIMING, RENDER = location.search.includes('render=1');
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = x => x < .5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2;
+// progress 0..1 inside segment `id`, optionally over the window [from, to] seconds after its start
+const seg = id => T.segments.find(s => s.id === id);
+const local = (t, id, from = 0, to) => { const s = seg(id); const d = (to ?? (s.end_s - s.start_s)) - from;
+  return clamp((t - s.start_s - from) / Math.max(d, 1e-6)); };
+
+function frame(t) {
+  const k = ease(local(t, 'intro', 0, 0.8));
+  const el = document.getElementById('title');
+  el.style.opacity = k; el.style.transform = `translateY(${(1 - k) * 40}px)`;
+}
+
+window.seek = t => { frame(t); };
+Promise.all([document.fonts.ready]).then(() => {
+  frame(0); window.__ready = true;
+  if (RENDER) return;
+  const t0 = performance.now(); // live preview only; never used while rendering
+  (function loop() { const t = ((performance.now() - t0) / 1000) % T.duration_s; frame(t);
+    document.getElementById('hint').textContent = t.toFixed(2) + ' s'; requestAnimationFrame(loop); })();
+});
+</script>
+</html>
